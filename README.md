@@ -14,15 +14,12 @@ npm install
 
 ## Run
 
-Two terminals:
-
 ```bash
-# Terminal 1: API server
+# Terminal 1: API server (port 8787)
 npx tsx packages/server/src/index.ts
 
-# Terminal 2: Frontend
-cd packages/web
-npm run dev
+# Terminal 2: Frontend (port 5173)
+cd packages/web && npm run dev
 ```
 
 - UI: http://localhost:5173
@@ -31,43 +28,102 @@ npm run dev
 
 ## Add the AI Skill
 
-This teaches your AI assistant (Claude Code, Cursor, etc.) how to create and manage flows.
+Teaches your AI assistant how to create and manage flows:
 
-**Claude Code:**
 ```bash
 npx skills add yourorg/flowscope
 ```
 
-**Or manually:** copy `skills/flowscope/SKILL.md` to `.claude/skills/flowscope/SKILL.md` in your project.
+Or manually copy `skills/flowscope/SKILL.md` to `.claude/skills/flowscope/SKILL.md`.
 
-**Then ask your AI:**
-> "Show me how data flows through the order processing system"
+---
 
-The AI will create a YAML flow and push it to FlowScope.
+## For AI Agents
 
-## Push a Flow Manually
-
-```bash
-npx tsx packages/cli/src/index.ts push examples/order-flow.yaml
-```
-
-## CLI
+### Check if FlowScope is running
 
 ```bash
-flowscope serve [--port 8787]        # Start server
-flowscope push <file.yaml | ->       # Push a flow (stdin supported)
-flowscope patch <id> <file.yaml | -> # Update a flow
-flowscope list                       # List all flows
-flowscope remove <id>                # Delete a flow
+curl -s http://localhost:8787/api/flows > /dev/null 2>&1 && echo "running" || echo "not running"
 ```
 
-## Examples
+If not running, tell the user to start it (see Run section above).
+
+### Quick flow creation
 
 ```bash
-npx tsx packages/cli/src/index.ts push examples/order-flow.yaml
-npx tsx packages/cli/src/index.ts push examples/auth-flow.yaml
-npx tsx packages/cli/src/index.ts push examples/simple-crud.yaml
+# Write YAML to a file
+cat > /tmp/my-flow.yaml << 'EOF'
+meta:
+  title: My Flow
+  path: project/backend
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+    - id: api
+      label: API
+      type: endpoint
+  steps:
+    - from: user
+      to: api
+      data: Request
+    - from: api
+      to: user
+      data: Response
+EOF
+
+# Push it
+npx tsx packages/cli/src/index.ts push /tmp/my-flow.yaml
 ```
+
+Or via stdin:
+```bash
+echo 'meta:
+  title: Quick Flow
+flow:
+  nodes:
+    - {id: a, label: Source}
+    - {id: b, label: Sink}
+  steps:
+    - {from: a, to: b, data: test}' | npx tsx packages/cli/src/index.ts push -
+```
+
+### Update an existing flow
+
+```bash
+cat > /tmp/patch.yaml << 'EOF'
+operations:
+  - op: add-nodes
+    nodes:
+      - {id: db, label: Database, type: database}
+  - op: add-steps
+    after: 0
+    steps:
+      - {from: api, to: db, data: query}
+EOF
+
+npx tsx packages/cli/src/index.ts patch <flow-id> /tmp/patch.yaml
+```
+
+### CLI commands
+
+```bash
+npx tsx packages/cli/src/index.ts push <file | ->       # Create flow
+npx tsx packages/cli/src/index.ts patch <id> <file | ->  # Update flow
+npx tsx packages/cli/src/index.ts list                   # List flows
+npx tsx packages/cli/src/index.ts remove <id>            # Delete flow
+```
+
+### Workflow
+
+1. **Sketch** — create a simple flow with just node labels and string data
+2. **Detail** — PATCH to add icons, colors, fields, sub-flows
+3. **Polish** — PATCH to add diff highlighting, drilldown, parallel steps
+
+See `skills/flowscope/SKILL.md` for the full schema reference.
+
+---
 
 ## Features
 
@@ -79,9 +135,4 @@ npx tsx packages/cli/src/index.ts push examples/simple-crud.yaml
 - File explorer sidebar with folder support
 - PATCH API for incremental updates
 - Strict YAML validation with fuzzy typo suggestions
-- Swagger API documentation
-- Configurable animation speed (`window.__flowSpeed = 3` in browser console)
-
-## Schema
-
-See the [design doc](docs/plans/2026-04-10-ai-driven-redesign.md) for the full schema specification, or the [AI skill file](skills/flowscope/SKILL.md) for a concise reference.
+- Swagger API docs at /docs
