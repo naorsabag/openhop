@@ -6,7 +6,8 @@ import type { Root } from '@flowscope/shared'
 
 export interface StoredFlow {
   id: string
-  flow: Root
+  meta: Root['meta']
+  flow: Root['flow']
   version: number
   createdAt: string
   updatedAt: string
@@ -17,7 +18,7 @@ interface StoredFlowFile {
   version: number
   createdAt: string
   updatedAt: string
-  flow: Root
+  root: Root  // the full Root object on disk
 }
 
 export class FlowStore {
@@ -35,38 +36,31 @@ export class FlowStore {
     return join(this.dir, `${id}.yaml`)
   }
 
-  async save(id: string, flow: Root): Promise<StoredFlow> {
+  private toStoredFlow(file: StoredFlowFile): StoredFlow {
+    return {
+      id: file.id,
+      meta: file.root.meta,
+      flow: file.root.flow,
+      version: file.version,
+      createdAt: file.createdAt,
+      updatedAt: file.updatedAt,
+    }
+  }
+
+  async save(id: string, root: Root): Promise<StoredFlow> {
     await this.ensureDir()
     const now = new Date().toISOString()
-    const stored: StoredFlowFile = {
-      id,
-      version: 1,
-      createdAt: now,
-      updatedAt: now,
-      flow,
-    }
-    await writeFile(this.filePath(id), YAML.stringify(stored), 'utf-8')
-    return {
-      id: stored.id,
-      flow: stored.flow,
-      version: stored.version,
-      createdAt: stored.createdAt,
-      updatedAt: stored.updatedAt,
-    }
+    const file: StoredFlowFile = { id, version: 1, createdAt: now, updatedAt: now, root }
+    await writeFile(this.filePath(id), YAML.stringify(file), 'utf-8')
+    return this.toStoredFlow(file)
   }
 
   async get(id: string): Promise<StoredFlow | null> {
     await this.ensureDir()
     try {
       const content = await readFile(this.filePath(id), 'utf-8')
-      const stored = YAML.parse(content) as StoredFlowFile
-      return {
-        id: stored.id,
-        flow: stored.flow,
-        version: stored.version,
-        createdAt: stored.createdAt,
-        updatedAt: stored.updatedAt,
-      }
+      const file = YAML.parse(content) as StoredFlowFile
+      return this.toStoredFlow(file)
     } catch {
       return null
     }
@@ -75,22 +69,13 @@ export class FlowStore {
   async list(): Promise<StoredFlow[]> {
     await this.ensureDir()
     const files = await readdir(this.dir)
-    const yamlFiles = files.filter((f) => f.endsWith('.yaml'))
     const results: StoredFlow[] = []
-    for (const file of yamlFiles) {
+    for (const f of files.filter((f) => f.endsWith('.yaml'))) {
       try {
-        const content = await readFile(join(this.dir, file), 'utf-8')
-        const stored = YAML.parse(content) as StoredFlowFile
-        results.push({
-          id: stored.id,
-          flow: stored.flow,
-          version: stored.version,
-          createdAt: stored.createdAt,
-          updatedAt: stored.updatedAt,
-        })
-      } catch {
-        // Skip corrupt files
-      }
+        const content = await readFile(join(this.dir, f), 'utf-8')
+        const file = YAML.parse(content) as StoredFlowFile
+        results.push(this.toStoredFlow(file))
+      } catch { /* skip corrupt */ }
     }
     return results
   }
@@ -110,27 +95,21 @@ export class FlowStore {
     return stored ? stored.version : null
   }
 
-  async updateFlow(id: string, flow: Root): Promise<StoredFlow> {
+  async updateFlow(id: string, root: Root): Promise<StoredFlow> {
     await this.ensureDir()
     const existing = await this.get(id)
     if (!existing) {
       throw new Error(`Flow "${id}" not found`)
     }
     const now = new Date().toISOString()
-    const stored: StoredFlowFile = {
+    const file: StoredFlowFile = {
       id,
       version: existing.version + 1,
       createdAt: existing.createdAt,
       updatedAt: now,
-      flow,
+      root,
     }
-    await writeFile(this.filePath(id), YAML.stringify(stored), 'utf-8')
-    return {
-      id: stored.id,
-      flow: stored.flow,
-      version: stored.version,
-      createdAt: stored.createdAt,
-      updatedAt: stored.updatedAt,
-    }
+    await writeFile(this.filePath(id), YAML.stringify(file), 'utf-8')
+    return this.toStoredFlow(file)
   }
 }

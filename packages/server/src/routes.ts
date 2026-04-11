@@ -147,7 +147,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send({
       id: stored.id,
       version: stored.version,
-      title: stored.flow.meta.title,
+      title: stored.meta.title,
     })
   })
 
@@ -169,9 +169,9 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
     const flows = await store.list()
     const summaries = flows.map((f) => ({
       id: f.id,
-      title: f.flow.meta.title,
-      description: f.flow.meta.description ?? null,
-      tags: f.flow.meta.tags ?? [],
+      title: f.meta.title,
+      description: f.meta.description ?? null,
+      tags: f.meta.tags ?? [],
       version: f.version,
       updatedAt: f.updatedAt,
     }))
@@ -363,8 +363,11 @@ Supported operations:
       })
     }
 
+    // Reconstruct Root from stored flat structure
+    const root = { meta: stored.meta, flow: stored.flow }
+
     // Apply patch
-    const patchResult = applyPatch(stored.flow, parseResult.data)
+    const patchResult = applyPatch(root, parseResult.data)
     if (!patchResult.success) {
       return reply.status(400).send({
         error: 'patch_error',
@@ -378,7 +381,7 @@ Supported operations:
     return reply.send({
       id: updated.id,
       version: updated.version,
-      title: updated.flow.meta.title,
+      title: updated.meta.title,
     })
   })
 
