@@ -25,7 +25,8 @@ interface DataPixelProps {
 }
 
 const PIXEL_SIZE = 20
-const ANIMATION_DURATION = 1800
+const getSpeed = () => (window as any).__flowSpeed ?? 1
+const ANIMATION_DURATION_BASE = 1800
 
 export function DataPixel({
   edgeId,
@@ -74,7 +75,7 @@ export function DataPixel({
       if (!startTimeRef.current) startTimeRef.current = timestamp
 
       const elapsed = timestamp - startTimeRef.current
-      const progress = Math.min(elapsed / ANIMATION_DURATION, 1)
+      const progress = Math.min(elapsed / (ANIMATION_DURATION_BASE / getSpeed()), 1)
 
       // Ease in-out cubic
       const eased =

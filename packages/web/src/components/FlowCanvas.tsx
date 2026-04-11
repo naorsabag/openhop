@@ -144,7 +144,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     drilldownTimerRef.current = setTimeout(() => {
       onDrilldownStep(targetId)
       drilldownTimerRef.current = null
-    }, 1500)
+    }, 1500 / ((window as any).__flowSpeed ?? 1))
 
     // Don't return cleanup — we want the timer to survive activeStep becoming null
   }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep])
