@@ -23,10 +23,11 @@ interface FlowCanvasProps {
   playing: boolean
   onDrillDown?: (nodeId: string) => void
   onDrilldownStep?: (nodeId: string) => void
+  onCycleComplete?: () => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
-function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep }: FlowCanvasProps) {
+function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { nodes: baseNodes, edges: baseEdges } = useMemo(
@@ -60,7 +61,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep }: FlowCa
     fireManualPixel, removeManualPixel, setNodeStep,
     manualPixels, nodeProgress,
     ...animState
-  } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing)
+  } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing, onCycleComplete)
 
   // Build a map: nodeId -> list of outgoing logical steps
   // A broadcast (to: [db, cache]) is ONE logical step with multiple edgeIds

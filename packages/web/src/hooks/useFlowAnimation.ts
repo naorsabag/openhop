@@ -38,6 +38,7 @@ export function useFlowAnimation(
   steps: FlowStep[],
   edgeStepMap: Map<string, number>,
   playing: boolean,
+  onCycleComplete?: () => void,
 ) {
   const [state, setState] = useState<AnimationState>({
     playing: false,
@@ -52,6 +53,8 @@ export function useFlowAnimation(
   })
 
   const nodeProgressRef = useRef<Map<string, number>>(new Map())
+  const onCycleCompleteRef = useRef(onCycleComplete)
+  onCycleCompleteRef.current = onCycleComplete
 
   const stepIndexRef = useRef(-1)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -104,12 +107,20 @@ export function useFlowAnimation(
     if (steps.length === 0) return
     if (!playingRef.current) return
 
-    const nextIdx = (stepIndexRef.current + 1) % steps.length
+    const rawNext = stepIndexRef.current + 1
 
-    // Reset progress when looping back to start
-    if (nextIdx === 0) {
+    // Cycle complete — fire callback or loop
+    if (rawNext >= steps.length) {
+      if (onCycleCompleteRef.current) {
+        // Don't loop — let the caller decide (e.g. navigate back from sub-flow)
+        onCycleCompleteRef.current()
+        return
+      }
+      // No callback — loop
       nodeProgressRef.current = new Map()
     }
+
+    const nextIdx = rawNext % steps.length
 
     stepIndexRef.current = nextIdx
     const mapping = mappingsRef.current[nextIdx]
