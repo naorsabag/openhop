@@ -24,10 +24,12 @@ interface FlowCanvasProps {
   onDrillDown?: (nodeId: string) => void
   onDrilldownStep?: (nodeId: string) => void
   onCycleComplete?: () => void
+  startFromStep?: number
+  onStepChange?: (stepIndex: number) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
-function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete }: FlowCanvasProps) {
+function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete, startFromStep, onStepChange }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { nodes: baseNodes, edges: baseEdges } = useMemo(
@@ -61,7 +63,16 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     fireManualPixel, removeManualPixel, setNodeStep,
     manualPixels, nodeProgress,
     ...animState
-  } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing, onCycleComplete)
+  } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing, onCycleComplete, startFromStep)
+
+  // Report step changes to parent
+  const onStepChangeRef = useRef(onStepChange)
+  onStepChangeRef.current = onStepChange
+  useEffect(() => {
+    if (onStepChangeRef.current && animState.currentStepIndex >= 0) {
+      onStepChangeRef.current(animState.currentStepIndex)
+    }
+  }, [animState.currentStepIndex])
 
   // Build a map: nodeId -> list of outgoing logical steps
   // A broadcast (to: [db, cache]) is ONE logical step with multiple edgeIds
