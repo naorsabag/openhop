@@ -96,16 +96,28 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
     return map
   }, [flow.flow, baseEdges])
 
+  // Track nodes that currently have a manual pixel in flight
+  const nodesWithActivePixel = useMemo(() => {
+    const ids = new Set<string>()
+    for (const mp of manualPixels) {
+      if (mp.step.from) ids.add(mp.step.from)
+    }
+    return ids
+  }, [manualPixels])
+
   const handleNodeClick = useCallback((nodeId: string) => {
+    // Block if this specific node already has a pixel in flight
+    if (nodesWithActivePixel.has(nodeId)) return
+
     const outgoing = nodeOutgoingSteps.get(nodeId)
     if (!outgoing || outgoing.length === 0) return
 
-    const currentProg = nodeProgress.get(nodeId) ?? 0
+    let currentProg = nodeProgress.get(nodeId) ?? 0
 
-    // If past the last step, reset to 0
+    // If past the last step, reset and fire first step
     if (currentProg >= outgoing.length) {
       setNodeStep(nodeId, 0)
-      return
+      currentProg = 0
     }
 
     const entry = outgoing[currentProg]
@@ -117,7 +129,7 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
       sourceNodeType: sourceInfo.type,
       sourceNodeColor: sourceInfo.color,
     })
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep])
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, nodesWithActivePixel])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
     setNodeStep(nodeId, targetStep)
