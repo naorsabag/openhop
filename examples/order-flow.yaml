@@ -129,16 +129,24 @@ flow:
     - from: payment
       to: order-service
       data:
-        label: payment confirmed
-        fields:
-          - name: payment_id
-            type: string
-            added: true
-          - name: status
-            type: string
-            added: true
-          - name: amount
-            type: float
+        - label: payment result
+          fields:
+            - name: payment_id
+              type: string
+              added: true
+            - name: status
+              type: string
+              added: true
+        - label: transaction details
+          fields:
+            - name: amount
+              type: float
+            - name: fee
+              type: float
+              added: true
+            - name: net
+              type: float
+              added: true
       drilldown: true
 
     - from: order-service
