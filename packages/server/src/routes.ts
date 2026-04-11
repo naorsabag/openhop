@@ -67,9 +67,10 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
       description: 'Accepts a flow definition in YAML or JSON format. Validates the schema and stores the flow.',
       tags: ['flows'],
       body: {
-        type: 'string',
-        description: 'Flow definition in YAML or JSON format',
-        examples: [EXAMPLE_YAML],
+        oneOf: [
+          { type: 'string', description: 'Flow in YAML format' },
+          { type: 'object', additionalProperties: true, description: 'Flow in JSON format' },
+        ],
       },
       response: {
         201: {
