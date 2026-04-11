@@ -7,6 +7,14 @@ import { resolve } from "node:path";
 import YAML from "yaml";
 import { parseFlowYaml, type ValidationResult, type Root } from "@flowscope/shared";
 
+/** Read input from file path or stdin (use "-" for stdin) */
+function readInput(file: string): string {
+  if (file === "-") {
+    return readFileSync(0, "utf-8"); // fd 0 = stdin
+  }
+  return readFileSync(resolve(file), "utf-8");
+}
+
 // ANSI color helpers
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
@@ -59,10 +67,10 @@ program
 // --- push ---
 program
   .command("push <file>")
-  .description("Push a YAML flow to the server")
+  .description("Push a YAML flow to the server (use - for stdin)")
   .option("-s, --server <url>", "Server URL", DEFAULT_SERVER)
   .action(async (file: string, opts) => {
-    const yamlContent = readFileSync(resolve(file), "utf-8");
+    const yamlContent = readInput(file);
 
     // Validate locally first
     const result = parseFlowYaml(yamlContent);
@@ -160,9 +168,9 @@ program
 // --- validate ---
 program
   .command("validate <file>")
-  .description("Validate a YAML flow file locally")
+  .description("Validate a YAML flow file locally (use - for stdin)")
   .action((file: string) => {
-    const yamlContent = readFileSync(resolve(file), "utf-8");
+    const yamlContent = readInput(file);
     const result = parseFlowYaml(yamlContent);
 
     if (result.success && result.data) {
@@ -188,7 +196,7 @@ program
   .description("Patch a flow with operations from a YAML file")
   .option("-s, --server <url>", "Server URL", DEFAULT_SERVER)
   .action(async (flowId: string, file: string, opts) => {
-    const content = readFileSync(resolve(file), "utf-8");
+    const content = readInput(file);
 
     // Try to parse as YAML (which also handles JSON)
     let operations: unknown;

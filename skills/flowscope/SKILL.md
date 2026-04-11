@@ -129,9 +129,24 @@ flowscope patch abc123 polish-patch.yaml
 ```bash
 flowscope serve [--port 8787]              # Start server
 flowscope push <file.yaml>                 # Push a flow → returns ID and URL
+flowscope push -                           # Push from stdin (pipe YAML)
 flowscope patch <flow-id> <patch.yaml>     # Apply patch operations
+flowscope patch <flow-id> -                # Patch from stdin
 flowscope list                             # List all flows
 flowscope validate <file.yaml>             # Validate locally (no server needed)
+flowscope validate -                       # Validate from stdin
+```
+
+Stdin is useful when generating YAML programmatically:
+```bash
+echo 'meta:
+  title: Quick Test
+flow:
+  nodes:
+    - {id: a, label: A}
+    - {id: b, label: B}
+  steps:
+    - {from: a, to: b, data: test}' | flowscope push -
 ```
 
 ## Schema Reference
@@ -154,9 +169,29 @@ Either a move step or parallel:
 - Parallel: `{ parallel: [move steps] }` (min 2)
 
 ### Data
-Either a string or object:
-- String: `data: "HTTP Request"`
-- Object: `data: { label, color, fields: [{ name, type, changed, added, removed }] }`
+Either a string (sketch) or object (detailed):
+
+**String** — just a label:
+```yaml
+data: "HTTP Request"
+```
+
+**Object** — with optional fields:
+```yaml
+data:
+  label: "Order payload"      # required
+  color: "#4aff7a"            # optional — override pixel color (hex)
+  fields:                      # optional — shown in tooltip on hover
+    - name: items              # required
+      type: "list[OrderItem]"  # optional
+    - name: total
+      type: float
+      added: true              # optional — green highlight (new field)
+    - name: old_field
+      removed: true            # optional — red strikethrough
+    - name: amount
+      changed: true            # optional — yellow highlight (modified)
+```
 
 ## PATCH Operations
 
