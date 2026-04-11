@@ -153,7 +153,7 @@ function App() {
             style={{ fontSize: 14 }}
             onClick={() => selectFlow(null)}
           >
-            FlowScope
+            OpenHop
           </h1>
           {apiFlow && (
             <span className="font-pixel text-text/60" style={{ fontSize: 12 }}>

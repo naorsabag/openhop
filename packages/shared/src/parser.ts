@@ -2,7 +2,7 @@ import YAML from "yaml";
 import { validateFlow, type ValidationResult } from "./validator.js";
 
 /**
- * Parse a YAML string and validate it as a FlowScope flow.
+ * Parse a YAML string and validate it as a OpenHop flow.
  */
 export function parseFlowYaml(yamlString: string): ValidationResult {
   let parsed: unknown;
@@ -18,7 +18,7 @@ export function parseFlowYaml(yamlString: string): ValidationResult {
 }
 
 /**
- * Parse a JSON string and validate it as a FlowScope flow.
+ * Parse a JSON string and validate it as a OpenHop flow.
  */
 export function parseFlowJson(jsonString: string): ValidationResult {
   let parsed: unknown;

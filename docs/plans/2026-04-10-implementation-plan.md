@@ -1,8 +1,8 @@
-# FlowScope v1 — Iterative Implementation Plan
+# OpenHop v1 — Iterative Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use sp-executing-plans to implement this plan task-by-task.
 
-**Goal:** Build FlowScope as a TypeScript full-stack app, iteratively. Each phase produces a working product testable via agent-browser.
+**Goal:** Build OpenHop as a TypeScript full-stack app, iteratively. Each phase produces a working product testable via agent-browser.
 
 **Tech Stack:** TypeScript, Fastify, Zod v4, React, React Flow, Tailwind, pixel-borders, Commander.js
 
@@ -48,7 +48,7 @@ This ensures every test step can use `snapshot -i` to find refs, then `click @re
 3. **Hardcode a flow** — create a TypeScript constant with the Order Flow example (nodes + steps)
 4. **Render nodes** — React Flow canvas with custom node components per type (actor, endpoint, database, external, service). Pixel borders, dark background (#0a0a1a), dot grid, correct colors per type.
 5. **Render edges** — Thick conveyor-belt style paths between nodes
-6. **Dark layout shell** — Header with "FlowScope" title, dark sidebar placeholder, canvas fills remaining space
+6. **Dark layout shell** — Header with "OpenHop" title, dark sidebar placeholder, canvas fills remaining space
 
 ### Verify with agent-browser:
 ```
@@ -131,7 +131,7 @@ screenshot /tmp/phase3-manual.png
    - `GET /api/flows/:id` — get a flow
    - `GET /api/flows/:id/version` — version number only
    - **Swagger UI** via `@fastify/swagger` + `@fastify/swagger-ui` at `/docs`
-3. **Filesystem storage** — flows saved as YAML in `~/.flowscope/flows/`
+3. **Filesystem storage** — flows saved as YAML in `~/.openhop/flows/`
 4. **UI fetches from API** — replace hardcoded flow with `GET /api/flows/:id`
 5. **UI polls version** — every 500ms, re-fetch on change
 
@@ -244,9 +244,9 @@ screenshot /tmp/phase7-viewer.png
 
 ## Phase 8: CLI + Validation Errors
 
-**Goal:** `flowscope` CLI works. Bad YAML returns clear errors.
+**Goal:** `openhop` CLI works. Bad YAML returns clear errors.
 
-**What you can test:** `flowscope push bad.yaml` → clear error message. `flowscope push good.yaml` → success.
+**What you can test:** `openhop push bad.yaml` → clear error message. `openhop push good.yaml` → success.
 
 ### Tasks:
 
@@ -256,13 +256,13 @@ screenshot /tmp/phase7-viewer.png
 
 ### Verify:
 ```bash
-echo "bad yaml" | flowscope validate -
+echo "bad yaml" | openhop validate -
 → Error with path and suggestion
 
-flowscope push examples/order-flow.yaml
+openhop push examples/order-flow.yaml
 → Success, flow ID printed
 
-flowscope list
+openhop list
 → Table of flows
 ```
 
@@ -274,15 +274,15 @@ flowscope list
 
 ### Tasks:
 
-1. **Skill file** — `skills/flowscope/SKILL.md` with full schema reference, phased workflow
+1. **Skill file** — `skills/openhop/SKILL.md` with full schema reference, phased workflow
 2. **Example flows** — `examples/order-flow.yaml`, `examples/auth-flow.yaml`, `examples/simple-crud.yaml`
 3. **Dockerfile** — multi-stage build (build frontend, serve with Node)
 4. **README** — installation, quick start, schema overview
 
 ### Verify:
 ```bash
-docker build -t flowscope .
-docker run -p 8787:8787 flowscope
+docker build -t openhop .
+docker run -p 8787:8787 openhop
 # Push example flow, open browser, confirm everything works
 ```
 

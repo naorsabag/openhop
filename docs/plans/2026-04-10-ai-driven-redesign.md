@@ -1,11 +1,11 @@
-# FlowScope v1 — Data Flow Visualization Platform
+# OpenHop v1 — Data Flow Visualization Platform
 
 **Date:** 2026-04-10
 **Status:** Approved
 
-## What Is FlowScope
+## What Is OpenHop
 
-A visualization platform for data flows. FlowScope contains **zero AI** — it is a tool **for** AI. AI assistants analyze code and produce flow descriptions in a standard YAML schema. FlowScope renders them as animated, interactive diagrams where colored data pixels travel between components like items on a Factorio conveyor belt.
+A visualization platform for data flows. OpenHop contains **zero AI** — it is a tool **for** AI. AI assistants analyze code and produce flow descriptions in a standard YAML schema. OpenHop renders them as animated, interactive diagrams where colored data pixels travel between components like items on a Factorio conveyor belt.
 
 ## Core Principles
 
@@ -26,7 +26,7 @@ AI Tool (Claude Code, Cursor, etc.)
     │  PATCH /api/flows/{id}  (incremental operations)
     ▼
 ┌────────────────────────────────────┐
-│  FlowScope Server (Node/Fastify)   │
+│  OpenHop Server (Node/Fastify)   │
 │  - Zod schema validation           │
 │  - Filesystem storage              │
 │  - Version tracking per flow       │
@@ -353,7 +353,7 @@ Checks:
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  FlowScope          [search...]         [▶ Play]     │
+│  OpenHop          [search...]         [▶ Play]     │
 ├───────────┬──────────────────────────────────────────┤
 │           │                                          │
 │  Flows    │  ╔══════════════════════════════════╗    │
@@ -462,17 +462,17 @@ Phase 2 — DETAIL: PATCH to add fields, types, custom icons, colors, sub-flows.
 Phase 3 — POLISH: PATCH to add diff highlighting, drilldown, parallel steps.
 ```
 
-Full skill file with schema reference, examples, and best practices lives at `skills/flowscope/SKILL.md`.
+Full skill file with schema reference, examples, and best practices lives at `skills/openhop/SKILL.md`.
 
 ---
 
 ## CLI
 
 ```bash
-flowscope serve [--port 8787]              # start server
-flowscope push <file.yaml> [--name "..."]  # push a flow
-flowscope list                             # list flows
-flowscope remove <id>                      # delete a flow
+openhop serve [--port 8787]              # start server
+openhop push <file.yaml> [--name "..."]  # push a flow
+openhop list                             # list flows
+openhop remove <id>                      # delete a flow
 ```
 
 ---
