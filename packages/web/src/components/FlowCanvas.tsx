@@ -337,6 +337,8 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         nodeTypes={nodeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
         onEdgeClick={(event, edge) => {
+          // Don't show popup for edges connected to hidden nodes
+          if (!isNodeAlive(edge.source) || !isNodeAlive(edge.target)) return
           const edgeStep = (edge.data as { step?: FlowStep } | undefined)?.step
           if (!edgeStep) return
           handlePinPopup(edgeStep, { x: event.clientX, y: event.clientY }, edge.id)
