@@ -319,20 +319,14 @@ Supported operations:
             type: 'array',
             items: {
               type: 'object',
+              additionalProperties: true,
               properties: {
-                op: { type: 'string', description: 'Operation type' },
+                op: { type: 'string' },
               },
             },
-            description: 'Array of patch operations to apply',
           },
         },
         required: ['operations'],
-        example: {
-          operations: [
-            { op: 'add-node', node: { id: 'cache', label: 'Redis Cache', type: 'cache' } },
-            { op: 'rename-node', node: 'api', label: 'API Gateway' },
-          ],
-        },
       },
       response: {
         200: {
