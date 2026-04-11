@@ -7,7 +7,7 @@ import {
   type Edge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useMemo, useRef, useCallback } from 'react'
+import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { flowToGraph } from '../lib/flow-to-graph'
 import { useFlowAnimation } from '../hooks/useFlowAnimation'
@@ -22,10 +22,11 @@ interface FlowCanvasProps {
   flow: Flow
   playing: boolean
   onDrillDown?: (nodeId: string) => void
+  onDrilldownStep?: (nodeId: string) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
-function FlowCanvasInner({ flow, playing, onDrillDown }: FlowCanvasProps) {
+function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { nodes: baseNodes, edges: baseEdges } = useMemo(
@@ -109,6 +110,22 @@ function FlowCanvasInner({ flow, playing, onDrillDown }: FlowCanvasProps) {
     }
     return set
   }, [manualPixels])
+
+  // Auto-drilldown: fire callback when a step with drilldown: true is active
+  useEffect(() => {
+    if (!onDrilldownStep) return
+    const step = animState.activeStep
+    if (!step || !('drilldown' in step) || !step.drilldown) return
+    const targetId = Array.isArray(step.to) ? step.to[0] : typeof step.to === 'string' ? step.to : null
+    if (!targetId) return
+
+    // Fire after pixel animation completes
+    const timer = setTimeout(() => {
+      onDrilldownStep(targetId)
+    }, 1800) // match ANIMATION_DURATION
+
+    return () => clearTimeout(timer)
+  }, [animState.activeStep, onDrilldownStep])
 
   const handleNodeClick = useCallback((nodeId: string) => {
     const outgoing = nodeOutgoingSteps.get(nodeId)

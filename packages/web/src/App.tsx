@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { FlowCanvas } from './components/FlowCanvas'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
@@ -66,11 +66,10 @@ function App() {
     }
   }, [apiFlow, currentFlowBody])
 
-  const handleDrillDown = useCallback((nodeId: string) => {
+  const navigateToDrillDown = useCallback((nodeId: string) => {
     if (!currentFlowBody || !apiFlow) return
     const node = currentFlowBody.flow.nodes.find(n => n.id === nodeId)
     if (!node?.flow) return
-    setPlaying(false)
     setFlowStack(prev => {
       const base = prev.length === 0 ? [{ flow: apiFlow.flow }] : prev
       return [...base, {
@@ -81,6 +80,11 @@ function App() {
     })
   }, [currentFlowBody, apiFlow])
 
+  const handleDrillDown = useCallback((nodeId: string) => {
+    setPlaying(false)
+    navigateToDrillDown(nodeId)
+  }, [navigateToDrillDown])
+
   const handleBack = useCallback(() => {
     setPlaying(false)
     setFlowStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev)
@@ -90,6 +94,24 @@ function App() {
     setPlaying(false)
     setFlowStack(prev => prev.slice(0, index + 1))
   }, [])
+
+  // Auto-drilldown during playback — triggered by FlowCanvas when a drilldown step completes
+  const handleAutoDrilldown = useCallback((nodeId: string) => {
+    if (!playing) return // only auto-drill during playback
+    navigateToDrillDown(nodeId) // don't pause — sub-flow continues playing
+  }, [playing, navigateToDrillDown])
+
+  // Zoom transition when flow stack changes
+  const [transitioning, setTransitioning] = useState(false)
+  const prevStackLen = useRef(flowStack.length)
+  useEffect(() => {
+    if (flowStack.length !== prevStackLen.current) {
+      setTransitioning(true)
+      const timer = setTimeout(() => setTransitioning(false), 400)
+      prevStackLen.current = flowStack.length
+      return () => clearTimeout(timer)
+    }
+  }, [flowStack.length])
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: '#0a0a1a' }}>
@@ -210,7 +232,9 @@ function App() {
                   </nav>
                 </div>
               )}
-              <FlowCanvas flow={displayFlow} playing={playing} onDrillDown={handleDrillDown} />
+              <div className={transitioning ? 'animate-drilldown w-full h-full' : 'w-full h-full'}>
+                <FlowCanvas flow={displayFlow} playing={playing} onDrillDown={handleDrillDown} onDrilldownStep={handleAutoDrilldown} />
+              </div>
             </>
           ) : null}
         </main>
