@@ -108,9 +108,9 @@ export function useFlowAnimation(
     stepIndexRef.current = nextIdx
     const mapping = mappingsRef.current[nextIdx]
 
-    // Increment node progress for all involved nodes
-    const allNodeIds = [...mapping.fromIds, ...mapping.toIds]
-    for (const nid of allNodeIds) {
+    // Increment node progress only for sender nodes (from)
+    // Receivers get incremented when they become senders in a later step
+    for (const nid of mapping.fromIds) {
       nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
     }
 
@@ -151,18 +151,18 @@ export function useFlowAnimation(
     if (playing) {
       advanceStep()
     } else {
+      // Pause: just stop timers, keep current state frozen
       clearTimers()
-      nodeProgressRef.current = new Map()
       setState((prev) => ({
         ...prev,
         playing: false,
+        // Clear active highlights but keep progress and step index
         activeEdgeIds: new Set<string>(),
         activeFromIds: new Set<string>(),
         activeToIds: new Set<string>(),
         activeStep: null,
-        nodeProgress: new Map(),
       }))
-      stepIndexRef.current = -1
+      // Don't reset stepIndexRef or nodeProgressRef — resume from where we paused
     }
 
     return clearTimers
