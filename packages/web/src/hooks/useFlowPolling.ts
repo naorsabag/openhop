@@ -38,7 +38,7 @@ export function useFlowData(flowId: string | null) {
     fetch(`${API_BASE}/api/flows/${flowId}`)
       .then(r => r.json())
       .then(data => {
-        setFlow(data.flow) // StoredFlow has { id, flow, version, ... }
+        setFlow({ meta: data.meta, flow: data.flow }) // StoredFlow has { id, meta, flow, version, ... }
         versionRef.current = data.version
         setLoading(false)
       })

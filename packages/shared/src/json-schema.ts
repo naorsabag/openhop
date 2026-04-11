@@ -122,12 +122,13 @@ export const storedFlowJsonSchema = {
   type: 'object' as const,
   properties: {
     id: { type: 'string', description: 'Flow ID' },
-    flow: rootJsonSchema,
+    meta: metaJsonSchema,
+    flow: flowJsonSchema,
     version: { type: 'number', description: 'Version counter (increments on each update)' },
     createdAt: { type: 'string', description: 'ISO timestamp' },
     updatedAt: { type: 'string', description: 'ISO timestamp' },
   },
-  required: ['id', 'flow', 'version', 'createdAt', 'updatedAt'],
+  required: ['id', 'meta', 'flow', 'version', 'createdAt', 'updatedAt'],
 }
 
 /**
