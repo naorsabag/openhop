@@ -197,6 +197,9 @@ function FlowCanvasInner({ flow, playing, onDrillDown }: FlowCanvasProps) {
         edges={edges}
         nodeTypes={nodeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
+        nodesConnectable={false}
+        edgesFocusable={false}
+        nodesDraggable={false}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
