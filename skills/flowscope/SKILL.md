@@ -13,8 +13,10 @@ FlowScope renders animated data flow diagrams. You describe the flow in YAML, pu
 Verify the FlowScope API server is running:
 
 ```bash
-curl -s http://localhost:8787/api/flows > /dev/null 2>&1 && echo "ready" || echo "not running"
+curl -s http://localhost:8787/health
 ```
+
+If it returns `{"status":"ok"}`, FlowScope is ready.
 
 If not running, follow the install and run instructions in the repo README at `~/flowscope/README.md`. If the repo doesn't exist yet, clone it first:
 

@@ -43,6 +43,26 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
   // Register shared schemas for Swagger docs
   app.addSchema({ $id: 'PatchOperations', ...patchOperationsJsonSchema })
 
+  // ── GET /health — Health check ──────────────────────────────────────
+  app.get('/health', {
+    schema: {
+      summary: 'Health check',
+      description: 'Returns server status. Use to verify FlowScope is running.',
+      tags: ['system'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', example: 'ok' },
+            version: { type: 'string', example: '0.1.0' },
+          },
+        },
+      },
+    },
+  }, async (_req, reply) => {
+    return reply.send({ status: 'ok', version: '0.1.0' })
+  })
+
   // Register content type parsers for YAML
   app.addContentTypeParser(
     ['text/yaml', 'application/x-yaml', 'text/x-yaml'],
