@@ -23,12 +23,20 @@ export type FlowNodeData = {
   fields?: FlowData['fields']
   isActiveSender?: boolean
   isActiveReceiver?: boolean
+  totalSteps: number
+  currentStep: number
+  onNodeClick?: (nodeId: string) => void
+  onProgressBarClick?: (nodeId: string, targetStep: number) => void
 }
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
 
 export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
-  const { label, nodeType, color, icon, hasSubFlow, isActiveSender, isActiveReceiver } = data
+  const {
+    label, nodeType, color, icon, hasSubFlow,
+    isActiveSender, isActiveReceiver,
+    totalSteps, currentStep, onNodeClick, onProgressBarClick,
+  } = data
 
   const isCustom = nodeType === 'custom'
   const style = NODE_STYLES[nodeType] ?? {
@@ -50,11 +58,28 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     }
   }
 
+  const handleNodeClick = () => {
+    if (onNodeClick) onNodeClick(id)
+  }
+
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+    if (!onProgressBarClick || totalSteps <= 1) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const targetStep = Math.min(
+      Math.floor((x / rect.width) * totalSteps),
+      totalSteps - 1,
+    )
+    onProgressBarClick(id, targetStep)
+  }
+
   return (
     <div
       role="group"
       aria-label={`Node: ${label}`}
       data-id={id}
+      onClick={handleNodeClick}
       style={{
         background: bg,
         borderColor,
@@ -67,6 +92,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
             : `4px 4px 0px 0px ${borderColor}40`,
         minWidth: 140,
         transition: 'box-shadow 0.2s ease',
+        cursor: 'pointer',
       }}
       className="px-3 py-2 rounded-sm"
     >
@@ -83,6 +109,35 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           <span className="text-xs leading-none ml-auto" title="Has sub-flow">🔍</span>
         )}
       </div>
+      {totalSteps > 1 && (
+        <div
+          data-testid="progress-bar"
+          role="progressbar"
+          aria-valuenow={currentStep}
+          aria-valuemax={totalSteps}
+          aria-label={`Progress: ${currentStep} of ${totalSteps} steps`}
+          onClick={handleProgressBarClick}
+          style={{
+            width: '100%',
+            height: 4,
+            marginTop: 4,
+            background: `${borderColor}33`,
+            borderRadius: 1,
+            cursor: 'pointer',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: `${(currentStep / totalSteps) * 100}%`,
+              height: '100%',
+              background: borderColor,
+              borderRadius: 1,
+              transition: 'width 0.2s ease',
+            }}
+          />
+        </div>
+      )}
       <Handle type="source" position={Position.Bottom} style={{ background: borderColor, width: 8, height: 8, border: 'none' }} />
     </div>
   )

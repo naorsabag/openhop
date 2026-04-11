@@ -20,10 +20,12 @@ interface DataPixelProps {
   sourceNodeColor?: string
   step: FlowStep
   containerRef: React.RefObject<HTMLDivElement | null>
+  isManual?: boolean
+  onAnimationComplete?: () => void
 }
 
-const PIXEL_SIZE = 12
-const ANIMATION_DURATION = 800
+const PIXEL_SIZE = 20
+const ANIMATION_DURATION = 1800
 
 export function DataPixel({
   edgeId,
@@ -31,6 +33,8 @@ export function DataPixel({
   sourceNodeColor,
   step,
   containerRef,
+  isManual,
+  onAnimationComplete,
 }: DataPixelProps) {
   const pixelRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number>(0)
@@ -105,12 +109,14 @@ export function DataPixel({
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick)
+      } else if (onAnimationComplete) {
+        onAnimationComplete()
       }
     }
 
     startTimeRef.current = 0
     rafRef.current = requestAnimationFrame(tick)
-  }, [edgeId, containerRef])
+  }, [edgeId, containerRef, onAnimationComplete])
 
   useEffect(() => {
     animate()
@@ -123,7 +129,7 @@ export function DataPixel({
     <>
       <div
         ref={pixelRef}
-        data-testid="data-pixel"
+        data-testid={isManual ? 'data-pixel-manual' : 'data-pixel'}
         aria-label={`Data: ${dataLabel}`}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
