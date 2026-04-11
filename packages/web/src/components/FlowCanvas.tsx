@@ -96,13 +96,33 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
     return map
   }, [flow.flow, baseEdges])
 
+  // Track which nodes currently have a manual pixel in flight
+  const activeManualNodes = useMemo(() => {
+    const ids = new Set<string>()
+    for (const mp of manualPixels) {
+      if (mp.step.from) ids.add(mp.step.from)
+    }
+    return ids
+  }, [manualPixels])
+
   const handleNodeClick = useCallback((nodeId: string) => {
+    // Don't fire if this node already has a manual pixel in flight
+    if (activeManualNodes.has(nodeId)) return
+    // Don't fire if this node is currently the active sender in auto-play
+    if (animState.activeFromIds.has(nodeId)) return
+
     const outgoing = nodeOutgoingSteps.get(nodeId)
     if (!outgoing || outgoing.length === 0) return
 
     const currentProg = nodeProgress.get(nodeId) ?? 0
-    // Pick the next outgoing step based on current progress (cycle through)
-    const entry = outgoing[currentProg % outgoing.length]
+
+    // If past the last step, reset to 0
+    if (currentProg >= outgoing.length) {
+      setNodeStep(nodeId, 0)
+      return
+    }
+
+    const entry = outgoing[currentProg]
 
     const sourceInfo = nodeTypeMap.get(nodeId) ?? { type: 'service' }
     fireManualPixel({
@@ -111,7 +131,7 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
       sourceNodeType: sourceInfo.type,
       sourceNodeColor: sourceInfo.color,
     })
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel])
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, activeManualNodes, animState.activeFromIds, setNodeStep])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
     setNodeStep(nodeId, targetStep)
