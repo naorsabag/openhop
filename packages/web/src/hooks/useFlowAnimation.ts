@@ -244,5 +244,29 @@ export function useFlowAnimation(
     }))
   }, [])
 
-  return { ...state, fireManualPixel, removeManualPixel, setNodeStep }
+  const activateNode = useCallback((nodeId: string) => {
+    activeNodesRef.current = new Set(activeNodesRef.current)
+    activeNodesRef.current.add(nodeId)
+    destroyedNodesRef.current = new Set(destroyedNodesRef.current)
+    destroyedNodesRef.current.delete(nodeId)
+    setState((prev) => ({
+      ...prev,
+      activeNodes: new Set(activeNodesRef.current),
+      destroyedNodes: new Set(destroyedNodesRef.current),
+    }))
+  }, [])
+
+  const deactivateNode = useCallback((nodeId: string) => {
+    activeNodesRef.current = new Set(activeNodesRef.current)
+    activeNodesRef.current.delete(nodeId)
+    destroyedNodesRef.current = new Set(destroyedNodesRef.current)
+    destroyedNodesRef.current.add(nodeId)
+    setState((prev) => ({
+      ...prev,
+      activeNodes: new Set(activeNodesRef.current),
+      destroyedNodes: new Set(destroyedNodesRef.current),
+    }))
+  }, [])
+
+  return { ...state, fireManualPixel, removeManualPixel, setNodeStep, activateNode, deactivateNode }
 }

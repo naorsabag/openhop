@@ -198,6 +198,9 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
           }
         }
       }
+    } else if ('create' in step && step.create && step.from) {
+      // Create step: edge from creator to new node
+      edges.push(makeEdge(edgeIdx++, step.from, step.create, step, stepIndex))
     } else if (step.from && step.to) {
       const targets = Array.isArray(step.to) ? step.to : [step.to]
       for (const t of targets) {

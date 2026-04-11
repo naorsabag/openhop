@@ -101,7 +101,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   }, [flow])
 
   const {
-    fireManualPixel, removeManualPixel, setNodeStep,
+    fireManualPixel, removeManualPixel, setNodeStep, activateNode, deactivateNode,
     manualPixels, nodeProgress,
     activeNodes, destroyedNodes,
     ...animState
@@ -147,6 +147,14 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
             map.set(ps.from, entries)
           }
         }
+      } else if (step.create && step.from) {
+        // Create step: from → newly created node
+        const entries = map.get(step.from) ?? []
+        const edgeId = baseEdges.find(
+          (e) => e.source === step.from && e.target === step.create && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
+        )?.id
+        if (edgeId) entries.push({ stepIndex: si, step, edgeIds: [edgeId] })
+        map.set(step.from, entries)
       } else if (step.from) {
         const entries = map.get(step.from) ?? []
         const targets = Array.isArray(step.to) ? step.to : step.to ? [step.to] : []
@@ -221,6 +229,11 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     // Increment progress once for this logical step
     setNodeStep(nodeId, currentProg + 1)
 
+    // If this is a create step, activate the new node
+    if (entry.step.create) {
+      activateNode(entry.step.create)
+    }
+
     // Fire a pixel for EACH edge in this logical step (broadcast = multiple edges)
     for (const edgeId of entry.edgeIds) {
       fireManualPixel({
@@ -232,7 +245,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         sourceNodeColor: sourceInfo.color,
       })
     }
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps])
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps, activateNode])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
     setNodeStep(nodeId, targetStep)
