@@ -101,12 +101,14 @@ function App() {
     navigateToDrillDown(nodeId)
   }, [playing, navigateToDrillDown])
 
-  // When sub-flow cycle completes during playback, navigate back to parent
+  // When sub-flow cycle completes during playback, navigate back to parent after a brief pause
   const isInSubFlow = flowStack.length > 1
   const handleCycleComplete = useCallback(() => {
     if (!playing || !isInSubFlow) return
-    // Navigate back to parent flow — keep playing
-    setFlowStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev)
+    // Brief pause so user can see the sub-flow before navigating back
+    setTimeout(() => {
+      setFlowStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev)
+    }, 1500)
   }, [playing, isInSubFlow])
 
   // Zoom transition when flow stack changes
