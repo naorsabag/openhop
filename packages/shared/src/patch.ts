@@ -2,78 +2,84 @@ import { z } from "zod";
 import type { Root } from "./schema.js";
 import { validateFlow } from "./validator.js";
 
-// --- Operation schemas ---
+// --- Operation schemas (all support multiple items) ---
 
-const addNodeOp = z.object({
-  op: z.literal("add-node"),
-  node: z.object({
-    id: z.string(),
-    label: z.string(),
-    type: z.string().optional(),
-    icon: z.string().optional(),
-    color: z.string().optional(),
-  }),
-});
-
-const removeNodeOp = z.object({
-  op: z.literal("remove-node"),
-  node: z.string(),
-});
-
-const renameNodeOp = z.object({
-  op: z.literal("rename-node"),
-  node: z.string(),
+const nodeDefSchema = z.object({
+  id: z.string(),
   label: z.string(),
-});
-
-const updateNodeOp = z.object({
-  op: z.literal("update-node"),
-  node: z.string(),
   type: z.string().optional(),
   icon: z.string().optional(),
   color: z.string().optional(),
 });
 
-const setFlowOp = z.object({
-  op: z.literal("set-flow"),
-  node: z.string(),
-  flow: z.object({
-    nodes: z.array(z.any()),
-    steps: z.array(z.any()).optional(),
-  }),
+const addNodesOp = z.object({
+  op: z.literal("add-nodes"),
+  nodes: z.array(nodeDefSchema).min(1),
 });
 
-const clearFlowOp = z.object({
-  op: z.literal("clear-flow"),
-  node: z.string(),
+const removeNodesOp = z.object({
+  op: z.literal("remove-nodes"),
+  nodes: z.array(z.string()).min(1), // array of node IDs
 });
 
-const addStepOp = z.object({
-  op: z.literal("add-step"),
-  after: z.number().int().min(-1),
-  step: z.any(),
+const renameNodesOp = z.object({
+  op: z.literal("rename-nodes"),
+  nodes: z.array(z.object({ id: z.string(), label: z.string() })).min(1),
 });
 
-const removeStepOp = z.object({
-  op: z.literal("remove-step"),
+const updateNodesOp = z.object({
+  op: z.literal("update-nodes"),
+  nodes: z.array(z.object({
+    id: z.string(),
+    type: z.string().optional(),
+    icon: z.string().optional(),
+    color: z.string().optional(),
+  })).min(1),
+});
+
+const setFlowsOp = z.object({
+  op: z.literal("set-flows"),
+  nodes: z.array(z.object({
+    id: z.string(),
+    flow: z.object({
+      nodes: z.array(z.any()),
+      steps: z.array(z.any()).optional(),
+    }),
+  })).min(1),
+});
+
+const clearFlowsOp = z.object({
+  op: z.literal("clear-flows"),
+  nodes: z.array(z.string()).min(1), // array of node IDs
+});
+
+const addStepsOp = z.object({
+  op: z.literal("add-steps"),
+  after: z.number().int().min(-1), // insert position
+  steps: z.array(z.any()).min(1),
+});
+
+const removeStepsOp = z.object({
+  op: z.literal("remove-steps"),
+  indices: z.array(z.number().int().min(0)).min(1), // sorted descending when applied
+});
+
+const updateStepOp = z.object({
+  op: z.literal("update-step"),
   index: z.number().int().min(0),
-});
-
-const replaceStepsOp = z.object({
-  op: z.literal("replace-steps"),
-  steps: z.array(z.any()),
+  step: z.any(), // the new step content
 });
 
 export const patchOperationSchema = z.discriminatedUnion("op", [
-  addNodeOp,
-  removeNodeOp,
-  renameNodeOp,
-  updateNodeOp,
-  setFlowOp,
-  clearFlowOp,
-  addStepOp,
-  removeStepOp,
-  replaceStepsOp,
+  addNodesOp,
+  removeNodesOp,
+  renameNodesOp,
+  updateNodesOp,
+  setFlowsOp,
+  clearFlowsOp,
+  addStepsOp,
+  removeStepsOp,
+  updateStepOp,
 ]);
 
 export const patchSchema = z.object({
@@ -95,156 +101,137 @@ function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
-/**
- * Find a node by ID in the top-level flow nodes.
- */
-function findNode(
-  nodes: any[],
-  nodeId: string
-): any | undefined {
+function findNode(nodes: any[], nodeId: string): any | undefined {
   return nodes.find((n: any) => n.id === nodeId);
 }
 
-/**
- * Check whether a step references a given node ID (in from or to).
- */
 function stepReferencesNode(step: any, nodeId: string): boolean {
   if ("parallel" in step) {
     return step.parallel.some((s: any) => stepReferencesNode(s, nodeId));
   }
   if (step.from === nodeId) return true;
-  if (Array.isArray(step.to)) {
-    return step.to.includes(nodeId);
-  }
+  if (Array.isArray(step.to)) return step.to.includes(nodeId);
   return step.to === nodeId;
 }
 
-/**
- * Apply a set of patch operations to a Root flow and return the result.
- * After applying all operations, the resulting flow is validated.
- */
 export function applyPatch(root: Root, patch: PatchOperations): PatchResult {
   const result = deepClone(root);
   const errors: PatchResult["errors"] = [];
 
   for (const op of patch.operations) {
     switch (op.op) {
-      case "add-node": {
-        const existing = findNode(result.flow.nodes, op.node.id);
-        if (existing) {
-          errors.push({
-            path: `flow.nodes`,
-            message: `Node "${op.node.id}" already exists`,
-          });
-          break;
-        }
-        result.flow.nodes.push({ ...op.node } as any);
-        break;
-      }
-
-      case "remove-node": {
-        const idx = result.flow.nodes.findIndex((n: any) => n.id === op.node);
-        if (idx === -1) {
-          errors.push({
-            path: `flow.nodes`,
-            message: `Node "${op.node}" not found`,
-          });
-          break;
-        }
-        result.flow.nodes.splice(idx, 1);
-        // Remove steps that reference this node
-        if (result.flow.steps) {
-          result.flow.steps = result.flow.steps.filter(
-            (s: any) => !stepReferencesNode(s, op.node)
-          );
+      case "add-nodes": {
+        for (const node of op.nodes) {
+          if (findNode(result.flow.nodes, node.id)) {
+            errors.push({ path: "flow.nodes", message: `Node "${node.id}" already exists` });
+          } else {
+            result.flow.nodes.push({ ...node } as any);
+          }
         }
         break;
       }
 
-      case "rename-node": {
-        const node = findNode(result.flow.nodes, op.node);
-        if (!node) {
-          errors.push({
-            path: `flow.nodes`,
-            message: `Node "${op.node}" not found`,
-          });
-          break;
+      case "remove-nodes": {
+        for (const nodeId of op.nodes) {
+          const idx = result.flow.nodes.findIndex((n: any) => n.id === nodeId);
+          if (idx === -1) {
+            errors.push({ path: "flow.nodes", message: `Node "${nodeId}" not found` });
+          } else {
+            result.flow.nodes.splice(idx, 1);
+            if (result.flow.steps) {
+              result.flow.steps = result.flow.steps.filter(
+                (s: any) => !stepReferencesNode(s, nodeId)
+              );
+            }
+          }
         }
-        node.label = op.label;
         break;
       }
 
-      case "update-node": {
-        const node = findNode(result.flow.nodes, op.node);
-        if (!node) {
-          errors.push({
-            path: `flow.nodes`,
-            message: `Node "${op.node}" not found`,
-          });
-          break;
+      case "rename-nodes": {
+        for (const { id, label } of op.nodes) {
+          const node = findNode(result.flow.nodes, id);
+          if (!node) {
+            errors.push({ path: "flow.nodes", message: `Node "${id}" not found` });
+          } else {
+            node.label = label;
+          }
         }
-        if (op.type !== undefined) node.type = op.type;
-        if (op.icon !== undefined) node.icon = op.icon;
-        if (op.color !== undefined) node.color = op.color;
         break;
       }
 
-      case "set-flow": {
-        const node = findNode(result.flow.nodes, op.node);
-        if (!node) {
-          errors.push({
-            path: `flow.nodes`,
-            message: `Node "${op.node}" not found`,
-          });
-          break;
+      case "update-nodes": {
+        for (const update of op.nodes) {
+          const node = findNode(result.flow.nodes, update.id);
+          if (!node) {
+            errors.push({ path: "flow.nodes", message: `Node "${update.id}" not found` });
+          } else {
+            if (update.type !== undefined) node.type = update.type;
+            if (update.icon !== undefined) node.icon = update.icon;
+            if (update.color !== undefined) node.color = update.color;
+          }
         }
-        node.flow = { nodes: op.flow.nodes, ...(op.flow.steps ? { steps: op.flow.steps } : {}) };
         break;
       }
 
-      case "clear-flow": {
-        const node = findNode(result.flow.nodes, op.node);
-        if (!node) {
-          errors.push({
-            path: `flow.nodes`,
-            message: `Node "${op.node}" not found`,
-          });
-          break;
+      case "set-flows": {
+        for (const { id, flow } of op.nodes) {
+          const node = findNode(result.flow.nodes, id);
+          if (!node) {
+            errors.push({ path: "flow.nodes", message: `Node "${id}" not found` });
+          } else {
+            node.flow = { nodes: flow.nodes, ...(flow.steps ? { steps: flow.steps } : {}) };
+          }
         }
-        delete node.flow;
         break;
       }
 
-      case "add-step": {
-        if (!result.flow.steps) {
-          result.flow.steps = [];
+      case "clear-flows": {
+        for (const nodeId of op.nodes) {
+          const node = findNode(result.flow.nodes, nodeId);
+          if (!node) {
+            errors.push({ path: "flow.nodes", message: `Node "${nodeId}" not found` });
+          } else {
+            delete node.flow;
+          }
         }
+        break;
+      }
+
+      case "add-steps": {
+        if (!result.flow.steps) result.flow.steps = [];
         const insertIndex = op.after + 1;
         if (insertIndex > result.flow.steps.length) {
-          errors.push({
-            path: `flow.steps`,
-            message: `Insert position ${op.after} is out of range (max ${result.flow.steps.length - 1})`,
-          });
-          break;
+          errors.push({ path: "flow.steps", message: `Insert position ${op.after} is out of range` });
+        } else {
+          result.flow.steps.splice(insertIndex, 0, ...op.steps);
         }
-        result.flow.steps.splice(insertIndex, 0, op.step);
         break;
       }
 
-      case "remove-step": {
+      case "remove-steps": {
+        if (!result.flow.steps) {
+          errors.push({ path: "flow.steps", message: "No steps to remove" });
+          break;
+        }
+        // Sort indices descending to remove from end first (avoids index shifting)
+        const sorted = [...op.indices].sort((a, b) => b - a);
+        for (const idx of sorted) {
+          if (idx >= result.flow.steps.length) {
+            errors.push({ path: "flow.steps", message: `Step index ${idx} is out of range` });
+          } else {
+            result.flow.steps.splice(idx, 1);
+          }
+        }
+        break;
+      }
+
+      case "update-step": {
         if (!result.flow.steps || op.index >= result.flow.steps.length) {
-          errors.push({
-            path: `flow.steps`,
-            message: `Step index ${op.index} is out of range`,
-          });
-          break;
+          errors.push({ path: "flow.steps", message: `Step index ${op.index} is out of range` });
+        } else {
+          result.flow.steps[op.index] = op.step;
         }
-        result.flow.steps.splice(op.index, 1);
-        break;
-      }
-
-      case "replace-steps": {
-        result.flow.steps = op.steps;
         break;
       }
     }
@@ -254,7 +241,6 @@ export function applyPatch(root: Root, patch: PatchOperations): PatchResult {
     return { success: false, errors };
   }
 
-  // Validate the resulting flow
   const validation = validateFlow(result);
   if (!validation.success) {
     return { success: false, errors: validation.errors };
