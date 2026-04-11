@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { nanoid } from 'nanoid'
 import { parseFlowYaml, parseFlowJson, validateFlow, patchSchema, applyPatch } from '@flowscope/shared'
+import { storedFlowJsonSchema, flowSummaryJsonSchema, rootJsonSchema } from '@flowscope/shared'
 import { FlowStore } from './store.js'
 
 const store = new FlowStore()
@@ -25,15 +26,6 @@ flow:
     - from: api
       to: user
       data: Response`
-
-const EXAMPLE_FLOW_SUMMARY = {
-  id: 'abc123',
-  title: 'Simple Flow',
-  description: 'A minimal example',
-  tags: ['example'],
-  version: 1,
-  updatedAt: '2026-04-11T12:00:00.000Z',
-}
 
 const VALIDATION_ERROR_EXAMPLE = {
   error: 'validation_error',
@@ -169,18 +161,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
         200: {
           type: 'array',
           description: 'List of flow summaries',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              description: { type: 'string', nullable: true },
-              tags: { type: 'array', items: { type: 'string' } },
-              version: { type: 'number' },
-              updatedAt: { type: 'string' },
-            },
-          },
-          example: [EXAMPLE_FLOW_SUMMARY],
+          items: flowSummaryJsonSchema,
         },
       },
     },
@@ -211,17 +192,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
         required: ['id'],
       },
       response: {
-        200: {
-          type: 'object',
-          description: 'Full stored flow',
-          properties: {
-            id: { type: 'string' },
-            flow: { type: 'object', additionalProperties: true, description: 'The flow definition (meta + flow)' },
-            version: { type: 'number' },
-            createdAt: { type: 'string' },
-            updatedAt: { type: 'string' },
-          },
-        },
+        200: storedFlowJsonSchema,
         404: {
           type: 'object',
           description: 'Flow not found',
