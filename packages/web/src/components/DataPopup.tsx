@@ -20,7 +20,7 @@ export function DataPopup({ steps, position, onClose }: DataPopupProps) {
   const from = step.from ?? '?'
   const to = Array.isArray(step.to)
     ? step.to.join(', ')
-    : step.to ?? '?'
+    : step.to ?? step.create ?? '?'
 
   const prev = () => setCurrentIndex(i => (i - 1 + total) % total)
   const next = () => setCurrentIndex(i => (i + 1) % total)
