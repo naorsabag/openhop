@@ -1,0 +1,71 @@
+meta:
+  title: Authentication Flow
+  path: examples/auth
+  description: OAuth2 login with JWT tokens
+  tags: [auth, oauth, jwt]
+
+flow:
+  nodes:
+    - id: browser
+      label: Browser
+      type: actor
+    - id: app
+      label: App Server
+      type: endpoint
+    - id: oauth
+      label: Google OAuth
+      type: external
+      icon: "logos:google-icon"
+    - id: db
+      label: User DB
+      type: database
+    - id: cache
+      label: Session Cache
+      type: cache
+
+  steps:
+    - from: browser
+      to: app
+      data: GET /login
+    - from: app
+      to: oauth
+      data: Redirect to Google
+    - from: oauth
+      to: app
+      data:
+        label: OAuth callback
+        fields:
+          - name: code
+            type: string
+          - name: state
+            type: string
+    - from: app
+      to: oauth
+      data: Exchange code for token
+    - from: oauth
+      to: app
+      data:
+        label: Token response
+        fields:
+          - name: access_token
+          - name: id_token
+          - name: email
+            added: true
+    - from: app
+      to: [db, cache]
+      data: Store user + session
+    - parallel:
+        - from: db
+          to: app
+          data: user_id
+        - from: cache
+          to: app
+          data: session_id
+    - from: app
+      to: browser
+      data:
+        label: Set cookie + redirect
+        fields:
+          - name: session_id
+          - name: redirect_to
+            type: string
