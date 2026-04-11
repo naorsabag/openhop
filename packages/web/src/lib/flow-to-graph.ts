@@ -1,4 +1,4 @@
-import { MarkerType, type Node, type Edge } from '@xyflow/react'
+import type { Node, Edge } from '@xyflow/react'
 import type { Flow, FlowStep } from '../types'
 import type { FlowNodeData } from '../components/nodes/FlowNode'
 
@@ -194,14 +194,8 @@ function makeEdge(idx: number, source: string, target: string, step: FlowStep, s
     target,
     label,
     data: { stepIndex, step },
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      color: '#2a2a3a',
-      width: 16,
-      height: 16,
-    },
     style: {
-      strokeWidth: 6,
+      strokeWidth: 4,
       stroke: '#2a2a3a',
     },
     labelStyle: {
