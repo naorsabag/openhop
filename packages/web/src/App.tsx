@@ -128,12 +128,13 @@ function App() {
   }, [])
 
   // Zoom transition when flow stack changes
-  const [transitioning, setTransitioning] = useState(false)
+  const [transitionClass, setTransitionClass] = useState('')
   const prevStackLen = useRef(flowStack.length)
   useEffect(() => {
     if (flowStack.length !== prevStackLen.current) {
-      setTransitioning(true)
-      const timer = setTimeout(() => setTransitioning(false), 400)
+      const direction = flowStack.length > prevStackLen.current ? 'enter' : 'exit'
+      setTransitionClass(`animate-drilldown-${direction}`)
+      const timer = setTimeout(() => setTransitionClass(''), 500)
       prevStackLen.current = flowStack.length
       return () => clearTimeout(timer)
     }
@@ -258,7 +259,7 @@ function App() {
                   </nav>
                 </div>
               )}
-              <div className={transitioning ? 'animate-drilldown w-full h-full' : 'w-full h-full'}>
+              <div className={`w-full h-full ${transitionClass}`}>
                 <FlowCanvas
                   flow={displayFlow}
                   playing={playing}
