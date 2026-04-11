@@ -187,7 +187,9 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
 }
 
 function makeEdge(idx: number, source: string, target: string, step: FlowStep, stepIndex: number): Edge {
-  const label = typeof step.data === 'string' ? step.data : step.data.label
+  const label = typeof step.data === 'string' ? step.data :
+    Array.isArray(step.data) ? step.data.map(d => d.label).join(', ') :
+    step.data.label
   return {
     id: `e-${idx}`,
     source,

@@ -40,7 +40,7 @@ export const DataObjectSchema = z.object({
   fields: z.array(FieldSchema).optional(),
 });
 
-export const DataSchema = z.union([z.string(), DataObjectSchema]);
+export const DataSchema = z.union([z.string(), DataObjectSchema, z.array(DataObjectSchema).min(1)]);
 
 export type Data = z.infer<typeof DataSchema>;
 

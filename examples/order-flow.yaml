@@ -113,14 +113,18 @@ flow:
     - from: order-service
       to: payment
       data:
-        label: charge customer
-        fields:
-          - name: amount
-            type: float
-          - name: currency
-            type: string
-          - name: order_id
-            type: int
+        - label: charge request
+          fields:
+            - name: amount
+              type: float
+            - name: currency
+              type: string
+        - label: order context
+          fields:
+            - name: order_id
+              type: int
+            - name: items_count
+              type: int
 
     - from: payment
       to: order-service

@@ -1,3 +1,8 @@
+// TODO: Import these types from @flowscope/shared instead of re-defining.
+// Currently duplicated because the shared package uses Zod inference
+// and the web package needs plain interfaces. Consolidate when we add
+// a build step to the shared package.
+
 export interface FlowField {
   name: string
   type?: string
@@ -15,7 +20,7 @@ export interface FlowData {
 export interface FlowNode {
   id: string
   label: string
-  type?: string // actor, endpoint, transform, database, external, cache, queue, service, custom
+  type?: string
   icon?: string
   color?: string
   flow?: { nodes: FlowNode[]; steps: FlowStep[] }
@@ -24,7 +29,7 @@ export interface FlowNode {
 export interface FlowStep {
   from?: string
   to?: string | string[]
-  data: string | FlowData
+  data: string | FlowData | FlowData[]
   drilldown?: boolean
   parallel?: FlowStep[]
 }

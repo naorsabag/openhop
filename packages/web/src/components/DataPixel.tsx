@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { FlowStep } from '../types'
+import type { FlowStep, FlowData } from '../types'
 import { DataTooltip } from './DataTooltip'
 
 /** Node type colors — must match FlowNode.tsx NODE_STYLES */
@@ -23,6 +23,8 @@ interface DataPixelProps {
   isManual?: boolean
   onAnimationComplete?: () => void
   onPixelClick?: (step: FlowStep, position: { x: number; y: number }) => void
+  delayMs?: number
+  dataOverride?: FlowData
 }
 
 const PIXEL_SIZE = 20
@@ -38,6 +40,8 @@ export function DataPixel({
   isManual,
   onAnimationComplete,
   onPixelClick,
+  delayMs,
+  dataOverride,
 }: DataPixelProps) {
   const pixelRef = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLDivElement>(null)
@@ -54,8 +58,13 @@ export function DataPixel({
       ? sourceNodeColor
       : NODE_COLORS[sourceNodeType] ?? '#888'
 
-  const dataLabel =
-    typeof step.data === 'string' ? step.data : step.data.label
+  const dataLabel = dataOverride
+    ? dataOverride.label
+    : typeof step.data === 'string'
+      ? step.data
+      : Array.isArray(step.data)
+        ? step.data.map(d => d.label).join(', ')
+        : step.data.label
 
   const animate = useCallback(() => {
     const container = containerRef.current
@@ -75,7 +84,7 @@ export function DataPixel({
     if (totalLength === 0) return
 
     const tick = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp
+      if (!startTimeRef.current) startTimeRef.current = timestamp + (delayMs ?? 0)
 
       const elapsed = timestamp - startTimeRef.current
       const progress = Math.min(elapsed / (ANIMATION_DURATION_BASE / getSpeed()), 1)
