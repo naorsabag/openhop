@@ -3,7 +3,7 @@ import type { Flow } from '../types'
 
 const API_BASE = '' // proxy handles /api -> localhost:8787
 
-interface FlowListItem {
+export interface FlowListItem {
   id: string
   title: string
   description?: string
