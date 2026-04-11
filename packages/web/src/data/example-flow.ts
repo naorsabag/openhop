@@ -1,0 +1,48 @@
+import type { Flow } from '../types'
+
+export const exampleFlow: Flow = {
+  meta: {
+    title: 'Create Order',
+    description: 'End-to-end order creation flow with payment processing',
+    tags: ['orders', 'payments', 'e-commerce'],
+  },
+  flow: {
+    nodes: [
+      { id: 'user', label: 'User', type: 'actor' },
+      { id: 'api', label: 'API Gateway', type: 'endpoint' },
+      {
+        id: 'order-service',
+        label: 'Order Service',
+        type: 'service',
+        flow: {
+          nodes: [
+            { id: 'validate', label: 'Validate', type: 'transform' },
+            { id: 'enrich', label: 'Enrich', type: 'transform' },
+          ],
+          steps: [
+            { from: 'validate', to: 'enrich', data: 'validated order' },
+          ],
+        },
+      },
+      { id: 'db', label: 'PostgreSQL', type: 'custom', icon: 'logos:postgresql', color: '#336791' },
+      { id: 'cache', label: 'Redis', type: 'custom', icon: 'logos:redis', color: '#DC382D' },
+      { id: 'payment', label: 'Stripe', type: 'custom', icon: 'logos:stripe', color: '#635BFF' },
+    ],
+    steps: [
+      { from: 'user', to: 'api', data: 'POST /orders' },
+      { from: 'api', to: 'order-service', data: 'create order' },
+      { from: 'order-service', to: ['db', 'cache'], data: 'persist order' },
+      {
+        parallel: [
+          { from: 'db', to: 'order-service', data: 'order saved' },
+          { from: 'cache', to: 'order-service', data: 'cache updated' },
+        ],
+        data: 'parallel responses',
+      },
+      { from: 'order-service', to: 'payment', data: 'charge customer' },
+      { from: 'payment', to: 'order-service', data: 'payment confirmed', drilldown: true },
+      { from: 'order-service', to: 'api', data: 'order response' },
+      { from: 'api', to: 'user', data: '201 Created' },
+    ],
+  },
+}
