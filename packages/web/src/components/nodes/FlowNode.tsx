@@ -28,6 +28,7 @@ export type FlowNodeData = {
   outgoingStepCount?: number
   onNodeClick?: (nodeId: string) => void
   onProgressBarClick?: (nodeId: string, targetStep: number) => void
+  onDrillDown?: (nodeId: string) => void
 }
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
@@ -37,6 +38,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     label, nodeType, color, icon, hasSubFlow,
     isActiveSender, isActiveReceiver,
     totalSteps, currentStep, outgoingStepCount, onNodeClick, onProgressBarClick,
+    onDrillDown,
   } = data
 
   // Use outgoing step count for progress bar (how many steps this node sends)
@@ -111,7 +113,19 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           {label}
         </span>
         {hasSubFlow && (
-          <span className="text-xs leading-none ml-auto" title="Has sub-flow">🔍</span>
+          <button
+            aria-label="Drill down"
+            data-testid={`drill-down-${id}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (onDrillDown) onDrillDown(id)
+            }}
+            className="text-xs leading-none ml-auto hover:opacity-70 transition-opacity"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            title="Has sub-flow"
+          >
+            🔍
+          </button>
         )}
       </div>
       {progressTotal > 0 && (
