@@ -124,7 +124,7 @@ function App() {
     if (!playingRef.current || !isInSubFlowRef.current) return
     setTimeout(() => {
       setFlowStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev)
-    }, 2000)
+    }, 800)
   }, [])
 
   // Zoom transition when flow stack changes
