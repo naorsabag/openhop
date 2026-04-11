@@ -149,7 +149,7 @@ flow:
               added: true
       drilldown: true
 
-    # Create temp audit logger
+    # Create temp audit logger — sends constructor data
     - create: audit
       from: order-service
       node:
@@ -157,17 +157,20 @@ flow:
         label: Audit Log
         type: transform
       data:
-        label: init logger
+        label: log order event
         fields:
-          - name: context
+          - name: order_id
+            type: int
+          - name: event
             type: string
           - name: trace_id
             type: string
             added: true
 
-    - from: order-service
-      to: audit
-      data: log order created
+    # Audit sends confirmation back
+    - from: audit
+      to: order-service
+      data: audit logged
 
     - destroy: audit
 
