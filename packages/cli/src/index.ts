@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import YAML from "yaml";
-import { parseFlowYaml } from "@flowscope/shared";
+import { parseFlowYaml } from "@openhop/shared";
 
 /** Read input from file path or stdin (use "-" for stdin) */
 function readInput(file: string): string {
@@ -31,21 +31,21 @@ function padRight(str: string, len: number): string {
 const program = new Command();
 
 program
-  .name("flowscope")
-  .description("FlowScope — Data Flow Visualization CLI")
+  .name("openhop")
+  .description("OpenHop — Data Flow Visualization CLI")
   .version("0.0.1");
 
 // --- serve ---
 program
   .command("serve")
-  .description("Start the FlowScope server")
+  .description("Start the OpenHop server")
   .option("-p, --port <port>", "Port to listen on", "8787")
   .action((opts) => {
     const serverEntry = resolve(
       import.meta.dirname,
       "../../server/src/index.ts"
     );
-    console.log(dim(`Starting FlowScope server on port ${opts.port}...`));
+    console.log(dim(`Starting OpenHop server on port ${opts.port}...`));
     const child = spawn("npx", ["tsx", serverEntry], {
       stdio: "inherit",
       env: { ...process.env, PORT: opts.port },
@@ -178,7 +178,7 @@ program
     }
 
     // Validate patch schema locally
-    const { patchSchema } = await import("@flowscope/shared");
+    const { patchSchema } = await import("@openhop/shared");
     const validation = patchSchema.safeParse(operations);
     if (!validation.success) {
       console.error(red("✗ Validation errors:"));

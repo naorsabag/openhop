@@ -1,5 +1,5 @@
 {
-  "name": "@flowscope/server",
+  "name": "@openhop/server",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -16,6 +16,6 @@
     "yaml": "^2.0.0",
     "nanoid": "^5.0.0",
     "tsx": "^4.0.0",
-    "@flowscope/shared": "*"
+    "@openhop/shared": "*"
   }
 }

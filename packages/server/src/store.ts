@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { mkdir, readFile, writeFile, readdir, unlink } from 'node:fs/promises'
 import YAML from 'yaml'
-import type { Root } from '@flowscope/shared'
+import type { Root } from '@openhop/shared'
 
 export interface StoredFlow {
   id: string
@@ -24,7 +24,7 @@ interface StoredFlowFile {
 export class FlowStore {
   private initialized = false
 
-  constructor(private dir: string = join(homedir(), '.flowscope', 'flows')) {}
+  constructor(private dir: string = join(homedir(), '.openhop', 'flows')) {}
 
   private async ensureDir(): Promise<void> {
     if (this.initialized) return

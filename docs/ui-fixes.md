@@ -46,12 +46,12 @@
 ### Distribution — npm publish phase
 When ready to publish to npm, do all of these:
 - **Build step** — compile TypeScript to JavaScript (tsup or tsc) for all packages
-- **Publish `flowscope` to npm** — `npm install -g flowscope` installs the CLI globally
-- **Update README** — replace `git clone` + `npm link` with `npm install -g flowscope`
-- **Update skill** — replace `git clone` install instructions with `npm install -g flowscope`
+- **Publish `openhop` to npm** — `npm install -g openhop` installs the CLI globally
+- **Update README** — replace `git clone` + `npm link` with `npm install -g openhop`
+- **Update skill** — replace `git clone` install instructions with `npm install -g openhop`
 - **Update check-status flow** — install via npm instead of git clone
-- **npx support** — `npx flowscope push` works without global install
-- **Publish to skills registry** — push to GitHub so `npx skills add yourorg/flowscope` works
+- **npx support** — `npx openhop push` works without global install
+- **Publish to skills registry** — push to GitHub so `npx skills add yourorg/openhop` works
 
 ### Future (V2)
 - **Serve frontend from Fastify** — one process, one port

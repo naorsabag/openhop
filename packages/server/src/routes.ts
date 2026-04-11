@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { nanoid } from 'nanoid'
-import { parseFlowYaml, parseFlowJson, validateFlow, patchSchema, applyPatch } from '@flowscope/shared'
-import { storedFlowJsonSchema, flowSummaryJsonSchema, rootJsonSchema, patchOperationsJsonSchema } from '@flowscope/shared'
+import { parseFlowYaml, parseFlowJson, validateFlow, patchSchema, applyPatch } from '@openhop/shared'
+import { storedFlowJsonSchema, flowSummaryJsonSchema, rootJsonSchema, patchOperationsJsonSchema } from '@openhop/shared'
 import { FlowStore } from './store.js'
 
 const store = new FlowStore()
@@ -47,7 +47,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
   app.get('/health', {
     schema: {
       summary: 'Health check',
-      description: 'Returns server status. Use to verify FlowScope is running.',
+      description: 'Returns server status. Use to verify OpenHop is running.',
       tags: ['system'],
       response: {
         200: {

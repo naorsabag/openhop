@@ -1,9 +1,9 @@
 {
-  "name": "flowscope",
+  "name": "openhop",
   "private": true,
   "workspaces": ["packages/*"],
   "bin": {
-    "flowscope": "packages/cli/src/index.ts"
+    "openhop": "packages/cli/src/index.ts"
   },
   "scripts": {
     "serve": "npx tsx packages/server/src/index.ts",

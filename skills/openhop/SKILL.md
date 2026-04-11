@@ -1,27 +1,27 @@
 ---
-name: flowscope
+name: openhop
 description: Data flow visualization. Use when the user asks to visualize, explain, or diagram how data flows through their code, APIs, services, or architecture. Triggers: "show me the data flow", "visualize the architecture", "how does data move through", "diagram the flow", "show me how X works".
-allowed-tools: Bash(flowscope:*), Bash(npx tsx:*)
+allowed-tools: Bash(openhop:*), Bash(npx tsx:*)
 ---
 
-# FlowScope — Data Flow Visualization
+# OpenHop — Data Flow Visualization
 
-FlowScope renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
+OpenHop renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
 
 ## Before Creating Flows
 
-Verify the FlowScope API server is running:
+Verify the OpenHop API server is running:
 
 ```bash
 curl -s http://localhost:8787/health
 ```
 
-If it returns `{"status":"ok"}`, FlowScope is ready.
+If it returns `{"status":"ok"}`, OpenHop is ready.
 
-If not running, follow the install and run instructions in the repo README at `~/flowscope/README.md`. If the repo doesn't exist yet, clone it first:
+If not running, follow the install and run instructions in the repo README at `~/openhop/README.md`. If the repo doesn't exist yet, clone it first:
 
 ```bash
-git clone https://github.com/yourorg/flowscope.git ~/flowscope
+git clone https://github.com/yourorg/openhop.git ~/openhop
 ```
 
 Then follow the README's Install and Run sections. After starting, open http://localhost:5173.
@@ -63,7 +63,7 @@ flow:
 Push it:
 
 ```bash
-flowscope push flow.yaml
+openhop push flow.yaml
 ```
 
 Output:
@@ -98,7 +98,7 @@ operations:
 Apply it:
 
 ```bash
-flowscope patch abc123 patch.yaml
+openhop patch abc123 patch.yaml
 ```
 
 ### Phase 3: POLISH (add data fields, sub-flows, diff highlighting)
@@ -135,7 +135,7 @@ operations:
 ```
 
 ```bash
-flowscope patch abc123 polish-patch.yaml
+openhop patch abc123 polish-patch.yaml
 ```
 
 ## CLI Commands
@@ -143,14 +143,14 @@ flowscope patch abc123 polish-patch.yaml
 Prefix all commands with the repo path:
 
 ```bash
-flowscope serve                                     # Start server
-flowscope serve                                       # Start server + frontend
-flowscope push <file.yaml>                 # Push a flow → returns ID and URL
-flowscope push -                           # Push from stdin (pipe YAML)
-flowscope patch <flow-id> <patch.yaml>     # Apply patch operations
-flowscope patch <flow-id> -                # Patch from stdin
-flowscope list                             # List all flows
-flowscope remove <flow-id>                 # Delete a flow
+openhop serve                                     # Start server
+openhop serve                                       # Start server + frontend
+openhop push <file.yaml>                 # Push a flow → returns ID and URL
+openhop push -                           # Push from stdin (pipe YAML)
+openhop patch <flow-id> <patch.yaml>     # Apply patch operations
+openhop patch <flow-id> -                # Patch from stdin
+openhop list                             # List all flows
+openhop remove <flow-id>                 # Delete a flow
 ```
 
 Stdin is useful when generating YAML programmatically:
@@ -162,7 +162,7 @@ flow:
     - {id: a, label: A}
     - {id: b, label: B}
   steps:
-    - {from: a, to: b, data: test}' | flowscope push -
+    - {from: a, to: b, data: test}' | openhop push -
 ```
 
 ## Schema Reference
@@ -226,7 +226,7 @@ data:
 
 ## PATCH Operations
 
-All operations support multiple items. Apply with `flowscope patch <id> <file.yaml>`.
+All operations support multiple items. Apply with `openhop patch <id> <file.yaml>`.
 
 | Operation | Fields | Description |
 |-----------|--------|-------------|

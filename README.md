@@ -1,16 +1,16 @@
-# FlowScope
+# OpenHop
 
 Data flow visualization platform for AI. Describe flows in YAML, see them as animated diagrams with data pixels traveling between components.
 
-![FlowScope](docs/image.png)
+![OpenHop](docs/image.png)
 
 ## Install
 
 ```bash
-git clone https://github.com/yourorg/flowscope.git
-cd flowscope
+git clone https://github.com/yourorg/openhop.git
+cd openhop
 npm install
-npm link    # makes 'flowscope' command available globally
+npm link    # makes 'openhop' command available globally
 ```
 
 ## Run
@@ -30,14 +30,14 @@ cd packages/web && npm run dev   # Frontend on :5173
 
 ## CLI
 
-After `npm link`, the `flowscope` command works from anywhere:
+After `npm link`, the `openhop` command works from anywhere:
 
 ```bash
-flowscope push <file.yaml>       # Create a flow
-flowscope push -                 # Create from stdin
-flowscope patch <id> <file.yaml> # Update a flow
-flowscope list                   # List all flows
-flowscope remove <id>            # Delete a flow
+openhop push <file.yaml>       # Create a flow
+openhop push -                 # Create from stdin
+openhop patch <id> <file.yaml> # Update a flow
+openhop list                   # List all flows
+openhop remove <id>            # Delete a flow
 ```
 
 ## Add the AI Skill
@@ -45,10 +45,10 @@ flowscope remove <id>            # Delete a flow
 Teaches your AI assistant how to create and manage flows:
 
 ```bash
-npx skills add yourorg/flowscope
+npx skills add yourorg/openhop
 ```
 
-Or manually copy `skills/flowscope/SKILL.md` to `.claude/skills/flowscope/SKILL.md`.
+Or manually copy `skills/openhop/SKILL.md` to `.claude/skills/openhop/SKILL.md`.
 
 Then ask your AI: *"Show me how data flows through the order processing system"*
 

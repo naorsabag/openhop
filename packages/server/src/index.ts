@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flowRoutes } from './routes.js'
 import { FlowStore } from './store.js'
-import { parseFlowYaml } from '@flowscope/shared'
+import { parseFlowYaml } from '@openhop/shared'
 
 const app = Fastify({ logger: true })
 
@@ -18,8 +18,8 @@ try {
   await app.register(swagger.default, {
     openapi: {
       info: {
-        title: 'FlowScope API',
-        description: 'Data flow visualization platform. AI tools POST flow definitions (YAML/JSON) and FlowScope renders them as animated diagrams.',
+        title: 'OpenHop API',
+        description: 'Data flow visualization platform. AI tools POST flow definitions (YAML/JSON) and OpenHop renders them as animated diagrams.',
         version: '0.1.0',
       },
     },
@@ -57,5 +57,5 @@ if (existing.length === 0) {
 
 const port = parseInt(process.env.PORT ?? '8787')
 await app.listen({ port, host: '0.0.0.0' })
-console.log(`FlowScope server running on http://localhost:${port}`)
+console.log(`OpenHop server running on http://localhost:${port}`)
 console.log(`Swagger docs at http://localhost:${port}/docs`)
