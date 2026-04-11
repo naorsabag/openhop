@@ -31,8 +31,10 @@ interface StepEdgeMapping {
   step: FlowStep
 }
 
-const STEP_DURATION = 2500
-const PIXEL_DURATION = 1800
+// Speed can be overridden via window.__flowSpeed (for testing)
+const getSpeed = () => (window as any).__flowSpeed ?? 1
+const STEP_DURATION_BASE = 2500
+const PIXEL_DURATION_BASE = 1800
 
 export function useFlowAnimation(
   steps: FlowStep[],
@@ -153,8 +155,8 @@ export function useFlowAnimation(
 
       timerRef.current = setTimeout(() => {
         advanceStep()
-      }, STEP_DURATION - PIXEL_DURATION)
-    }, PIXEL_DURATION)
+      }, (STEP_DURATION_BASE - PIXEL_DURATION_BASE) / getSpeed())
+    }, PIXEL_DURATION_BASE / getSpeed())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steps.length])
 
