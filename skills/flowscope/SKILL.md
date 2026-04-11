@@ -8,21 +8,21 @@ allowed-tools: Bash(flowscope:*), Bash(npx tsx:*)
 
 FlowScope renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
 
-## Before First Use
+## Before Creating Flows
 
-Run the status check:
+Verify the FlowScope API server is running:
 
 ```bash
-bash skills/flowscope/scripts/check-status.sh
+curl -s http://localhost:8787/api/flows > /dev/null 2>&1 && echo "ready" || echo "not running"
 ```
 
-If it reports issues, fix them:
-- **Repo not found** → `git clone https://github.com/yourorg/flowscope.git ~/flowscope && cd ~/flowscope && npm install`
-- **Dependencies not installed** → `cd <flowscope-dir> && npm install`
-- **API server not running** → `cd <flowscope-dir> && npx tsx packages/server/src/index.ts &`
-- **Frontend not running** → `cd <flowscope-dir>/packages/web && npm run dev &`
+If not running, follow the install and run instructions in the repo README at `~/flowscope/README.md`. If the repo doesn't exist yet, clone it first:
 
-After fixing, run the check again to confirm. Then tell the user to open http://localhost:5173.
+```bash
+git clone https://github.com/yourorg/flowscope.git ~/flowscope
+```
+
+Then follow the README's Install and Run sections. After starting, tell the user to open http://localhost:5173.
 
 ## How to Work: Sketch → Detail → Polish
 
