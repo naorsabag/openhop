@@ -1,0 +1,5 @@
+{
+  "name": "flowscope",
+  "private": true,
+  "workspaces": ["packages/*"]
+}
