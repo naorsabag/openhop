@@ -39,6 +39,8 @@ export function DataPixel({
   const pixelRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
+  const onCompleteRef = useRef(onAnimationComplete)
+  onCompleteRef.current = onAnimationComplete
   const [hovered, setHovered] = useState(false)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
 
@@ -109,14 +111,14 @@ export function DataPixel({
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick)
-      } else if (onAnimationComplete) {
-        onAnimationComplete()
+      } else if (onCompleteRef.current) {
+        onCompleteRef.current()
       }
     }
 
     startTimeRef.current = 0
     rafRef.current = requestAnimationFrame(tick)
-  }, [edgeId, containerRef, onAnimationComplete])
+  }, [edgeId, containerRef])
 
   useEffect(() => {
     animate()
