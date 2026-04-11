@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { FlowCanvas } from './components/FlowCanvas'
 import { exampleFlow } from './data/example-flow'
 
 function App() {
+  const [playing, setPlaying] = useState(false)
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
       {/* Header */}
@@ -13,12 +16,12 @@ function App() {
           FlowScope
         </h1>
         <button
-          disabled
-          aria-label="Play flow"
-          className="font-pixel text-xs px-3 py-1 border border-border text-text/40 cursor-not-allowed"
+          aria-label={playing ? 'Pause flow' : 'Play flow'}
+          onClick={() => setPlaying((p) => !p)}
+          className="font-pixel text-xs px-3 py-1 border border-border text-text hover:text-accent hover:border-accent transition-colors"
           style={{ fontSize: 10 }}
         >
-          ▶ Play
+          {playing ? '⏸ Pause' : '▶ Play'}
         </button>
       </header>
 
@@ -48,7 +51,7 @@ function App() {
 
         {/* Canvas */}
         <main className="flex-1 min-w-0" style={{ background: '#0a0a1a' }}>
-          <FlowCanvas flow={exampleFlow} />
+          <FlowCanvas flow={exampleFlow} playing={playing} />
         </main>
       </div>
     </div>

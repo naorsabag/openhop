@@ -21,12 +21,14 @@ export type FlowNodeData = {
   icon?: string
   hasSubFlow?: boolean
   fields?: FlowData['fields']
+  isActiveSender?: boolean
+  isActiveReceiver?: boolean
 }
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
 
 export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
-  const { label, nodeType, color, icon, hasSubFlow } = data
+  const { label, nodeType, color, icon, hasSubFlow, isActiveSender, isActiveReceiver } = data
 
   const isCustom = nodeType === 'custom'
   const style = NODE_STYLES[nodeType] ?? {
@@ -58,8 +60,13 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         borderColor,
         borderWidth: 3,
         borderStyle: 'solid',
-        boxShadow: `4px 4px 0px 0px ${borderColor}40`,
+        boxShadow: isActiveSender
+          ? `0 0 20px ${borderColor}, 4px 4px 0px 0px ${borderColor}40`
+          : isActiveReceiver
+            ? `0 0 10px ${borderColor}60, 4px 4px 0px 0px ${borderColor}40`
+            : `4px 4px 0px 0px ${borderColor}40`,
         minWidth: 140,
+        transition: 'box-shadow 0.2s ease',
       }}
       className="px-3 py-2 rounded-sm"
     >

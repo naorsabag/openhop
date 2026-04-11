@@ -138,20 +138,21 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
   const edges: Edge[] = []
   let edgeIdx = 0
 
-  for (const step of steps) {
+  for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
+    const step = steps[stepIndex]
     if (step.parallel) {
       for (const ps of step.parallel) {
         if (ps.from && ps.to) {
           const targets = Array.isArray(ps.to) ? ps.to : [ps.to]
           for (const t of targets) {
-            edges.push(makeEdge(edgeIdx++, ps.from, t, ps))
+            edges.push(makeEdge(edgeIdx++, ps.from, t, ps, stepIndex))
           }
         }
       }
     } else if (step.from && step.to) {
       const targets = Array.isArray(step.to) ? step.to : [step.to]
       for (const t of targets) {
-        edges.push(makeEdge(edgeIdx++, step.from, t, step))
+        edges.push(makeEdge(edgeIdx++, step.from, t, step, stepIndex))
       }
     }
   }
@@ -159,13 +160,14 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
   return { nodes, edges }
 }
 
-function makeEdge(idx: number, source: string, target: string, step: FlowStep): Edge {
+function makeEdge(idx: number, source: string, target: string, step: FlowStep, stepIndex: number): Edge {
   const label = typeof step.data === 'string' ? step.data : step.data.label
   return {
     id: `e-${idx}`,
     source,
     target,
     label,
+    data: { stepIndex, step },
     style: {
       strokeWidth: 4,
       stroke: '#2a2a3a',
