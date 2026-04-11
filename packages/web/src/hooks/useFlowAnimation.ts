@@ -57,12 +57,11 @@ export function useFlowAnimation(
   const onCycleCompleteRef = useRef(onCycleComplete)
   onCycleCompleteRef.current = onCycleComplete
 
-  const stepIndexRef = useRef(-1)
+  const stepIndexRef = useRef(startFromStep !== undefined ? startFromStep - 1 : -1)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const playingRef = useRef(playing)
   playingRef.current = playing
 
-  // Build step-to-edge mapping (memoized)
   const stepMappings = useMemo<StepEdgeMapping[]>(() => {
     return steps.map((step, idx) => {
       const edgeIds: string[] = []
@@ -93,7 +92,6 @@ export function useFlowAnimation(
     })
   }, [steps, edgeStepMap])
 
-  // Store mappings in ref so advanceStep never goes stale
   const mappingsRef = useRef(stepMappings)
   mappingsRef.current = stepMappings
 
@@ -110,28 +108,25 @@ export function useFlowAnimation(
 
     const rawNext = stepIndexRef.current + 1
 
-    // Cycle complete — fire callback or loop
+    // Check if we've completed all steps
     if (rawNext >= steps.length) {
       if (onCycleCompleteRef.current) {
-        // Don't loop — let the caller decide (e.g. navigate back from sub-flow)
+        // Fire cycle complete — caller decides what to do
         onCycleCompleteRef.current()
         return
       }
-      // No callback — loop
+      // No callback — loop back to start
       nodeProgressRef.current = new Map()
     }
 
     const nextIdx = rawNext % steps.length
-
     stepIndexRef.current = nextIdx
     const mapping = mappingsRef.current[nextIdx]
 
-    // Increment node progress only for sender nodes (from)
     for (const nid of mapping.fromIds) {
       nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
     }
 
-    // Activate edges and nodes
     setState((prev) => ({
       playing: true,
       currentStepIndex: nextIdx,
@@ -144,7 +139,6 @@ export function useFlowAnimation(
       manualPixels: prev.manualPixels,
     }))
 
-    // After pixel animation duration, clear active state, then wait before next step
     timerRef.current = setTimeout(() => {
       if (!playingRef.current) return
 
@@ -164,31 +158,19 @@ export function useFlowAnimation(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steps.length])
 
-  // Set starting step if provided
-  const startApplied = useRef(false)
-  useEffect(() => {
-    if (startFromStep !== undefined && startFromStep >= 0 && !startApplied.current) {
-      stepIndexRef.current = startFromStep - 1 // -1 because advanceStep increments
-      startApplied.current = true
-    }
-  }, [startFromStep])
-
   useEffect(() => {
     if (playing) {
       advanceStep()
     } else {
-      // Pause: just stop timers, keep current state frozen
       clearTimers()
       setState((prev) => ({
         ...prev,
         playing: false,
-        // Clear active highlights but keep progress and step index
         activeEdgeIds: new Set<string>(),
         activeFromIds: new Set<string>(),
         activeToIds: new Set<string>(),
         activeStep: null,
       }))
-      // Don't reset stepIndexRef or nodeProgressRef — resume from where we paused
     }
 
     return clearTimers
@@ -200,7 +182,6 @@ export function useFlowAnimation(
     const id = `manual-${++manualPixelCounter.current}`
     const manualPixel: ManualPixel = { ...pixel, id }
 
-    // Don't increment progress here — caller (handleNodeClick) manages it per logical step
     setState((prev) => ({
       ...prev,
       manualPixels: [...prev.manualPixels, manualPixel],
