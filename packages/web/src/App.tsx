@@ -11,24 +11,24 @@ interface FlowNavItem {
 }
 
 function App() {
-  // Read flow ID from URL query params
+  // Read flow ID from URL path: /flow/{id}
   const [selectedFlowId, setSelectedFlowId] = useState<string | null>(() => {
-    const params = new URLSearchParams(window.location.search)
-    return params.get('id')
+    const match = window.location.pathname.match(/^\/flow\/(.+)$/)
+    return match ? match[1] : null
   })
 
   // Update URL when flow is selected
   const selectFlow = useCallback((id: string | null) => {
     setSelectedFlowId(id)
-    const url = id ? `?id=${id}` : '/'
+    const url = id ? `/flow/${id}` : '/'
     window.history.pushState({}, '', url)
   }, [])
 
   // Handle browser back/forward
   useEffect(() => {
     const handler = () => {
-      const params = new URLSearchParams(window.location.search)
-      setSelectedFlowId(params.get('id'))
+      const match = window.location.pathname.match(/^\/flow\/(.+)$/)
+      setSelectedFlowId(match ? match[1] : null)
     }
     window.addEventListener('popstate', handler)
     return () => window.removeEventListener('popstate', handler)
