@@ -149,7 +149,7 @@ flow:
               added: true
       drilldown: true
 
-    # Create temp audit logger — sends constructor data
+    # Create temp audit logger — receives order event data
     - create: audit
       from: order-service
       node:
@@ -167,11 +167,7 @@ flow:
             type: string
             added: true
 
-    # Audit sends confirmation back
-    - from: audit
-      to: order-service
-      data: audit logged
-
+    # Destroy after logging
     - destroy: audit
 
     - from: order-service
