@@ -10,15 +10,19 @@ FlowScope renders animated data flow diagrams. You describe the flow in YAML, pu
 
 ## Before First Use
 
-Run the status check to see if FlowScope is ready:
+Run the status check:
 
 ```bash
 bash skills/flowscope/scripts/check-status.sh
 ```
 
-If it reports issues, tell the user what needs fixing. Don't try to fix it yourself — the user needs to install/start FlowScope manually.
+If it reports issues, fix them:
+- **Repo not found** → `git clone https://github.com/yourorg/flowscope.git ~/flowscope && cd ~/flowscope && npm install`
+- **Dependencies not installed** → `cd <flowscope-dir> && npm install`
+- **API server not running** → `cd <flowscope-dir> && npx tsx packages/server/src/index.ts &`
+- **Frontend not running** → `cd <flowscope-dir>/packages/web && npm run dev &`
 
-Once the status check shows "FlowScope is ready", proceed with creating flows.
+After fixing, run the check again to confirm. Then tell the user to open http://localhost:5173.
 
 ## How to Work: Sketch → Detail → Polish
 
