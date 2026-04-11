@@ -1,7 +1,7 @@
 meta:
   title: Create Order
-  path: e-commerce/orders
   description: End-to-end order creation flow with payment processing
+  path: e-commerce/orders
   tags: [orders, payments, e-commerce]
 
 flow:
@@ -26,7 +26,16 @@ flow:
         steps:
           - from: validate
             to: enrich
-            data: validated order
+            data:
+              label: validated order
+              fields:
+                - name: items
+                  type: "list[OrderItem]"
+                - name: user_id
+                  type: int
+                - name: valid
+                  type: bool
+                  added: true
     - id: db
       label: PostgreSQL
       type: custom
@@ -46,30 +55,110 @@ flow:
   steps:
     - from: user
       to: api
-      data: POST /orders
+      data:
+        label: POST /orders
+        fields:
+          - name: items
+            type: "list[OrderItem]"
+          - name: user_id
+            type: int
+          - name: coupon_code
+            type: string
+
     - from: api
       to: order-service
-      data: create order
+      data:
+        label: create order
+        fields:
+          - name: items
+            type: "list[OrderItem]"
+          - name: user_id
+            type: int
+          - name: coupon_code
+            type: string
+
     - from: order-service
       to: [db, cache]
-      data: persist order
+      data:
+        label: persist order
+        fields:
+          - name: order
+            type: Order
+          - name: total
+            type: float
+            added: true
+          - name: coupon_code
+            removed: true
+
     - parallel:
         - from: db
           to: order-service
-          data: order saved
+          data:
+            label: order saved
+            fields:
+              - name: order_id
+                type: int
+                added: true
+              - name: created_at
+                type: datetime
+                added: true
         - from: cache
           to: order-service
-          data: cache updated
+          data:
+            label: cache updated
+            fields:
+              - name: cached
+                type: bool
+
     - from: order-service
       to: payment
-      data: charge customer
+      data:
+        label: charge customer
+        fields:
+          - name: amount
+            type: float
+          - name: currency
+            type: string
+          - name: order_id
+            type: int
+
     - from: payment
       to: order-service
-      data: payment confirmed
+      data:
+        label: payment confirmed
+        fields:
+          - name: payment_id
+            type: string
+            added: true
+          - name: status
+            type: string
+            added: true
+          - name: amount
+            type: float
       drilldown: true
+
     - from: order-service
       to: api
-      data: order response
+      data:
+        label: order response
+        fields:
+          - name: order_id
+            type: int
+          - name: total
+            type: float
+          - name: status
+            type: string
+          - name: payment_id
+            type: string
+
     - from: api
       to: user
-      data: "201 Created"
+      data:
+        label: "201 Created"
+        fields:
+          - name: order_id
+            type: int
+          - name: total
+            type: float
+          - name: status
+            type: string
