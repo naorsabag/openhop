@@ -1,0 +1,31 @@
+meta:
+  title: Simple CRUD
+  path: examples/crud
+  description: Basic REST API CRUD operations
+  tags: [crud, rest, api]
+
+flow:
+  nodes:
+    - id: client
+      label: Client
+      type: actor
+    - id: api
+      label: REST API
+      type: endpoint
+    - id: db
+      label: Database
+      type: database
+
+  steps:
+    - from: client
+      to: api
+      data: POST /items
+    - from: api
+      to: db
+      data: INSERT item
+    - from: db
+      to: api
+      data: created item
+    - from: api
+      to: client
+      data: "201 Created"
