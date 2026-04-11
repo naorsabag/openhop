@@ -152,6 +152,19 @@ export function useFlowAnimation(
       destroyedNodesRef.current.add(currentStep.destroy)
       activeNodesRef.current = new Set(activeNodesRef.current)
       activeNodesRef.current.delete(currentStep.destroy)
+
+      // Destroy is instant — update state and advance immediately
+      setState((prev) => ({
+        ...prev,
+        currentStepIndex: nextIdx,
+        activeNodes: new Set(activeNodesRef.current),
+        destroyedNodes: new Set(destroyedNodesRef.current),
+      }))
+      // Brief pause for fade animation then advance
+      timerRef.current = setTimeout(() => {
+        advanceStep()
+      }, 400 / getSpeed())
+      return
     }
 
     for (const nid of mapping.fromIds) {
