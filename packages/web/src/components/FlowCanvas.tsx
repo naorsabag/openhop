@@ -60,9 +60,10 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
     ...animState
   } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing)
 
-  // Build a map: nodeId -> list of outgoing steps (stepIndex + edge info)
+  // Build a map: nodeId -> list of outgoing logical steps
+  // A broadcast (to: [db, cache]) is ONE logical step with multiple edgeIds
   const nodeOutgoingSteps = useMemo(() => {
-    const map = new Map<string, Array<{ stepIndex: number; step: FlowStep; edgeId: string }>>()
+    const map = new Map<string, Array<{ stepIndex: number; step: FlowStep; edgeIds: string[] }>>()
     const { steps } = flow.flow
     for (let si = 0; si < steps.length; si++) {
       const step = steps[si]
@@ -70,26 +71,29 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
         for (const ps of step.parallel) {
           if (ps.from) {
             const entries = map.get(ps.from) ?? []
-            // Find matching edge
             const targets = Array.isArray(ps.to) ? ps.to : ps.to ? [ps.to] : []
+            const edgeIds: string[] = []
             for (const t of targets) {
               const edgeId = baseEdges.find(
                 (e) => e.source === ps.from && e.target === t && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
               )?.id
-              if (edgeId) entries.push({ stepIndex: si, step: ps, edgeId })
+              if (edgeId) edgeIds.push(edgeId)
             }
+            if (edgeIds.length > 0) entries.push({ stepIndex: si, step: ps, edgeIds })
             map.set(ps.from, entries)
           }
         }
       } else if (step.from) {
         const entries = map.get(step.from) ?? []
         const targets = Array.isArray(step.to) ? step.to : step.to ? [step.to] : []
+        const edgeIds: string[] = []
         for (const t of targets) {
           const edgeId = baseEdges.find(
             (e) => e.source === step.from && e.target === t && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
           )?.id
-          if (edgeId) entries.push({ stepIndex: si, step, edgeId })
+          if (edgeId) edgeIds.push(edgeId)
         }
+        if (edgeIds.length > 0) entries.push({ stepIndex: si, step, edgeIds })
         map.set(step.from, entries)
       }
     }
@@ -117,21 +121,27 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
       currentProg = 0
     }
 
-    // Block only if THIS EXACT step is already animating
+    // Block only if THIS EXACT logical step is already animating
     const stepKey = `${nodeId}:${currentProg}`
     if (activePixelSteps.has(stepKey)) return
 
     const entry = outgoing[currentProg]
-
     const sourceInfo = nodeTypeMap.get(nodeId) ?? { type: 'service' }
-    fireManualPixel({
-      edgeId: entry.edgeId,
-      step: entry.step,
-      sourceNodeId: nodeId,
-      sourceStepIndex: currentProg,
-      sourceNodeType: sourceInfo.type,
-      sourceNodeColor: sourceInfo.color,
-    })
+
+    // Increment progress once for this logical step
+    setNodeStep(nodeId, currentProg + 1)
+
+    // Fire a pixel for EACH edge in this logical step (broadcast = multiple edges)
+    for (const edgeId of entry.edgeIds) {
+      fireManualPixel({
+        edgeId,
+        step: entry.step,
+        sourceNodeId: nodeId,
+        sourceStepIndex: currentProg,
+        sourceNodeType: sourceInfo.type,
+        sourceNodeColor: sourceInfo.color,
+      })
+    }
   }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
