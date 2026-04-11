@@ -305,6 +305,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
             stroke: '#4a9eff',
             strokeWidth: 4,
             opacity: bothAlive ? 1 : 0,
+            pointerEvents: bothAlive ? 'auto' : 'none',
             transition: 'opacity 0.4s ease',
           },
           animated: true,
@@ -315,6 +316,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         style: {
           ...edge.style,
           opacity: bothAlive ? 1 : 0,
+          pointerEvents: bothAlive ? 'auto' : 'none',
           transition: 'opacity 0.4s ease',
         },
       }
