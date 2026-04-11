@@ -110,6 +110,7 @@ export const MetaSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  path: z.string().optional(),
 });
 
 export type Meta = z.infer<typeof MetaSchema>;

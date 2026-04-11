@@ -101,6 +101,7 @@ export const metaJsonSchema = {
     title: { type: 'string', description: 'Flow title' },
     description: { type: 'string', description: 'Human-readable description' },
     tags: { type: 'array', items: { type: 'string' }, description: 'Tags for search/filter' },
+    path: { type: 'string', description: 'Folder path (e.g. my-repo/backend). Folders are created implicitly.' },
   },
   required: ['title'],
 }
@@ -141,6 +142,7 @@ export const flowSummaryJsonSchema = {
     title: { type: 'string' },
     description: { type: 'string', nullable: true },
     tags: { type: 'array', items: { type: 'string' } },
+    path: { type: 'string', nullable: true },
     version: { type: 'number' },
     updatedAt: { type: 'string' },
   },
