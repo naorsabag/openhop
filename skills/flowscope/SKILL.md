@@ -183,7 +183,7 @@ flow:
 Either a move step, parallel, create, or destroy:
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
 - Parallel: `{ parallel: [move steps] }` (min 2)
-- Create: `{ create: "node-id", node: { id, label, type?, icon?, color? }, data? }`
+- Create: `{ create: "node-id", from: "creator-node", node: { id, label, type?, icon?, color? }, data? }`
 - Destroy: `{ destroy: "node-id" }`
 
 ### Data
