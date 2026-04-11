@@ -175,6 +175,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
       title: f.meta.title,
       description: f.meta.description ?? null,
       tags: f.meta.tags ?? [],
+      path: f.meta.path ?? null,
       version: f.version,
       updatedAt: f.updatedAt,
     }))

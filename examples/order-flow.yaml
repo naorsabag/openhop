@@ -1,5 +1,6 @@
 meta:
   title: Create Order
+  path: e-commerce/orders
   description: End-to-end order creation flow with payment processing
   tags: [orders, payments, e-commerce]
 
