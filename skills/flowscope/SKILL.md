@@ -1,23 +1,22 @@
 ---
 name: flowscope
 description: Data flow visualization. Use when the user asks to visualize, explain, or diagram how data flows through their code, APIs, services, or architecture. Triggers: "show me the data flow", "visualize the architecture", "how does data move through", "diagram the flow", "show me how X works".
+allowed-tools: Bash(flowscope:*), Bash(npx tsx:*)
 ---
 
 # FlowScope — Data Flow Visualization
 
-FlowScope renders animated data flow diagrams. You describe the flow in YAML, FlowScope renders it with animated data pixels traveling between components.
+FlowScope renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
 
-## Quick Start
+## Prerequisites
 
-1. FlowScope server must be running: `flowscope serve`
-2. POST a flow: `curl -X POST http://localhost:8787/api/flows -H "Content-Type: text/yaml" -d @flow.yaml`
-3. Open the returned URL in the browser
+FlowScope server must be running: `flowscope serve`
 
 ## How to Work: Sketch → Detail → Polish
 
 ### Phase 1: SKETCH (always start here)
 
-Create nodes and steps with just names. No colors, icons, fields, or sub-flows.
+Write a YAML file with just nodes and steps. No colors, icons, fields, or sub-flows.
 
 ```yaml
 meta:
@@ -47,28 +46,93 @@ flow:
       data: Response
 ```
 
-POST this. The user sees the flow immediately.
+Push it:
+
+```bash
+flowscope push flow.yaml
+```
+
+Output:
+```
+✓ Flow created
+  ID:    abc123
+  Title: Order Processing
+  URL:   http://localhost:5173/flow/abc123
+```
+
+Tell the user to open the URL.
 
 ### Phase 2: DETAIL (iterate with PATCH)
 
-Use PATCH to add fields, types, custom icons, colors, sub-flows.
+Write a patch YAML file to add detail:
 
-```json
-{
-  "operations": [
-    {"op": "update-nodes", "nodes": [
-      {"id": "db", "type": "custom", "icon": "logos:postgresql", "color": "#336791"}
-    ]},
-    {"op": "rename-nodes", "nodes": [
-      {"id": "api", "label": "Order Service"}
-    ]}
-  ]
-}
+```yaml
+# patch.yaml
+operations:
+  - op: update-nodes
+    nodes:
+      - id: db
+        type: custom
+        icon: "logos:postgresql"
+        color: "#336791"
+  - op: rename-nodes
+    nodes:
+      - id: api
+        label: Order Service
 ```
 
-### Phase 3: POLISH (when user wants more detail)
+Apply it:
 
-Add diff highlighting, detailed fields, sub-flows, drilldown.
+```bash
+flowscope patch abc123 patch.yaml
+```
+
+### Phase 3: POLISH (add data fields, sub-flows, diff highlighting)
+
+```yaml
+# polish-patch.yaml
+operations:
+  - op: update-step
+    index: 1
+    step:
+      from: api
+      to: db
+      data:
+        label: INSERT order
+        fields:
+          - name: items
+            type: "list[OrderItem]"
+          - name: total
+            type: float
+            added: true
+  - op: set-flows
+    nodes:
+      - id: api
+        flow:
+          nodes:
+            - id: validate
+              label: Validate
+            - id: save
+              label: Save to DB
+          steps:
+            - from: validate
+              to: save
+              data: validated order
+```
+
+```bash
+flowscope patch abc123 polish-patch.yaml
+```
+
+## CLI Commands
+
+```bash
+flowscope serve [--port 8787]              # Start server
+flowscope push <file.yaml>                 # Push a flow → returns ID and URL
+flowscope patch <flow-id> <patch.yaml>     # Apply patch operations
+flowscope list                             # List all flows
+flowscope validate <file.yaml>             # Validate locally (no server needed)
+```
 
 ## Schema Reference
 
@@ -82,21 +146,21 @@ Add diff highlighting, detailed fields, sub-flows, drilldown.
 - `type`: actor | endpoint | transform | database | external | cache | queue | service | custom
 - `icon`: Iconify icon ID (e.g. "logos:postgresql"). Browse: https://icon-sets.iconify.design/logos/
 - `color`: hex color
-- `flow`: nested sub-flow { nodes, steps } — makes node expandable
+- `flow`: nested sub-flow { nodes, steps } — makes node expandable with 🔍
 
 ### Step
 Either a move step or parallel:
-- Move: { from, to (string or string[]), data (string or object), drilldown (bool) }
-- Parallel: { parallel: [move steps] }
+- Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
+- Parallel: `{ parallel: [move steps] }` (min 2)
 
 ### Data
 Either a string or object:
-- String: `data: "HTTP Request"` 
+- String: `data: "HTTP Request"`
 - Object: `data: { label, color, fields: [{ name, type, changed, added, removed }] }`
 
 ## PATCH Operations
 
-All operations support multiple items in one call.
+All operations support multiple items. Apply with `flowscope patch <id> <file.yaml>`.
 
 | Operation | Fields | Description |
 |-----------|--------|-------------|
@@ -110,25 +174,18 @@ All operations support multiple items in one call.
 | remove-steps | indices: [0, 3] | Remove steps by index |
 | update-step | index: N, step: {...} | Replace a step |
 
-## API Endpoints
-
-- POST /api/flows — Create flow (YAML or JSON body) → {id, version, title}
-- GET /api/flows — List flows
-- GET /api/flows/:id — Get full flow
-- PATCH /api/flows/:id — Apply patch operations → {id, version, title}
-- DELETE /api/flows/:id — Delete flow
-- GET /api/flows/:id/version — Get version number (for polling)
-
 ## Icons
 
-Use Iconify logos set: `logos:postgresql`, `logos:redis`, `logos:docker-icon`, `logos:stripe`, etc.
+Use Iconify logos set: `logos:postgresql`, `logos:redis`, `logos:docker-icon`, `logos:stripe`, `logos:kubernetes`, etc.
 Browse: https://icon-sets.iconify.design/logos/
 
 ## Tips
 
 - Start with 3-5 nodes. Add more only when needed.
-- Use string data for sketch mode, object data for detail.
+- Use string data for sketch, object data for detail.
 - Broadcast: `to: [db, cache]` sends to multiple targets in one step.
 - Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements.
 - `drilldown: true` on a step auto-zooms into the target's sub-flow during playback.
 - Use `meta.path` to organize flows in folders (e.g. "my-app/backend").
+- Always validate before pushing: `flowscope validate flow.yaml`
+- Iterate: push a sketch first, then refine with patch operations. Don't try to get everything right in one push.
