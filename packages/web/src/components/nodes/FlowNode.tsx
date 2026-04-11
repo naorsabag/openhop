@@ -97,7 +97,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           : isActiveReceiver
             ? `0 0 10px ${borderColor}60, 4px 4px 0px 0px ${borderColor}40`
             : `4px 4px 0px 0px ${borderColor}40`,
-        minWidth: 140,
+        minWidth: 180,
         transition: 'box-shadow 0.2s ease',
         cursor: 'pointer',
       }}
@@ -107,8 +107,8 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
       <div className="flex items-center gap-2">
         <span className="text-base leading-none">{displayIcon}</span>
         <span
-          className="font-pixel text-white truncate"
-          style={{ fontSize: 10, lineHeight: '14px' }}
+          className="font-pixel text-white"
+          style={{ fontSize: 10, lineHeight: '14px', whiteSpace: 'nowrap' }}
         >
           {label}
         </span>

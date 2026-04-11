@@ -61,7 +61,7 @@ export function useFlowData(flowId: string | null) {
           versionRef.current = data.version
         }
       } catch {}
-    }, 500)
+    }, 2000)
     return () => clearInterval(interval)
   }, [flowId])
 
