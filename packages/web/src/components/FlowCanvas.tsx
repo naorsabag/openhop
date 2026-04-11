@@ -96,29 +96,30 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
     return map
   }, [flow.flow, baseEdges])
 
-  // Track nodes that currently have a manual pixel in flight
-  const nodesWithActivePixel = useMemo(() => {
-    const ids = new Set<string>()
+  // Track which specific (nodeId, stepIndex) combos have a pixel in flight
+  const activePixelSteps = useMemo(() => {
+    const set = new Set<string>()
     for (const mp of manualPixels) {
-      if (mp.step.from) ids.add(mp.step.from)
+      set.add(`${mp.sourceNodeId}:${mp.sourceStepIndex}`)
     }
-    return ids
+    return set
   }, [manualPixels])
 
   const handleNodeClick = useCallback((nodeId: string) => {
-    // Block if this specific node already has a pixel in flight
-    if (nodesWithActivePixel.has(nodeId)) return
-
     const outgoing = nodeOutgoingSteps.get(nodeId)
     if (!outgoing || outgoing.length === 0) return
 
     let currentProg = nodeProgress.get(nodeId) ?? 0
 
-    // If past the last step, reset and fire first step
+    // If past the last step, reset progress and fire first step
     if (currentProg >= outgoing.length) {
       setNodeStep(nodeId, 0)
       currentProg = 0
     }
+
+    // Block only if THIS EXACT step is already animating
+    const stepKey = `${nodeId}:${currentProg}`
+    if (activePixelSteps.has(stepKey)) return
 
     const entry = outgoing[currentProg]
 
@@ -126,10 +127,12 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
     fireManualPixel({
       edgeId: entry.edgeId,
       step: entry.step,
+      sourceNodeId: nodeId,
+      sourceStepIndex: currentProg,
       sourceNodeType: sourceInfo.type,
       sourceNodeColor: sourceInfo.color,
     })
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, nodesWithActivePixel])
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
     setNodeStep(nodeId, targetStep)
