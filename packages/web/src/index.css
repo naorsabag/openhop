@@ -29,10 +29,10 @@ body {
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* Drill-back: parent appears by zooming out from close-up */
+/* Drill-back: parent appears from zoomed in, zooms out to normal */
 @keyframes drilldown-exit {
-  0%   { opacity: 0; transform: scale(0.3); }
-  40%  { opacity: 0.5; transform: scale(0.7); }
+  0%   { opacity: 0; transform: scale(2.5); }
+  40%  { opacity: 0.5; transform: scale(1.5); }
   100% { opacity: 1; transform: scale(1); }
 }
 
