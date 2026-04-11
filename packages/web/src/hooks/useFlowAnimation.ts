@@ -39,6 +39,7 @@ export function useFlowAnimation(
   edgeStepMap: Map<string, number>,
   playing: boolean,
   onCycleComplete?: () => void,
+  startFromStep?: number,
 ) {
   const [state, setState] = useState<AnimationState>({
     playing: false,
@@ -162,6 +163,15 @@ export function useFlowAnimation(
     }, PIXEL_DURATION)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steps.length])
+
+  // Set starting step if provided
+  const startApplied = useRef(false)
+  useEffect(() => {
+    if (startFromStep !== undefined && startFromStep >= 0 && !startApplied.current) {
+      stepIndexRef.current = startFromStep - 1 // -1 because advanceStep increments
+      startApplied.current = true
+    }
+  }, [startFromStep])
 
   useEffect(() => {
     if (playing) {

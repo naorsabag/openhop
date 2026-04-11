@@ -8,6 +8,7 @@ interface FlowNavItem {
   flow: { nodes: FlowNode[]; steps: FlowStep[] }
   parentNodeId?: string
   parentLabel?: string
+  resumeFromStep?: number  // step index to resume from when returning to this level
 }
 
 function App() {
@@ -66,13 +67,25 @@ function App() {
     }
   }, [apiFlow, currentFlowBody])
 
+  // Track current step index for resume
+  const currentStepRef = useRef(0)
+  const handleStepChange = useCallback((stepIndex: number) => {
+    currentStepRef.current = stepIndex
+  }, [])
+
   const navigateToDrillDown = useCallback((nodeId: string) => {
     if (!currentFlowBody || !apiFlow) return
     const node = currentFlowBody.flow.nodes.find(n => n.id === nodeId)
     if (!node?.flow) return
     setFlowStack(prev => {
       const base = prev.length === 0 ? [{ flow: apiFlow.flow }] : prev
-      return [...base, {
+      // Save current step on the parent level so we can resume
+      const updated = [...base]
+      updated[updated.length - 1] = {
+        ...updated[updated.length - 1],
+        resumeFromStep: currentStepRef.current + 1, // resume from NEXT step
+      }
+      return [...updated, {
         flow: node.flow!,
         parentNodeId: nodeId,
         parentLabel: node.label,
@@ -243,7 +256,15 @@ function App() {
                 </div>
               )}
               <div className={transitioning ? 'animate-drilldown w-full h-full' : 'w-full h-full'}>
-                <FlowCanvas flow={displayFlow} playing={playing} onDrillDown={handleDrillDown} onDrilldownStep={handleAutoDrilldown} onCycleComplete={isInSubFlow ? handleCycleComplete : undefined} />
+                <FlowCanvas
+                  flow={displayFlow}
+                  playing={playing}
+                  onDrillDown={handleDrillDown}
+                  onDrilldownStep={handleAutoDrilldown}
+                  onCycleComplete={isInSubFlow ? handleCycleComplete : undefined}
+                  startFromStep={currentFlowBody?.resumeFromStep}
+                  onStepChange={handleStepChange}
+                />
               </div>
             </>
           ) : null}
