@@ -105,11 +105,16 @@ export function useFlowAnimation(
     if (!playingRef.current) return
 
     const nextIdx = (stepIndexRef.current + 1) % steps.length
+
+    // Reset progress when looping back to start
+    if (nextIdx === 0) {
+      nodeProgressRef.current = new Map()
+    }
+
     stepIndexRef.current = nextIdx
     const mapping = mappingsRef.current[nextIdx]
 
     // Increment node progress only for sender nodes (from)
-    // Receivers get incremented when they become senders in a later step
     for (const nid of mapping.fromIds) {
       nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
     }
