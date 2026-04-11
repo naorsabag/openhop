@@ -112,20 +112,30 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep }: FlowCa
   }, [manualPixels])
 
   // Auto-drilldown: fire callback when a step with drilldown: true is active
+  const drilldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastDrilldownStepRef = useRef<number>(-1)
   useEffect(() => {
     if (!onDrilldownStep) return
     const step = animState.activeStep
-    if (!step || !('drilldown' in step) || !step.drilldown) return
+    if (!step) return
+    if (!('drilldown' in step) || !step.drilldown) return
     const targetId = Array.isArray(step.to) ? step.to[0] : typeof step.to === 'string' ? step.to : null
     if (!targetId) return
+    // Prevent double-fire for same step index
+    if (lastDrilldownStepRef.current === animState.currentStepIndex) return
+    lastDrilldownStepRef.current = animState.currentStepIndex
 
-    // Fire after pixel animation completes
-    const timer = setTimeout(() => {
+    // Clear any existing timer
+    if (drilldownTimerRef.current) clearTimeout(drilldownTimerRef.current)
+
+    // Fire after pixel animation — use a ref so cleanup doesn't cancel it
+    drilldownTimerRef.current = setTimeout(() => {
       onDrilldownStep(targetId)
-    }, 1800) // match ANIMATION_DURATION
+      drilldownTimerRef.current = null
+    }, 1500)
 
-    return () => clearTimeout(timer)
-  }, [animState.activeStep, onDrilldownStep])
+    // Don't return cleanup — we want the timer to survive activeStep becoming null
+  }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep])
 
   const handleNodeClick = useCallback((nodeId: string) => {
     const outgoing = nodeOutgoingSteps.get(nodeId)

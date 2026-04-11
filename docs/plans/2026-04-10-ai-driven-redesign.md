@@ -472,7 +472,7 @@ Full skill file with schema reference, examples, and best practices lives at `sk
 flowscope serve [--port 8787]              # start server
 flowscope push <file.yaml> [--name "..."]  # push a flow
 flowscope list                             # list flows
-flowscope validate <file.yaml>             # validate locally
+flowscope remove <id>                      # delete a flow
 ```
 
 ---
