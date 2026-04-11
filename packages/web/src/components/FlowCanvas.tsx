@@ -147,6 +147,11 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
             map.set(ps.from, entries)
           }
         }
+      } else if (step.destroy) {
+        // Destroy step: outgoing action for the destroyed node (no edge, just triggers deactivation)
+        const entries = map.get(step.destroy) ?? []
+        entries.push({ stepIndex: si, step, edgeIds: [] })
+        map.set(step.destroy, entries)
       } else if (step.create && step.from) {
         // Create step: from → newly created node
         const entries = map.get(step.from) ?? []
@@ -234,6 +239,12 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       activateNode(entry.step.create)
     }
 
+    // If this is a destroy step, deactivate the node
+    if (entry.step.destroy) {
+      deactivateNode(entry.step.destroy)
+      return // no pixel to fire
+    }
+
     // Fire a pixel for EACH edge in this logical step (broadcast = multiple edges)
     for (const edgeId of entry.edgeIds) {
       fireManualPixel({
@@ -245,7 +256,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         sourceNodeColor: sourceInfo.color,
       })
     }
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps, activateNode])
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps, activateNode, deactivateNode])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
     setNodeStep(nodeId, targetStep)
