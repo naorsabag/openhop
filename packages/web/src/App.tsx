@@ -79,11 +79,10 @@ function App() {
     if (!node?.flow) return
     setFlowStack(prev => {
       const base = prev.length === 0 ? [{ flow: apiFlow.flow }] : prev
-      // Save current step on the parent level so we can resume
       const updated = [...base]
       updated[updated.length - 1] = {
         ...updated[updated.length - 1],
-        resumeFromStep: currentStepRef.current + 1, // resume from NEXT step
+        resumeFromStep: currentStepRef.current + 1,
       }
       return [...updated, {
         flow: node.flow!,
@@ -112,7 +111,6 @@ function App() {
   const playingRef = useRef(playing)
   playingRef.current = playing
   const handleAutoDrilldown = useCallback((nodeId: string) => {
-    // Use ref to avoid stale closure — playing might have changed
     if (!playingRef.current) return
     navigateToDrillDown(nodeId)
   }, [navigateToDrillDown])
@@ -123,7 +121,6 @@ function App() {
   isInSubFlowRef.current = isInSubFlow
   const handleCycleComplete = useCallback(() => {
     if (!playingRef.current || !isInSubFlowRef.current) return
-    // Let the last step's animation finish, then navigate back
     setTimeout(() => {
       setFlowStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev)
     }, 2000)
