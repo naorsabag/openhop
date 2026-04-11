@@ -55,13 +55,30 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   const bg = isCustom ? (color ? adjustAlpha(color, 0.15) : '#1a1a1a') : style.bg
   const borderColor = isCustom ? (color ?? '#666') : style.border
 
-  // For custom nodes with logos: prefix, show a fallback emoji
-  let displayIcon = style.icon
+  // Build icon element — use Iconify API for "prefix:name" icons
+  let iconElement: React.ReactNode = <span className="text-base leading-none">{style.icon}</span>
+
   if (isCustom && icon) {
-    if (icon.startsWith('logos:')) {
-      displayIcon = '🔷'
+    if (icon.includes(':')) {
+      // Iconify URL: "logos:postgresql" → "https://api.iconify.design/logos/postgresql.svg"
+      const [prefix, name] = icon.split(':')
+      const url = `https://api.iconify.design/${prefix}/${name}.svg`
+      iconElement = (
+        <img
+          src={url}
+          alt={label}
+          style={{ width: 20, height: 20, imageRendering: 'auto' }}
+          onError={(e) => {
+            // Fallback to emoji if image fails to load
+            const span = document.createElement('span')
+            span.textContent = '🔷'
+            span.className = 'text-base leading-none'
+            ;(e.target as HTMLElement).replaceWith(span)
+          }}
+        />
+      )
     } else {
-      displayIcon = icon
+      iconElement = <span className="text-base leading-none">{icon}</span>
     }
   }
 
@@ -105,7 +122,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     >
       <Handle type="target" position={Position.Top} style={{ background: borderColor, width: 8, height: 8, border: 'none' }} />
       <div className="flex items-center gap-2">
-        <span className="text-base leading-none">{displayIcon}</span>
+        {iconElement}
         <span
           className="font-pixel text-white"
           style={{ fontSize: 10, lineHeight: '14px', whiteSpace: 'nowrap' }}

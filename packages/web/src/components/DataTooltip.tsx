@@ -28,21 +28,52 @@ export function DataTooltip({ step, color, x, y }: DataTooltipProps) {
         pointerEvents: 'none',
         whiteSpace: 'nowrap',
         boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+        borderRadius: 2,
       }}
     >
-      <div style={{ marginBottom: data.fields ? 4 : 0 }}>{data.label}</div>
+      {/* Colored header with square indicator */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: data.fields && data.fields.length > 0 ? 6 : 0,
+        paddingBottom: data.fields && data.fields.length > 0 ? 6 : 0,
+        borderBottom: data.fields && data.fields.length > 0 ? '1px solid #2a2a4a' : 'none',
+      }}>
+        <span style={{
+          display: 'inline-block',
+          width: 8,
+          height: 8,
+          background: color,
+          borderRadius: 1,
+          flexShrink: 0,
+        }} />
+        <span>{data.label}</span>
+      </div>
       {data.fields && data.fields.length > 0 && (
-        <div style={{ fontSize: 12, color: '#888' }}>
+        <div style={{ fontSize: 12 }}>
           {data.fields.map((field) => {
             let fieldColor = '#888'
-            if (field.added) fieldColor = '#4aff7a'
-            if (field.changed) fieldColor = '#ffcc4a'
-            if (field.removed) fieldColor = '#ff4a4a'
+            let prefix = '  '
+            let textDecoration = 'none'
+
+            if (field.added) {
+              fieldColor = '#4aff7a'
+              prefix = '+ '
+            } else if (field.changed) {
+              fieldColor = '#ffcc4a'
+              prefix = '~ '
+            } else if (field.removed) {
+              fieldColor = '#ff4a4a'
+              prefix = '- '
+              textDecoration = 'line-through'
+            }
 
             return (
-              <div key={field.name} style={{ color: fieldColor }}>
+              <div key={field.name} style={{ color: fieldColor, textDecoration }}>
+                <span style={{ opacity: 0.7 }}>{prefix}</span>
                 {field.name}
-                {field.type ? `: ${field.type}` : ''}
+                {field.type ? <span style={{ opacity: 0.6, marginLeft: 8 }}>{field.type}</span> : ''}
               </div>
             )
           })}
