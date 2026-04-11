@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { nanoid } from 'nanoid'
 import { parseFlowYaml, parseFlowJson, validateFlow, patchSchema, applyPatch } from '@flowscope/shared'
-import { storedFlowJsonSchema, flowSummaryJsonSchema, rootJsonSchema } from '@flowscope/shared'
+import { storedFlowJsonSchema, flowSummaryJsonSchema, rootJsonSchema, patchOperationsJsonSchema } from '@flowscope/shared'
 import { FlowStore } from './store.js'
 
 const store = new FlowStore()
@@ -40,6 +40,9 @@ const NOT_FOUND_EXAMPLE = {
 }
 
 export async function flowRoutes(app: FastifyInstance): Promise<void> {
+  // Register shared schemas for Swagger docs
+  app.addSchema({ $id: 'PatchOperations', ...patchOperationsJsonSchema })
+
   // Register content type parsers for YAML
   app.addContentTypeParser(
     ['text/yaml', 'application/x-yaml', 'text/x-yaml'],
@@ -283,22 +286,7 @@ Supported operations:
         },
         required: ['id'],
       },
-      body: {
-        type: 'object',
-        properties: {
-          operations: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: true,
-              properties: {
-                op: { type: 'string' },
-              },
-            },
-          },
-        },
-        required: ['operations'],
-      },
+      body: { $ref: 'PatchOperations#' },
       response: {
         200: {
           type: 'object',
