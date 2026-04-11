@@ -135,6 +135,7 @@ flowscope patch <flow-id> -                # Patch from stdin
 flowscope list                             # List all flows
 flowscope validate <file.yaml>             # Validate locally (no server needed)
 flowscope validate -                       # Validate from stdin
+flowscope remove <flow-id>                 # Delete a flow
 ```
 
 Stdin is useful when generating YAML programmatically:
