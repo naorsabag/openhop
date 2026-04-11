@@ -10,7 +10,12 @@ FlowScope renders animated data flow diagrams. You describe the flow in YAML, pu
 
 ## Prerequisites
 
-FlowScope server must be running: `flowscope serve`
+FlowScope server and frontend must be running. If not running, tell the user:
+
+> Please start FlowScope: open two terminals in your flowscope directory and run:
+> 1. `npx tsx packages/server/src/index.ts`
+> 2. `cd packages/web && npm run dev`
+> Then open http://localhost:5173
 
 ## How to Work: Sketch → Detail → Polish
 
