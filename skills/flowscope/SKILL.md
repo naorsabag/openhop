@@ -133,8 +133,6 @@ flowscope push -                           # Push from stdin (pipe YAML)
 flowscope patch <flow-id> <patch.yaml>     # Apply patch operations
 flowscope patch <flow-id> -                # Patch from stdin
 flowscope list                             # List all flows
-flowscope validate <file.yaml>             # Validate locally (no server needed)
-flowscope validate -                       # Validate from stdin
 flowscope remove <flow-id>                 # Delete a flow
 ```
 
@@ -223,5 +221,5 @@ Browse: https://icon-sets.iconify.design/logos/
 - Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements.
 - `drilldown: true` on a step auto-zooms into the target's sub-flow during playback.
 - Use `meta.path` to organize flows in folders (e.g. "my-app/backend").
-- Always validate before pushing: `flowscope validate flow.yaml`
 - Iterate: push a sketch first, then refine with patch operations. Don't try to get everything right in one push.
+- Both push and patch validate locally before sending to the server.

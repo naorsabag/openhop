@@ -165,31 +165,6 @@ program
     }
   });
 
-// --- validate ---
-program
-  .command("validate <file>")
-  .description("Validate a YAML flow file locally (use - for stdin)")
-  .action((file: string) => {
-    const yamlContent = readInput(file);
-    const result = parseFlowYaml(yamlContent);
-
-    if (result.success && result.data) {
-      const nodeCount = result.data.flow.nodes.length;
-      const stepCount = countSteps(result.data.flow);
-      console.log(
-        green("✓") +
-          ` Valid flow: "${result.data.meta.title}" (${nodeCount} nodes, ${stepCount} steps)`
-      );
-    } else {
-      console.error(red("✗ Validation errors:"));
-      for (const err of result.errors) {
-        const suggestion = err.suggestion ? ` ${err.suggestion}` : "";
-        console.error(`  ${dim(err.path + ":")} ${err.message}${suggestion}`);
-      }
-      process.exit(1);
-    }
-  });
-
 // --- patch ---
 program
   .command("patch <flow-id> <file>")
@@ -198,12 +173,23 @@ program
   .action(async (flowId: string, file: string, opts) => {
     const content = readInput(file);
 
-    // Try to parse as YAML (which also handles JSON)
+    // Parse YAML
     let operations: unknown;
     try {
       operations = YAML.parse(content);
     } catch (err: any) {
       console.error(red(`✗ Parse error: ${err.message}`));
+      process.exit(1);
+    }
+
+    // Validate patch schema locally
+    const { patchSchema } = await import("@flowscope/shared");
+    const validation = patchSchema.safeParse(operations);
+    if (!validation.success) {
+      console.error(red("✗ Validation errors:"));
+      for (const issue of validation.error.issues) {
+        console.error(`  ${dim(issue.path.join(".") + ":")} ${issue.message}`);
+      }
       process.exit(1);
     }
 

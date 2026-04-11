@@ -83,7 +83,6 @@ flowscope push <file.yaml>      # Push a flow
 flowscope push -                 # Push from stdin
 flowscope patch <id> <file.yaml> # Update a flow
 flowscope list                   # List all flows
-flowscope validate <file.yaml>  # Validate locally
 flowscope remove <id>            # Delete a flow
 ```
 
