@@ -88,8 +88,11 @@ export const StepSchema = z.union([MoveStepSchema, ParallelStepSchema, CreateSte
 
 export type Step = z.infer<typeof StepSchema>;
 
-/** Flat step interface — all fields optional. Used by frontend code that
- *  handles both move and parallel steps without discriminated union narrowing. */
+/** Flat step interface — all fields optional.
+ *  This is intentionally NOT derived from the Zod union type because TypeScript's
+ *  discriminated union narrowing makes it impractical for frontend code that
+ *  needs to handle move, parallel, create, and destroy steps uniformly
+ *  (e.g., animation logic, layout, pixel rendering). Keep in sync with StepSchema. */
 export interface FlowStep {
   from?: string
   to?: string | string[]

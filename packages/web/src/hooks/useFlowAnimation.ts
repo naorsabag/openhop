@@ -227,7 +227,7 @@ export function useFlowAnimation(
     return clearTimers
   }, [playing, advanceStep, clearTimers])
 
-  let manualPixelCounter = useRef(0)
+  const manualPixelCounter = useRef(0)
 
   const fireManualPixel = useCallback((pixel: Omit<ManualPixel, 'id'>) => {
     const id = `manual-${++manualPixelCounter.current}`

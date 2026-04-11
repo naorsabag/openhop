@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import YAML from "yaml";
-import { parseFlowYaml, type ValidationResult, type Root } from "@flowscope/shared";
+import { parseFlowYaml } from "@flowscope/shared";
 
 /** Read input from file path or stdin (use "-" for stdin) */
 function readInput(file: string): string {
@@ -23,11 +23,6 @@ const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 
 const DEFAULT_SERVER = "http://localhost:8787";
-
-function countSteps(flow: Root["flow"]): number {
-  if (!flow.steps) return 0;
-  return flow.steps.length;
-}
 
 function padRight(str: string, len: number): string {
   return str.length >= len ? str.slice(0, len) : str + " ".repeat(len - str.length);

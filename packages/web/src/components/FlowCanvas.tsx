@@ -13,7 +13,7 @@ import { flowToGraph } from '../lib/flow-to-graph'
 import { useFlowAnimation } from '../hooks/useFlowAnimation'
 import { DataPixel } from './DataPixel'
 import { DataPopup } from './DataPopup'
-import type { Flow, FlowStep, FlowData } from '../types'
+import type { Flow, FlowStep } from '../types'
 
 const nodeTypes: NodeTypes = {
   flowNode: FlowNodeComponent,

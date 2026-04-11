@@ -87,8 +87,7 @@ function validateStepRefs(
 ): void {
   if (!steps) return;
 
-  // Track dynamic nodes: created nodes are added, destroyed nodes are removed
-  const dynamicIds = new Set<string>();
+  // Track all known node IDs including dynamically created ones
   const allKnownIds = new Set(nodeIds);
 
   for (let i = 0; i < steps.length; i++) {
@@ -103,7 +102,6 @@ function validateStepRefs(
           message: `Node "${createId}" already exists — cannot create a duplicate`,
         });
       } else {
-        dynamicIds.add(createId);
         allKnownIds.add(createId);
       }
     } else if ("destroy" in step) {
