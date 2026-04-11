@@ -77,6 +77,7 @@ function collectNodeIds(
 
 /**
  * Validate that step references point to existing node IDs.
+ * Tracks dynamically created/destroyed nodes from create/destroy steps.
  */
 function validateStepRefs(
   steps: Step[] | undefined,
@@ -85,29 +86,56 @@ function validateStepRefs(
   errors: ValidationError[]
 ): void {
   if (!steps) return;
-  const idsArray = Array.from(nodeIds);
+
+  // Track dynamic nodes: created nodes are added, destroyed nodes are removed
+  const dynamicIds = new Set<string>();
+  const allKnownIds = new Set(nodeIds);
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
     const stepPath = `${path}.steps[${i}]`;
 
-    if ("parallel" in step) {
+    if ("create" in step) {
+      const createId = step.create;
+      if (allKnownIds.has(createId)) {
+        errors.push({
+          path: `${stepPath}.create`,
+          message: `Node "${createId}" already exists — cannot create a duplicate`,
+        });
+      } else {
+        dynamicIds.add(createId);
+        allKnownIds.add(createId);
+      }
+    } else if ("destroy" in step) {
+      const destroyId = step.destroy;
+      const idsArray = Array.from(allKnownIds);
+      if (!allKnownIds.has(destroyId)) {
+        const suggestion = findClosest(destroyId, idsArray);
+        errors.push({
+          path: `${stepPath}.destroy`,
+          message: `Node "${destroyId}" not found — cannot destroy`,
+          ...(suggestion ? { suggestion: `Did you mean "${suggestion}"?` } : {}),
+        });
+      }
+    } else if ("parallel" in step) {
+      const idsArray = Array.from(allKnownIds);
       for (let j = 0; j < step.parallel.length; j++) {
         const ps = step.parallel[j];
         const pPath = `${stepPath}.parallel[${j}]`;
-        checkRef(ps.from, `${pPath}.from`, nodeIds, idsArray, errors);
+        checkRef(ps.from, `${pPath}.from`, allKnownIds, idsArray, errors);
         if (Array.isArray(ps.to)) {
-          ps.to.forEach((t, k) => checkRef(t, `${pPath}.to[${k}]`, nodeIds, idsArray, errors));
+          ps.to.forEach((t, k) => checkRef(t, `${pPath}.to[${k}]`, allKnownIds, idsArray, errors));
         } else {
-          checkRef(ps.to, `${pPath}.to`, nodeIds, idsArray, errors);
+          checkRef(ps.to, `${pPath}.to`, allKnownIds, idsArray, errors);
         }
       }
     } else {
-      checkRef(step.from, `${stepPath}.from`, nodeIds, idsArray, errors);
+      const idsArray = Array.from(allKnownIds);
+      checkRef(step.from, `${stepPath}.from`, allKnownIds, idsArray, errors);
       if (Array.isArray(step.to)) {
-        step.to.forEach((t, k) => checkRef(t, `${stepPath}.to[${k}]`, nodeIds, idsArray, errors));
+        step.to.forEach((t, k) => checkRef(t, `${stepPath}.to[${k}]`, allKnownIds, idsArray, errors));
       } else {
-        checkRef(step.to, `${stepPath}.to`, nodeIds, idsArray, errors);
+        checkRef(step.to, `${stepPath}.to`, allKnownIds, idsArray, errors);
       }
     }
   }

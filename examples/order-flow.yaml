@@ -149,6 +149,27 @@ flow:
               added: true
       drilldown: true
 
+    # Create temp audit logger
+    - create: audit
+      node:
+        id: audit
+        label: Audit Log
+        type: transform
+      data:
+        label: init logger
+        fields:
+          - name: context
+            type: string
+          - name: trace_id
+            type: string
+            added: true
+
+    - from: order-service
+      to: audit
+      data: log order created
+
+    - destroy: audit
+
     - from: order-service
       to: api
       data:

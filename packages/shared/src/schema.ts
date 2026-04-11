@@ -63,7 +63,27 @@ export const ParallelStepSchema = z.object({
 
 export type ParallelStep = z.infer<typeof ParallelStepSchema>;
 
-export const StepSchema = z.union([MoveStepSchema, ParallelStepSchema]);
+export const CreateStepSchema = z.object({
+  create: z.string().min(1),  // node ID being created
+  node: z.object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    type: NodeTypeEnum.optional(),
+    icon: z.string().optional(),
+    color: z.string().optional(),
+  }),
+  data: DataSchema.optional(),  // constructor data
+});
+
+export type CreateStep = z.infer<typeof CreateStepSchema>;
+
+export const DestroyStepSchema = z.object({
+  destroy: z.string().min(1),  // node ID being destroyed
+});
+
+export type DestroyStep = z.infer<typeof DestroyStepSchema>;
+
+export const StepSchema = z.union([MoveStepSchema, ParallelStepSchema, CreateStepSchema, DestroyStepSchema]);
 
 export type Step = z.infer<typeof StepSchema>;
 
@@ -75,6 +95,9 @@ export interface FlowStep {
   data?: Data
   drilldown?: boolean
   parallel?: FlowStep[]
+  create?: string        // node ID being created
+  node?: { id: string; label: string; type?: string; icon?: string; color?: string }
+  destroy?: string       // node ID being destroyed
 }
 
 // --- Flow (recursive) ---

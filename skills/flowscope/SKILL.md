@@ -180,9 +180,11 @@ flow:
 - `flow`: nested sub-flow { nodes, steps } — makes node expandable with 🔍
 
 ### Step
-Either a move step or parallel:
+Either a move step, parallel, create, or destroy:
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
 - Parallel: `{ parallel: [move steps] }` (min 2)
+- Create: `{ create: "node-id", node: { id, label, type?, icon?, color? }, data? }`
+- Destroy: `{ destroy: "node-id" }`
 
 ### Data
 Either a string (sketch) or object (detailed):

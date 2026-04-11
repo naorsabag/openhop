@@ -29,6 +29,7 @@ export type FlowNodeData = {
   onNodeClick?: (nodeId: string) => void
   onProgressBarClick?: (nodeId: string, targetStep: number) => void
   onDrillDown?: (nodeId: string) => void
+  isDynamic?: boolean
 }
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
