@@ -5,6 +5,8 @@ export interface ManualPixel {
   id: string
   edgeId: string
   step: FlowStep
+  sourceNodeId: string
+  sourceStepIndex: number
   sourceNodeType: string
   sourceNodeColor?: string
 }
