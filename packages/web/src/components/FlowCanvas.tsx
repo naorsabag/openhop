@@ -22,7 +22,7 @@ interface FlowCanvasProps {
   flow: Flow
   playing: boolean
   onDrillDown?: (nodeId: string) => void
-  onDrilldownStep?: (nodeId: string) => void
+  onDrilldownStep?: (nodeId: string, atStepIndex: number) => void
   onCycleComplete?: () => void
   startFromStep?: number
   onStepChange?: (stepIndex: number) => void
@@ -123,7 +123,8 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     return set
   }, [manualPixels])
 
-  // Auto-drilldown: fire callback when a step with drilldown: true is active
+  // Auto-drilldown: when a step with drilldown:true is detected, capture the step index
+  // and drill down after the pixel animation, preventing the parent from advancing further
   const drilldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastDrilldownStepRef = useRef<number>(-1)
   useEffect(() => {
@@ -133,20 +134,19 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     if (!('drilldown' in step) || !step.drilldown) return
     const targetId = Array.isArray(step.to) ? step.to[0] : typeof step.to === 'string' ? step.to : null
     if (!targetId) return
-    // Prevent double-fire for same step index
     if (lastDrilldownStepRef.current === animState.currentStepIndex) return
     lastDrilldownStepRef.current = animState.currentStepIndex
 
-    // Clear any existing timer
     if (drilldownTimerRef.current) clearTimeout(drilldownTimerRef.current)
 
-    // Fire after pixel animation — use a ref so cleanup doesn't cancel it
+    // Capture the current step index NOW before the animation advances
+    const capturedStepIndex = animState.currentStepIndex
+
     drilldownTimerRef.current = setTimeout(() => {
-      onDrilldownStep(targetId)
+      // Pass both the target node and the step to resume from
+      onDrilldownStep(targetId, capturedStepIndex)
       drilldownTimerRef.current = null
     }, 1500 / ((window as any).__flowSpeed ?? 1))
-
-    // Don't return cleanup — we want the timer to survive activeStep becoming null
   }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep])
 
   const handleNodeClick = useCallback((nodeId: string) => {

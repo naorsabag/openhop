@@ -113,7 +113,10 @@ export function useFlowAnimation(
     // Check if we've completed all steps
     if (rawNext >= steps.length) {
       if (onCycleCompleteRef.current) {
-        // Fire cycle complete — caller decides what to do
+        // Don't loop — fire cycle complete callback
+        // But NOT here — this runs at the start of the NEXT advance
+        // The previous step's pixel might still be animating
+        // So just fire the callback and return
         onCycleCompleteRef.current()
         return
       }
@@ -162,7 +165,10 @@ export function useFlowAnimation(
 
   useEffect(() => {
     if (playing) {
-      advanceStep()
+      // Delay first step so React Flow has time to render edges (important for sub-flow drill-down)
+      timerRef.current = setTimeout(() => {
+        advanceStep()
+      }, 500)
     } else {
       clearTimers()
       setState((prev) => ({

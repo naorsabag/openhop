@@ -73,16 +73,17 @@ function App() {
     currentStepRef.current = stepIndex
   }, [])
 
-  const navigateToDrillDown = useCallback((nodeId: string) => {
+  const navigateToDrillDown = useCallback((nodeId: string, atStepIndex?: number) => {
     if (!currentFlowBody || !apiFlow) return
     const node = currentFlowBody.flow.nodes.find(n => n.id === nodeId)
     if (!node?.flow) return
+    const resumeFrom = atStepIndex !== undefined ? atStepIndex + 1 : currentStepRef.current + 1
     setFlowStack(prev => {
       const base = prev.length === 0 ? [{ flow: apiFlow.flow }] : prev
       const updated = [...base]
       updated[updated.length - 1] = {
         ...updated[updated.length - 1],
-        resumeFromStep: currentStepRef.current + 1,
+        resumeFromStep: resumeFrom,
       }
       return [...updated, {
         flow: node.flow!,
@@ -110,9 +111,9 @@ function App() {
   // Auto-drilldown during playback — triggered by FlowCanvas when a drilldown step completes
   const playingRef = useRef(playing)
   playingRef.current = playing
-  const handleAutoDrilldown = useCallback((nodeId: string) => {
+  const handleAutoDrilldown = useCallback((nodeId: string, atStepIndex: number) => {
     if (!playingRef.current) return
-    navigateToDrillDown(nodeId)
+    navigateToDrillDown(nodeId, atStepIndex)
   }, [navigateToDrillDown])
 
   // When sub-flow cycle completes during playback, navigate back to parent
