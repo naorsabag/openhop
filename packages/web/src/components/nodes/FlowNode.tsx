@@ -25,6 +25,7 @@ export type FlowNodeData = {
   isActiveReceiver?: boolean
   totalSteps: number
   currentStep: number
+  outgoingStepCount?: number
   onNodeClick?: (nodeId: string) => void
   onProgressBarClick?: (nodeId: string, targetStep: number) => void
 }
@@ -35,8 +36,12 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   const {
     label, nodeType, color, icon, hasSubFlow,
     isActiveSender, isActiveReceiver,
-    totalSteps, currentStep, onNodeClick, onProgressBarClick,
+    totalSteps, currentStep, outgoingStepCount, onNodeClick, onProgressBarClick,
   } = data
+
+  // Use outgoing step count for progress bar (how many steps this node sends)
+  const progressTotal = outgoingStepCount ?? totalSteps
+  const progressCurrent = Math.min(currentStep, progressTotal)
 
   const isCustom = nodeType === 'custom'
   const style = NODE_STYLES[nodeType] ?? {
@@ -109,13 +114,13 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           <span className="text-xs leading-none ml-auto" title="Has sub-flow">🔍</span>
         )}
       </div>
-      {totalSteps > 1 && (
+      {progressTotal > 0 && (
         <div
           data-testid="progress-bar"
           role="progressbar"
-          aria-valuenow={currentStep}
-          aria-valuemax={totalSteps}
-          aria-label={`Progress: ${currentStep} of ${totalSteps} steps`}
+          aria-valuenow={progressCurrent}
+          aria-valuemax={progressTotal}
+          aria-label={`Progress: ${progressCurrent} of ${progressTotal} steps`}
           onClick={handleProgressBarClick}
           style={{
             width: '100%',
@@ -129,7 +134,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         >
           <div
             style={{
-              width: `${(currentStep / totalSteps) * 100}%`,
+              width: `${(progressCurrent / progressTotal) * 100}%`,
               height: '100%',
               background: borderColor,
               borderRadius: 1,
