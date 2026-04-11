@@ -16,6 +16,7 @@ import {
   DataObjectSchema,
   DataSchema,
 } from './schema.js'
+import { patchSchema } from './patch.js'
 
 export const rootJsonSchema = zodToJsonSchema(RootSchema, { target: 'openApi3' })
 export const metaJsonSchema = zodToJsonSchema(MetaSchema, { target: 'openApi3' })
@@ -62,8 +63,6 @@ export const flowSummaryJsonSchema = {
 /**
  * Patch operations schema
  */
-import { patchSchema } from './patch.js'
-
 export const patchOperationsJsonSchema = zodToJsonSchema(patchSchema, { target: 'openApi3' })
 
 /** Example for documentation */

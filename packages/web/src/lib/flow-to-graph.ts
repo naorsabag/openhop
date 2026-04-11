@@ -18,11 +18,11 @@ interface LayoutState {
 export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: Edge[] } {
   const { nodes: flowNodes, steps } = flow.flow
 
-  // Build adjacency to determine layout order
+  // Phase 1: Determine node ordering by walking steps in sequence.
+  // The first time a node ID appears (as source or target), it gets appended to `ordered`.
+  // This produces a topological-ish order that reflects the flow narrative.
   const visited = new Set<string>()
   const ordered: string[] = []
-
-  // Determine the order nodes appear via steps
   for (const step of steps) {
     if (step.from && !visited.has(step.from)) {
       visited.add(step.from)
@@ -65,7 +65,8 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
 
   const flowNodeMap = new Map(flowNodes.map((n) => [n.id, n]))
 
-  // Compute how many steps reference each node (as from or to)
+  // Phase 2: Count how many steps reference each node (as from or to).
+  // Used to size the progress bar on each node.
   const nodeStepCount = new Map<string, number>()
   for (const step of steps) {
     const touchedIds = new Set<string>()
@@ -94,15 +95,16 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
     }
   }
 
-  // Layout: walk through steps and assign positions
+  // Phase 3: Layout — assign (x, y) positions by walking steps sequentially.
+  // Strategy: build a vertical chain at x=0. Special cases:
+  //   - Fan-out (to is array with 2+ targets): spread targets horizontally, centered on x=0.
+  //   - Parallel steps: don't advance Y — they represent concurrent responses converging back.
+  //   - Create steps: dynamically-created nodes are placed at the next Y position.
+  // Nodes are only placed once (first occurrence wins).
   const state: LayoutState = {
     nodeMap: new Map(),
     currentY: 0,
   }
-
-  // Track which nodes fan out together
-  const fanOuts = new Map<string, string[]>() // step index -> fan-out targets
-
   for (const step of steps) {
     if (step.to && Array.isArray(step.to) && step.to.length > 1) {
       // Fan-out: place targets side by side
@@ -121,7 +123,6 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
           state.nodeMap.set(t, { x: startX + i * X_SPACING, y: state.currentY })
         }
       })
-      fanOuts.set(step.from ?? '', targets)
       state.currentY += Y_SPACING
     } else if (step.parallel) {
       // Parallel steps don't advance Y — they're responses converging back
@@ -162,7 +163,7 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
     }
   }
 
-  // Build React Flow nodes
+  // Phase 4: Build React Flow node objects from the ordered IDs and computed positions.
   const nodes: Node<FlowNodeData>[] = ordered.map((id) => {
     const flowNode = flowNodeMap.get(id)
     const dynNode = dynamicNodeDefs.get(id)
@@ -172,7 +173,7 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
     return {
       id,
       type: 'flowNode',
-      position: { x: pos.x - NODE_WIDTH / 2 + NODE_WIDTH / 2, y: pos.y },
+      position: { x: pos.x, y: pos.y },
       data: {
         label: dynNode?.label ?? flowNode?.label ?? id,
         nodeType: dynNode?.type ?? flowNode?.type ?? 'service',
@@ -188,7 +189,8 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
     }
   })
 
-  // Build edges
+  // Phase 5: Build React Flow edges — one edge per (source, target) per step.
+  // Parallel sub-steps and broadcast targets each produce their own edge.
   const edges: Edge[] = []
   let edgeIdx = 0
 
@@ -217,10 +219,14 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
   return { nodes, edges }
 }
 
+/** Create a React Flow edge with consistent styling and step metadata. */
 function makeEdge(idx: number, source: string, target: string, step: FlowStep, stepIndex: number): Edge {
-  const label = typeof step.data === 'string' ? step.data :
-    Array.isArray(step.data) ? step.data.map(d => d.label).join(', ') :
-    step.data.label
+  // Extract a human-readable label from the step's data payload
+  const label = typeof step.data === 'string'
+    ? step.data
+    : Array.isArray(step.data)
+      ? step.data.map(d => d.label).join(', ')
+      : step.data?.label ?? ''
   return {
     id: `e-${idx}`,
     source,

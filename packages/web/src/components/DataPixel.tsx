@@ -64,7 +64,7 @@ export function DataPixel({
       ? step.data
       : Array.isArray(step.data)
         ? step.data.map(d => d.label).join(', ')
-        : step.data.label
+        : step.data?.label ?? ''
 
   const animate = useCallback(() => {
     const container = containerRef.current
@@ -135,7 +135,7 @@ export function DataPixel({
 
     startTimeRef.current = 0
     rafRef.current = requestAnimationFrame(tick)
-  }, [edgeId, containerRef])
+  }, [edgeId, containerRef, delayMs])
 
   useEffect(() => {
     animate()

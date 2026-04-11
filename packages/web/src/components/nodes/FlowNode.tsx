@@ -53,7 +53,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     icon: '❓',
   }
 
-  const bg = isCustom ? (color ? adjustAlpha(color, 0.15) : '#1a1a1a') : style.bg
+  const bg = isCustom ? (color ? adjustAlpha(color) : '#1a1a1a') : style.bg
   const borderColor = isCustom ? (color ?? '#666') : style.border
 
   // Build icon element — use Iconify API for "prefix:name" icons
@@ -180,8 +180,8 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   )
 }
 
-/** Darken a hex color and make it a subtle background */
-function adjustAlpha(hex: string, _opacity: number): string {
+/** Darken a hex color to create a subtle background tint */
+function adjustAlpha(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)

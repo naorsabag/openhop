@@ -15,7 +15,7 @@ export function DataPopup({ steps, position, onClose }: DataPopupProps) {
   const data: FlowData =
     typeof step.data === 'string' ? { label: step.data } :
     Array.isArray(step.data) ? { label: step.data.map(d => d.label).join(', ') } :
-    step.data
+    step.data ?? { label: '' }
 
   const from = step.from ?? '?'
   const to = Array.isArray(step.to)

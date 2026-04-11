@@ -57,7 +57,7 @@ export function useFlowData(flowId: string | null) {
           // Version changed — re-fetch full flow
           const fullRes = await fetch(`${API_BASE}/api/flows/${flowId}`)
           const data = await fullRes.json()
-          setFlow(data.flow)
+          setFlow({ meta: data.meta, flow: data.flow })
           versionRef.current = data.version
         }
       } catch {}
