@@ -1,0 +1,22 @@
+{
+  "name": "@flowscope/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/swagger": "^9.0.0",
+    "@fastify/swagger-ui": "^5.0.0",
+    "@fastify/static": "^8.0.0",
+    "yaml": "^2.0.0",
+    "nanoid": "^5.0.0",
+    "tsx": "^4.0.0",
+    "@flowscope/shared": "*"
+  }
+}
