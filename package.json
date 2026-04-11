@@ -2,8 +2,10 @@
   "name": "flowscope",
   "private": true,
   "workspaces": ["packages/*"],
+  "bin": {
+    "flowscope": "packages/cli/src/index.ts"
+  },
   "scripts": {
-    "flowscope": "npx tsx packages/cli/src/index.ts",
     "serve": "npx tsx packages/server/src/index.ts",
     "dev": "npx tsx packages/server/src/index.ts & cd packages/web && npm run dev"
   }

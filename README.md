@@ -10,6 +10,7 @@ Data flow visualization platform for AI. Describe flows in YAML, see them as ani
 git clone https://github.com/yourorg/flowscope.git
 cd flowscope
 npm install
+npm link    # makes 'flowscope' command available globally
 ```
 
 ## Run
@@ -29,14 +30,14 @@ cd packages/web && npm run dev   # Frontend on :5173
 
 ## CLI
 
-From the flowscope directory:
+After `npm link`, the `flowscope` command works from anywhere:
 
 ```bash
-npm run flowscope -- push <file.yaml>       # Create a flow
-npm run flowscope -- push -                 # Create from stdin
-npm run flowscope -- patch <id> <file.yaml> # Update a flow
-npm run flowscope -- list                   # List all flows
-npm run flowscope -- remove <id>            # Delete a flow
+flowscope push <file.yaml>       # Create a flow
+flowscope push -                 # Create from stdin
+flowscope patch <id> <file.yaml> # Update a flow
+flowscope list                   # List all flows
+flowscope remove <id>            # Delete a flow
 ```
 
 ## Add the AI Skill
@@ -91,7 +92,7 @@ flow:
       data: Response
 EOF
 
-cd ~/flowscope && npm run flowscope -- push /tmp/my-flow.yaml
+flowscope push /tmp/my-flow.yaml
 ```
 
 Or via stdin:
@@ -103,7 +104,7 @@ flow:
     - {id: a, label: Source}
     - {id: b, label: Sink}
   steps:
-    - {from: a, to: b, data: test}' | cd ~/flowscope && npm run flowscope -- push -
+    - {from: a, to: b, data: test}' | flowscope push -
 ```
 
 ### Update an existing flow
@@ -120,7 +121,7 @@ operations:
       - {from: api, to: db, data: query}
 EOF
 
-cd ~/flowscope && npm run flowscope -- patch <flow-id> /tmp/patch.yaml
+flowscope patch <flow-id> /tmp/patch.yaml
 ```
 
 ### Workflow
