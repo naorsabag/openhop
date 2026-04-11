@@ -174,12 +174,7 @@ export function useFlowAnimation(
     const id = `manual-${++manualPixelCounter.current}`
     const manualPixel: ManualPixel = { ...pixel, id }
 
-    // Increment node progress for source node
-    const sourceId = pixel.step.from
-    if (sourceId) {
-      nodeProgressRef.current.set(sourceId, (nodeProgressRef.current.get(sourceId) ?? 0) + 1)
-    }
-
+    // Don't increment progress here — caller (handleNodeClick) manages it per logical step
     setState((prev) => ({
       ...prev,
       manualPixels: [...prev.manualPixels, manualPixel],
