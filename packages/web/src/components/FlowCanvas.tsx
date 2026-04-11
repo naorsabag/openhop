@@ -34,9 +34,31 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   const containerRef = useRef<HTMLDivElement>(null)
   const [pinnedEdge, setPinnedEdge] = useState<{
     edgeId: string
-    step: FlowStep
+    steps: FlowStep[]
     position: { x: number; y: number }
   } | null>(null)
+
+  // Collect all steps that flow through a given edge
+  const getStepsForEdge = useCallback((edgeId: string): FlowStep[] => {
+    const steps: FlowStep[] = []
+    for (const edge of baseEdges) {
+      if (edge.id === edgeId) {
+        const step = (edge.data as { step?: FlowStep } | undefined)?.step
+        if (step) steps.push(step)
+      }
+    }
+    // Also check if multiple flow steps share the same source→target (different step indices)
+    const targetEdge = baseEdges.find(e => e.id === edgeId)
+    if (targetEdge) {
+      for (const edge of baseEdges) {
+        if (edge.id !== edgeId && edge.source === targetEdge.source && edge.target === targetEdge.target) {
+          const step = (edge.data as { step?: FlowStep } | undefined)?.step
+          if (step && !steps.includes(step)) steps.push(step)
+        }
+      }
+    }
+    return steps.length > 0 ? steps : []
+  }, [baseEdges])
 
   const handlePinPopup = useCallback((step: FlowStep, position: { x: number; y: number }, edgeId?: string) => {
     const id = edgeId ?? '__pixel__'
@@ -44,8 +66,9 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       setPinnedEdge(null)
       return
     }
-    setPinnedEdge({ edgeId: id, step, position })
-  }, [pinnedEdge])
+    const steps = id !== '__pixel__' ? getStepsForEdge(id) : [step]
+    setPinnedEdge({ edgeId: id, steps: steps.length > 0 ? steps : [step], position })
+  }, [pinnedEdge, getStepsForEdge])
 
   const { nodes: baseNodes, edges: baseEdges } = useMemo(
     () => flowToGraph(flow),
@@ -252,15 +275,15 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         nodeTypes={nodeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
         onEdgeClick={(event, edge) => {
-          const edgeStep = (edge.data as { step?: FlowStep } | undefined)?.step
-          if (!edgeStep) return
           if (pinnedEdge?.edgeId === edge.id) {
             setPinnedEdge(null)
             return
           }
+          const steps = getStepsForEdge(edge.id)
+          if (steps.length === 0) return
           setPinnedEdge({
             edgeId: edge.id,
-            step: edgeStep,
+            steps,
             position: { x: event.clientX, y: event.clientY },
           })
         }}
@@ -322,7 +345,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       {/* Pinned data popup — fixed position overlay */}
       {pinnedEdge && (
         <DataPopup
-          step={pinnedEdge.step}
+          steps={pinnedEdge.steps}
           position={pinnedEdge.position}
           onClose={() => setPinnedEdge(null)}
         />
