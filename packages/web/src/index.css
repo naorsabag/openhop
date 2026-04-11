@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: "Press Start 2P", monospace;
+  --font-terminal: "VT323", monospace;
+
+  --color-bg: #0f0f0f;
+  --color-surface: #1a1a2e;
+  --color-border: #2a2a4a;
+  --color-text: #e0e0e0;
+  --color-accent: #f5a623;
+  --color-accent-dim: #c4841d;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-bg text-text font-terminal;
+  margin: 0;
+  min-height: 100vh;
+}
