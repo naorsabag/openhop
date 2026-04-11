@@ -24,7 +24,7 @@ If not running, follow the install and run instructions in the repo README at `~
 git clone https://github.com/yourorg/flowscope.git ~/flowscope
 ```
 
-Then follow the README's Install and Run sections. After starting, tell the user to open http://localhost:5173.
+Then follow the README's Install and Run sections. After starting, open http://localhost:5173.
 
 ## How to Work: Sketch → Detail → Polish
 
@@ -63,7 +63,7 @@ flow:
 Push it:
 
 ```bash
-flowscope push flow.yaml
+npm run flowscope -- push flow.yaml
 ```
 
 Output:
@@ -98,7 +98,7 @@ operations:
 Apply it:
 
 ```bash
-flowscope patch abc123 patch.yaml
+npm run flowscope -- patch abc123 patch.yaml
 ```
 
 ### Phase 3: POLISH (add data fields, sub-flows, diff highlighting)
@@ -135,19 +135,22 @@ operations:
 ```
 
 ```bash
-flowscope patch abc123 polish-patch.yaml
+npm run flowscope -- patch abc123 polish-patch.yaml
 ```
 
 ## CLI Commands
 
+All commands must run from the flowscope repo directory (e.g. `~/flowscope`).
+
 ```bash
-flowscope serve [--port 8787]              # Start server
-flowscope push <file.yaml>                 # Push a flow → returns ID and URL
-flowscope push -                           # Push from stdin (pipe YAML)
-flowscope patch <flow-id> <patch.yaml>     # Apply patch operations
-flowscope patch <flow-id> -                # Patch from stdin
-flowscope list                             # List all flows
-flowscope remove <flow-id>                 # Delete a flow
+npm run serve                                     # Start server
+npm run dev                                       # Start server + frontend
+npm run flowscope -- push <file.yaml>                 # Push a flow → returns ID and URL
+npm run flowscope -- push -                           # Push from stdin (pipe YAML)
+npm run flowscope -- patch <flow-id> <patch.yaml>     # Apply patch operations
+npm run flowscope -- patch <flow-id> -                # Patch from stdin
+npm run flowscope -- list                             # List all flows
+npm run flowscope -- remove <flow-id>                 # Delete a flow
 ```
 
 Stdin is useful when generating YAML programmatically:
@@ -159,7 +162,7 @@ flow:
     - {id: a, label: A}
     - {id: b, label: B}
   steps:
-    - {from: a, to: b, data: test}' | flowscope push -
+    - {from: a, to: b, data: test}' | npm run flowscope -- push -
 ```
 
 ## Schema Reference
@@ -208,7 +211,7 @@ data:
 
 ## PATCH Operations
 
-All operations support multiple items. Apply with `flowscope patch <id> <file.yaml>`.
+All operations support multiple items. Apply with `npm run flowscope -- patch <id> <file.yaml>`.
 
 | Operation | Fields | Description |
 |-----------|--------|-------------|
