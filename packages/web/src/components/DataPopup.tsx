@@ -1,12 +1,17 @@
+import { useState } from 'react'
 import type { FlowStep, FlowData } from '../types'
 
 interface DataPopupProps {
-  step: FlowStep
+  steps: FlowStep[]  // multiple steps can share an edge
   position: { x: number; y: number }
   onClose: () => void
 }
 
-export function DataPopup({ step, position, onClose }: DataPopupProps) {
+export function DataPopup({ steps, position, onClose }: DataPopupProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const step = steps[currentIndex]
+  const total = steps.length
+
   const data: FlowData =
     typeof step.data === 'string' ? { label: step.data } : step.data
 
@@ -14,6 +19,9 @@ export function DataPopup({ step, position, onClose }: DataPopupProps) {
   const to = Array.isArray(step.to)
     ? step.to.join(', ')
     : step.to ?? '?'
+
+  const prev = () => setCurrentIndex(i => (i - 1 + total) % total)
+  const next = () => setCurrentIndex(i => (i + 1) % total)
 
   return (
     <div
@@ -49,22 +57,40 @@ export function DataPopup({ step, position, onClose }: DataPopupProps) {
         <span style={{ color: '#4a9eff' }}>
           {from} &rarr; {to}
         </span>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#888',
-            cursor: 'pointer',
-            fontFamily: '"VT323", monospace',
-            fontSize: 16,
-            padding: '0 0 0 12px',
-            lineHeight: 1,
-          }}
-        >
-          &times;
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {total > 1 && (
+            <>
+              <button
+                onClick={prev}
+                aria-label="Previous data"
+                style={navBtnStyle}
+              >
+                ◂
+              </button>
+              <span style={{ color: '#888', fontSize: 12 }}>
+                {currentIndex + 1}/{total}
+              </span>
+              <button
+                onClick={next}
+                aria-label="Next data"
+                style={navBtnStyle}
+              >
+                ▸
+              </button>
+            </>
+          )}
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              ...navBtnStyle,
+              marginLeft: total > 1 ? 8 : 0,
+              color: '#888',
+            }}
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {/* Data label */}
@@ -104,4 +130,15 @@ export function DataPopup({ step, position, onClose }: DataPopupProps) {
       )}
     </div>
   )
+}
+
+const navBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#4a9eff',
+  cursor: 'pointer',
+  fontFamily: '"VT323", monospace',
+  fontSize: 14,
+  padding: '0 2px',
+  lineHeight: 1,
 }
