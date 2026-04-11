@@ -22,6 +22,7 @@ interface DataPixelProps {
   containerRef: React.RefObject<HTMLDivElement | null>
   isManual?: boolean
   onAnimationComplete?: () => void
+  onPixelClick?: (step: FlowStep, position: { x: number; y: number }) => void
 }
 
 const PIXEL_SIZE = 20
@@ -36,8 +37,10 @@ export function DataPixel({
   containerRef,
   isManual,
   onAnimationComplete,
+  onPixelClick,
 }: DataPixelProps) {
   const pixelRef = useRef<HTMLDivElement>(null)
+  const labelRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
   const onCompleteRef = useRef(onAnimationComplete)
@@ -109,6 +112,10 @@ export function DataPixel({
         pixelRef.current.style.transform = `translate(${screenX - PIXEL_SIZE / 2}px, ${screenY - PIXEL_SIZE / 2}px)`
         pixelRef.current.style.opacity = '1'
       }
+      if (labelRef.current) {
+        labelRef.current.style.transform = `translate(${screenX + PIXEL_SIZE / 2 + 4}px, ${screenY - 6}px)`
+        labelRef.current.style.opacity = '1'
+      }
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick)
@@ -136,6 +143,11 @@ export function DataPixel({
         aria-label={`Data: ${dataLabel}`}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        onClick={(e) => {
+          if (onPixelClick) {
+            onPixelClick(step, { x: e.clientX, y: e.clientY })
+          }
+        }}
         style={{
           position: 'absolute',
           top: 0,
@@ -151,6 +163,24 @@ export function DataPixel({
           cursor: 'pointer',
         }}
       />
+      <div
+        ref={labelRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          fontFamily: '"VT323", monospace',
+          fontSize: 11,
+          color: '#ccc',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          textShadow: '0 0 4px #000, 0 0 2px #000',
+          opacity: 0,
+          zIndex: 1000,
+        }}
+      >
+        {dataLabel}
+      </div>
       {hovered && position && (
         <DataTooltip
           step={step}

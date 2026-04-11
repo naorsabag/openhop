@@ -7,11 +7,12 @@ import {
   type Edge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useMemo, useRef, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { flowToGraph } from '../lib/flow-to-graph'
 import { useFlowAnimation } from '../hooks/useFlowAnimation'
 import { DataPixel } from './DataPixel'
+import { DataPopup } from './DataPopup'
 import type { Flow, FlowStep } from '../types'
 
 const nodeTypes: NodeTypes = {
@@ -31,6 +32,20 @@ interface FlowCanvasProps {
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
 function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete, startFromStep, onStepChange }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [pinnedEdge, setPinnedEdge] = useState<{
+    edgeId: string
+    step: FlowStep
+    position: { x: number; y: number }
+  } | null>(null)
+
+  const handlePinPopup = useCallback((step: FlowStep, position: { x: number; y: number }, edgeId?: string) => {
+    const id = edgeId ?? '__pixel__'
+    if (pinnedEdge?.edgeId === id) {
+      setPinnedEdge(null)
+      return
+    }
+    setPinnedEdge({ edgeId: id, step, position })
+  }, [pinnedEdge])
 
   const { nodes: baseNodes, edges: baseEdges } = useMemo(
     () => flowToGraph(flow),
@@ -236,6 +251,20 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         edges={edges}
         nodeTypes={nodeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
+        onEdgeClick={(event, edge) => {
+          const edgeStep = (edge.data as { step?: FlowStep } | undefined)?.step
+          if (!edgeStep) return
+          if (pinnedEdge?.edgeId === edge.id) {
+            setPinnedEdge(null)
+            return
+          }
+          setPinnedEdge({
+            edgeId: edge.id,
+            step: edgeStep,
+            position: { x: event.clientX, y: event.clientY },
+          })
+        }}
+        onPaneClick={() => setPinnedEdge(null)}
         nodesConnectable={false}
         edgesFocusable={false}
         nodesDraggable={false}
@@ -270,6 +299,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
               sourceNodeColor={sourceInfo.color}
               step={edgeStep}
               containerRef={containerRef}
+              onPixelClick={(s, pos) => handlePinPopup(s, pos, edge.id)}
             />
           )
         })}
@@ -285,8 +315,18 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
           containerRef={containerRef}
           isManual
           onAnimationComplete={() => removeManualPixel(mp.id)}
+          onPixelClick={(s, pos) => handlePinPopup(s, pos, mp.edgeId)}
         />
       ))}
+
+      {/* Pinned data popup — fixed position overlay */}
+      {pinnedEdge && (
+        <DataPopup
+          step={pinnedEdge.step}
+          position={pinnedEdge.position}
+          onClose={() => setPinnedEdge(null)}
+        />
+      )}
     </div>
   )
 }
