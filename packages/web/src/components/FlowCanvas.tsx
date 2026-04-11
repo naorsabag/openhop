@@ -300,12 +300,13 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       if (animState.activeEdgeIds.has(edge.id)) {
         return {
           ...edge,
+          interactionWidth: bothAlive ? undefined : 0,
           style: {
             ...edge.style,
             stroke: '#4a9eff',
             strokeWidth: 4,
             opacity: bothAlive ? 1 : 0,
-            pointerEvents: bothAlive ? 'auto' : 'none',
+            pointerEvents: (bothAlive ? 'auto' : 'none') as any,
             transition: 'opacity 0.4s ease',
           },
           animated: true,
@@ -313,10 +314,11 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       }
       return {
         ...edge,
+        interactionWidth: bothAlive ? undefined : 0,
         style: {
           ...edge.style,
           opacity: bothAlive ? 1 : 0,
-          pointerEvents: bothAlive ? 'auto' : 'none',
+          pointerEvents: (bothAlive ? 'auto' : 'none') as any,
           transition: 'opacity 0.4s ease',
         },
       }
@@ -337,8 +339,10 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         nodeTypes={nodeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
         onEdgeClick={(event, edge) => {
-          // Don't show popup for edges connected to hidden nodes
-          if (!isNodeAlive(edge.source) || !isNodeAlive(edge.target)) return
+          // Don't show popup for edges where either node is hidden (dynamic + not yet created)
+          const srcAlive = isNodeAlive(edge.source)
+          const tgtAlive = isNodeAlive(edge.target)
+          if (!srcAlive || !tgtAlive) return
           const edgeStep = (edge.data as { step?: FlowStep } | undefined)?.step
           if (!edgeStep) return
           handlePinPopup(edgeStep, { x: event.clientX, y: event.clientY }, edge.id)
