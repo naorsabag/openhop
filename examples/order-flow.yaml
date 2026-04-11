@@ -151,6 +151,7 @@ flow:
 
     # Create temp audit logger
     - create: audit
+      from: order-service
       node:
         id: audit
         label: Audit Log

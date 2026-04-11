@@ -65,6 +65,7 @@ export type ParallelStep = z.infer<typeof ParallelStepSchema>;
 
 export const CreateStepSchema = z.object({
   create: z.string().min(1),  // node ID being created
+  from: z.string().min(1),    // who creates it — pixel travels from here to the new node
   node: z.object({
     id: z.string().min(1),
     label: z.string().min(1),
