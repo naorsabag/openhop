@@ -231,4 +231,32 @@ program
     }
   });
 
+// --- remove ---
+program
+  .command("remove <flow-id>")
+  .description("Delete a flow from the server")
+  .option("-s, --server <url>", "Server URL", DEFAULT_SERVER)
+  .action(async (flowId: string, opts) => {
+    try {
+      const res = await fetch(`${opts.server}/api/flows/${flowId}`, {
+        method: "DELETE",
+      });
+
+      if (res.status === 204) {
+        console.log(green("✓ Flow deleted"));
+        console.log(`  ${bold("ID:")} ${flowId}`);
+      } else if (res.status === 404) {
+        console.error(red(`✗ Flow "${flowId}" not found`));
+        process.exit(1);
+      } else {
+        const body = await res.text();
+        console.error(red(`✗ Server error (${res.status}): ${body}`));
+        process.exit(1);
+      }
+    } catch (err: any) {
+      console.error(red(`✗ Connection failed: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
 program.parse();
