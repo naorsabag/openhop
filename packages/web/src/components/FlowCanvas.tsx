@@ -7,7 +7,7 @@ import {
   type Edge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useCallback } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { flowToGraph } from '../lib/flow-to-graph'
 import { useFlowAnimation } from '../hooks/useFlowAnimation'
@@ -54,7 +54,68 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
     return map
   }, [flow])
 
-  const animState = useFlowAnimation(flow.flow.steps, edgeStepMap, playing)
+  const {
+    fireManualPixel, removeManualPixel, setNodeStep,
+    manualPixels, nodeProgress,
+    ...animState
+  } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing)
+
+  // Build a map: nodeId -> list of outgoing steps (stepIndex + edge info)
+  const nodeOutgoingSteps = useMemo(() => {
+    const map = new Map<string, Array<{ stepIndex: number; step: FlowStep; edgeId: string }>>()
+    const { steps } = flow.flow
+    for (let si = 0; si < steps.length; si++) {
+      const step = steps[si]
+      if (step.parallel) {
+        for (const ps of step.parallel) {
+          if (ps.from) {
+            const entries = map.get(ps.from) ?? []
+            // Find matching edge
+            const targets = Array.isArray(ps.to) ? ps.to : ps.to ? [ps.to] : []
+            for (const t of targets) {
+              const edgeId = baseEdges.find(
+                (e) => e.source === ps.from && e.target === t && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
+              )?.id
+              if (edgeId) entries.push({ stepIndex: si, step: ps, edgeId })
+            }
+            map.set(ps.from, entries)
+          }
+        }
+      } else if (step.from) {
+        const entries = map.get(step.from) ?? []
+        const targets = Array.isArray(step.to) ? step.to : step.to ? [step.to] : []
+        for (const t of targets) {
+          const edgeId = baseEdges.find(
+            (e) => e.source === step.from && e.target === t && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
+          )?.id
+          if (edgeId) entries.push({ stepIndex: si, step, edgeId })
+        }
+        map.set(step.from, entries)
+      }
+    }
+    return map
+  }, [flow.flow, baseEdges])
+
+  const handleNodeClick = useCallback((nodeId: string) => {
+    const outgoing = nodeOutgoingSteps.get(nodeId)
+    if (!outgoing || outgoing.length === 0) return
+
+    const currentProg = nodeProgress.get(nodeId) ?? 0
+    // Pick the next outgoing step based on current progress (cycle through)
+    const entry = outgoing[currentProg % outgoing.length]
+
+    const sourceInfo = nodeTypeMap.get(nodeId) ?? { type: 'service' }
+    fireManualPixel({
+      edgeId: entry.edgeId,
+      step: entry.step,
+      sourceNodeType: sourceInfo.type,
+      sourceNodeColor: sourceInfo.color,
+    })
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel])
+
+  const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
+    setNodeStep(nodeId, targetStep)
+  }, [setNodeStep])
 
   // Apply active sender/receiver flags to nodes
   const nodes: Node<FlowNodeData>[] = useMemo(() => {
@@ -64,9 +125,12 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
         ...node.data,
         isActiveSender: animState.activeFromIds.has(node.id),
         isActiveReceiver: animState.activeToIds.has(node.id),
+        currentStep: nodeProgress.get(node.id) ?? 0,
+        onNodeClick: handleNodeClick,
+        onProgressBarClick: handleProgressBarClick,
       },
     }))
-  }, [baseNodes, animState.activeFromIds, animState.activeToIds])
+  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, handleNodeClick, handleProgressBarClick])
 
   // Highlight active edges
   const edges: Edge[] = useMemo(() => {
@@ -111,7 +175,7 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
         />
       </ReactFlow>
 
-      {/* Data pixel overlay */}
+      {/* Data pixel overlay — automatic */}
       {animState.activeStep &&
         activeEdges.map((edge) => {
           const sourceInfo = nodeTypeMap.get(edge.source) ?? {
@@ -132,6 +196,20 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
             />
           )
         })}
+
+      {/* Data pixel overlay — manual (click-to-fire) */}
+      {manualPixels.map((mp) => (
+        <DataPixel
+          key={mp.id}
+          edgeId={mp.edgeId}
+          sourceNodeType={mp.sourceNodeType}
+          sourceNodeColor={mp.sourceNodeColor}
+          step={mp.step}
+          containerRef={containerRef}
+          isManual
+          onAnimationComplete={() => removeManualPixel(mp.id)}
+        />
+      ))}
     </div>
   )
 }

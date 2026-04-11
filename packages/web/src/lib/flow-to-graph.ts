@@ -65,6 +65,30 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
 
   const flowNodeMap = new Map(flowNodes.map((n) => [n.id, n]))
 
+  // Compute how many steps reference each node (as from or to)
+  const nodeStepCount = new Map<string, number>()
+  for (const step of steps) {
+    const touchedIds = new Set<string>()
+    if (step.parallel) {
+      for (const ps of step.parallel) {
+        if (ps.from) touchedIds.add(ps.from)
+        if (ps.to) {
+          const targets = Array.isArray(ps.to) ? ps.to : [ps.to]
+          for (const t of targets) touchedIds.add(t)
+        }
+      }
+    } else {
+      if (step.from) touchedIds.add(step.from)
+      if (step.to) {
+        const targets = Array.isArray(step.to) ? step.to : [step.to]
+        for (const t of targets) touchedIds.add(t)
+      }
+    }
+    for (const id of touchedIds) {
+      nodeStepCount.set(id, (nodeStepCount.get(id) ?? 0) + 1)
+    }
+  }
+
   // Layout: walk through steps and assign positions
   const state: LayoutState = {
     nodeMap: new Map(),
@@ -128,6 +152,8 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
         color: flowNode?.color,
         icon: flowNode?.icon,
         hasSubFlow: !!flowNode?.flow,
+        totalSteps: nodeStepCount.get(id) ?? 0,
+        currentStep: 0,
       },
       width: NODE_WIDTH,
       height: NODE_HEIGHT,

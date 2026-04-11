@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import type { FlowStep } from '../types'
 
+export interface ManualPixel {
+  id: string
+  edgeId: string
+  step: FlowStep
+  sourceNodeType: string
+  sourceNodeColor?: string
+}
+
 export interface AnimationState {
   playing: boolean
   currentStepIndex: number
@@ -9,6 +17,8 @@ export interface AnimationState {
   activeFromIds: Set<string>
   activeToIds: Set<string>
   activeStep: FlowStep | null
+  nodeProgress: Map<string, number>
+  manualPixels: ManualPixel[]
 }
 
 interface StepEdgeMapping {
@@ -19,8 +29,8 @@ interface StepEdgeMapping {
   step: FlowStep
 }
 
-const STEP_DURATION = 1500
-const PIXEL_DURATION = 800
+const STEP_DURATION = 2500
+const PIXEL_DURATION = 1800
 
 export function useFlowAnimation(
   steps: FlowStep[],
@@ -35,7 +45,11 @@ export function useFlowAnimation(
     activeFromIds: new Set(),
     activeToIds: new Set(),
     activeStep: null,
+    nodeProgress: new Map(),
+    manualPixels: [],
   })
+
+  const nodeProgressRef = useRef<Map<string, number>>(new Map())
 
   const stepIndexRef = useRef(-1)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -92,8 +106,14 @@ export function useFlowAnimation(
     stepIndexRef.current = nextIdx
     const mapping = mappingsRef.current[nextIdx]
 
+    // Increment node progress for all involved nodes
+    const allNodeIds = [...mapping.fromIds, ...mapping.toIds]
+    for (const nid of allNodeIds) {
+      nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
+    }
+
     // Activate edges and nodes
-    setState({
+    setState((prev) => ({
       playing: true,
       currentStepIndex: nextIdx,
       totalSteps: steps.length,
@@ -101,7 +121,9 @@ export function useFlowAnimation(
       activeFromIds: new Set(mapping.fromIds),
       activeToIds: new Set(mapping.toIds),
       activeStep: mapping.step,
-    })
+      nodeProgress: new Map(nodeProgressRef.current),
+      manualPixels: prev.manualPixels,
+    }))
 
     // After pixel animation duration, clear active state, then wait before next step
     timerRef.current = setTimeout(() => {
@@ -113,6 +135,7 @@ export function useFlowAnimation(
         activeFromIds: new Set<string>(),
         activeToIds: new Set<string>(),
         activeStep: null,
+        nodeProgress: new Map(nodeProgressRef.current),
       }))
 
       timerRef.current = setTimeout(() => {
@@ -127,6 +150,7 @@ export function useFlowAnimation(
       advanceStep()
     } else {
       clearTimers()
+      nodeProgressRef.current = new Map()
       setState((prev) => ({
         ...prev,
         playing: false,
@@ -134,6 +158,7 @@ export function useFlowAnimation(
         activeFromIds: new Set<string>(),
         activeToIds: new Set<string>(),
         activeStep: null,
+        nodeProgress: new Map(),
       }))
       stepIndexRef.current = -1
     }
@@ -141,5 +166,41 @@ export function useFlowAnimation(
     return clearTimers
   }, [playing, advanceStep, clearTimers])
 
-  return state
+  let manualPixelCounter = useRef(0)
+
+  const fireManualPixel = useCallback((pixel: Omit<ManualPixel, 'id'>) => {
+    const id = `manual-${++manualPixelCounter.current}`
+    const manualPixel: ManualPixel = { ...pixel, id }
+
+    // Increment node progress for source node
+    const sourceId = pixel.step.from
+    if (sourceId) {
+      nodeProgressRef.current.set(sourceId, (nodeProgressRef.current.get(sourceId) ?? 0) + 1)
+    }
+
+    setState((prev) => ({
+      ...prev,
+      manualPixels: [...prev.manualPixels, manualPixel],
+      nodeProgress: new Map(nodeProgressRef.current),
+    }))
+
+    return id
+  }, [])
+
+  const removeManualPixel = useCallback((pixelId: string) => {
+    setState((prev) => ({
+      ...prev,
+      manualPixels: prev.manualPixels.filter((p) => p.id !== pixelId),
+    }))
+  }, [])
+
+  const setNodeStep = useCallback((nodeId: string, step: number) => {
+    nodeProgressRef.current.set(nodeId, step)
+    setState((prev) => ({
+      ...prev,
+      nodeProgress: new Map(nodeProgressRef.current),
+    }))
+  }, [])
+
+  return { ...state, fireManualPixel, removeManualPixel, setNodeStep }
 }
