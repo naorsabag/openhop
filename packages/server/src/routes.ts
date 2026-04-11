@@ -81,9 +81,9 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
           type: 'object',
           description: 'Flow created successfully',
           properties: {
-            id: { type: 'string', description: 'Unique flow ID', examples: ['abc123'] },
-            version: { type: 'number', description: 'Flow version', examples: [1] },
-            title: { type: 'string', description: 'Flow title', examples: ['Simple Flow'] },
+            id: { type: 'string', description: 'Unique flow ID', example: 'abc123' },
+            version: { type: 'number', description: 'Flow version', example: 1 },
+            title: { type: 'string', description: 'Flow title', example: 'Simple Flow' },
           },
         },
         400: {
@@ -96,14 +96,14 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
               items: {
                 type: 'object',
                 properties: {
-                  path: { type: 'string', examples: ['flow.steps[0].to'] },
-                  message: { type: 'string', examples: ['Node "nonexistent" not found'] },
-                  suggestion: { type: 'string', examples: ['Change "nonexistent" to "api"'] },
+                  path: { type: 'string', example: 'flow.steps[0].to' },
+                  message: { type: 'string', example: 'Node "nonexistent" not found. Did you mean "api"?' },
+                  suggestion: { type: 'string', example: 'Change "nonexistent" to "api"' },
                 },
               },
             },
           },
-          examples: [VALIDATION_ERROR_EXAMPLE],
+          example: VALIDATION_ERROR_EXAMPLE,
         },
       },
     },
@@ -180,7 +180,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
               updatedAt: { type: 'string' },
             },
           },
-          examples: [[EXAMPLE_FLOW_SUMMARY]],
+          example: [EXAMPLE_FLOW_SUMMARY],
         },
       },
     },
@@ -229,7 +229,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
             error: { type: 'string' },
             details: { type: 'array', items: { type: 'object' } },
           },
-          examples: [NOT_FOUND_EXAMPLE],
+          example: NOT_FOUND_EXAMPLE,
         },
       },
     },
@@ -263,7 +263,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
           type: 'object',
           description: 'Version number',
           properties: {
-            version: { type: 'number', examples: [1] },
+            version: { type: 'number', example: 1 },
           },
         },
         404: {
