@@ -63,7 +63,7 @@ flow:
 Push it:
 
 ```bash
-npm run flowscope -- push flow.yaml
+flowscope push flow.yaml
 ```
 
 Output:
@@ -98,7 +98,7 @@ operations:
 Apply it:
 
 ```bash
-npm run flowscope -- patch abc123 patch.yaml
+flowscope patch abc123 patch.yaml
 ```
 
 ### Phase 3: POLISH (add data fields, sub-flows, diff highlighting)
@@ -135,22 +135,22 @@ operations:
 ```
 
 ```bash
-npm run flowscope -- patch abc123 polish-patch.yaml
+flowscope patch abc123 polish-patch.yaml
 ```
 
 ## CLI Commands
 
-All commands must run from the flowscope repo directory (e.g. `~/flowscope`).
+Prefix all commands with the repo path:
 
 ```bash
-npm run serve                                     # Start server
-npm run dev                                       # Start server + frontend
-npm run flowscope -- push <file.yaml>                 # Push a flow → returns ID and URL
-npm run flowscope -- push -                           # Push from stdin (pipe YAML)
-npm run flowscope -- patch <flow-id> <patch.yaml>     # Apply patch operations
-npm run flowscope -- patch <flow-id> -                # Patch from stdin
-npm run flowscope -- list                             # List all flows
-npm run flowscope -- remove <flow-id>                 # Delete a flow
+flowscope serve                                     # Start server
+flowscope serve                                       # Start server + frontend
+flowscope push <file.yaml>                 # Push a flow → returns ID and URL
+flowscope push -                           # Push from stdin (pipe YAML)
+flowscope patch <flow-id> <patch.yaml>     # Apply patch operations
+flowscope patch <flow-id> -                # Patch from stdin
+flowscope list                             # List all flows
+flowscope remove <flow-id>                 # Delete a flow
 ```
 
 Stdin is useful when generating YAML programmatically:
@@ -162,7 +162,7 @@ flow:
     - {id: a, label: A}
     - {id: b, label: B}
   steps:
-    - {from: a, to: b, data: test}' | npm run flowscope -- push -
+    - {from: a, to: b, data: test}' | flowscope push -
 ```
 
 ## Schema Reference
@@ -211,7 +211,7 @@ data:
 
 ## PATCH Operations
 
-All operations support multiple items. Apply with `npm run flowscope -- patch <id> <file.yaml>`.
+All operations support multiple items. Apply with `flowscope patch <id> <file.yaml>`.
 
 | Operation | Fields | Description |
 |-----------|--------|-------------|
