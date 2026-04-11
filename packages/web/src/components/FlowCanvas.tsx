@@ -96,21 +96,7 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
     return map
   }, [flow.flow, baseEdges])
 
-  // Track which nodes currently have a manual pixel in flight
-  const activeManualNodes = useMemo(() => {
-    const ids = new Set<string>()
-    for (const mp of manualPixels) {
-      if (mp.step.from) ids.add(mp.step.from)
-    }
-    return ids
-  }, [manualPixels])
-
   const handleNodeClick = useCallback((nodeId: string) => {
-    // Don't fire if this node already has a manual pixel in flight
-    if (activeManualNodes.has(nodeId)) return
-    // Don't fire if this node is currently the active sender in auto-play
-    if (animState.activeFromIds.has(nodeId)) return
-
     const outgoing = nodeOutgoingSteps.get(nodeId)
     if (!outgoing || outgoing.length === 0) return
 
@@ -131,7 +117,7 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
       sourceNodeType: sourceInfo.type,
       sourceNodeColor: sourceInfo.color,
     })
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, activeManualNodes, animState.activeFromIds, setNodeStep])
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
     setNodeStep(nodeId, targetStep)
@@ -146,6 +132,7 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
         isActiveSender: animState.activeFromIds.has(node.id),
         isActiveReceiver: animState.activeToIds.has(node.id),
         currentStep: nodeProgress.get(node.id) ?? 0,
+        outgoingStepCount: nodeOutgoingSteps.get(node.id)?.length ?? 0,
         onNodeClick: handleNodeClick,
         onProgressBarClick: handleProgressBarClick,
       },
@@ -182,6 +169,7 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        onNodeClick={(_event, node) => handleNodeClick(node.id)}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
