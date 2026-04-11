@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { nanoid } from 'nanoid'
-import { parseFlowYaml, parseFlowJson, validateFlow } from '@flowscope/shared'
+import { parseFlowYaml, parseFlowJson, validateFlow, patchSchema, applyPatch } from '@flowscope/shared'
 import { FlowStore } from './store.js'
 
 const store = new FlowStore()
@@ -286,6 +286,135 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
       })
     }
     return reply.send({ version })
+  })
+
+  // ── PATCH /api/flows/:id — Patch a flow with incremental operations ─
+  app.patch('/api/flows/:id', {
+    schema: {
+      summary: 'Update a flow with patch operations',
+      description: `Apply incremental updates to an existing flow using patch operations.
+
+Supported operations:
+- **add-node**: Add a new node (id, label, optional type/icon/color)
+- **remove-node**: Remove a node by ID and all steps referencing it
+- **rename-node**: Change a node's label
+- **update-node**: Update a node's type, icon, or color
+- **set-flow**: Set a sub-flow on a node
+- **clear-flow**: Remove a sub-flow from a node
+- **add-step**: Insert a step after a given index (-1 for beginning)
+- **remove-step**: Remove a step by index
+- **replace-steps**: Replace the entire steps array`,
+      tags: ['flows'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'Flow ID' },
+        },
+        required: ['id'],
+      },
+      body: {
+        type: 'object',
+        properties: {
+          operations: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                op: { type: 'string', description: 'Operation type' },
+              },
+            },
+            description: 'Array of patch operations to apply',
+          },
+        },
+        required: ['operations'],
+        example: {
+          operations: [
+            { op: 'add-node', node: { id: 'cache', label: 'Redis Cache', type: 'cache' } },
+            { op: 'rename-node', node: 'api', label: 'API Gateway' },
+          ],
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          description: 'Flow updated successfully',
+          properties: {
+            id: { type: 'string' },
+            version: { type: 'number' },
+            title: { type: 'string' },
+          },
+        },
+        400: {
+          type: 'object',
+          description: 'Patch validation or application error',
+          properties: {
+            error: { type: 'string' },
+            details: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  path: { type: 'string' },
+                  message: { type: 'string' },
+                  suggestion: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        404: {
+          type: 'object',
+          description: 'Flow not found',
+          properties: {
+            error: { type: 'string' },
+            details: { type: 'array', items: { type: 'object' } },
+          },
+          example: NOT_FOUND_EXAMPLE,
+        },
+      },
+    },
+  }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const { id } = req.params
+
+    // Load existing flow
+    const stored = await store.get(id)
+    if (!stored) {
+      return reply.status(404).send({
+        error: 'not_found',
+        details: [{ path: '', message: `Flow "${id}" not found` }],
+      })
+    }
+
+    // Parse and validate patch body
+    const parseResult = patchSchema.safeParse(req.body)
+    if (!parseResult.success) {
+      const zodErrors = parseResult.error.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+      }))
+      return reply.status(400).send({
+        error: 'validation_error',
+        details: zodErrors,
+      })
+    }
+
+    // Apply patch
+    const patchResult = applyPatch(stored.flow, parseResult.data)
+    if (!patchResult.success) {
+      return reply.status(400).send({
+        error: 'patch_error',
+        details: patchResult.errors,
+      })
+    }
+
+    // Save updated flow (version increments via store.updateFlow)
+    const updated = await store.updateFlow(id, patchResult.data!)
+
+    return reply.send({
+      id: updated.id,
+      version: updated.version,
+      title: updated.flow.meta.title,
+    })
   })
 
   // ── DELETE /api/flows/:id — Delete a flow ──────────────────────────
