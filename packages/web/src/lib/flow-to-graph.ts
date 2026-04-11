@@ -77,6 +77,11 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
           for (const t of targets) touchedIds.add(t)
         }
       }
+    } else if ('create' in step && step.create) {
+      if (step.from) touchedIds.add(step.from)
+      touchedIds.add(step.create)
+    } else if ('destroy' in step && step.destroy) {
+      touchedIds.add(step.destroy)
     } else {
       if (step.from) touchedIds.add(step.from)
       if (step.to) {
