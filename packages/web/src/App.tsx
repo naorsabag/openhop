@@ -109,10 +109,13 @@ function App() {
   }, [])
 
   // Auto-drilldown during playback — triggered by FlowCanvas when a drilldown step completes
+  const playingRef = useRef(playing)
+  playingRef.current = playing
   const handleAutoDrilldown = useCallback((nodeId: string) => {
-    if (!playing) return
+    // Use ref to avoid stale closure — playing might have changed
+    if (!playingRef.current) return
     navigateToDrillDown(nodeId)
-  }, [playing, navigateToDrillDown])
+  }, [navigateToDrillDown])
 
   // When sub-flow cycle completes during playback, navigate back to parent after a brief pause
   const isInSubFlow = flowStack.length > 1
