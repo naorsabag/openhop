@@ -97,9 +97,17 @@ function App() {
 
   // Auto-drilldown during playback — triggered by FlowCanvas when a drilldown step completes
   const handleAutoDrilldown = useCallback((nodeId: string) => {
-    if (!playing) return // only auto-drill during playback
-    navigateToDrillDown(nodeId) // don't pause — sub-flow continues playing
+    if (!playing) return
+    navigateToDrillDown(nodeId)
   }, [playing, navigateToDrillDown])
+
+  // When sub-flow cycle completes during playback, navigate back to parent
+  const isInSubFlow = flowStack.length > 1
+  const handleCycleComplete = useCallback(() => {
+    if (!playing || !isInSubFlow) return
+    // Navigate back to parent flow — keep playing
+    setFlowStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev)
+  }, [playing, isInSubFlow])
 
   // Zoom transition when flow stack changes
   const [transitioning, setTransitioning] = useState(false)
@@ -233,7 +241,7 @@ function App() {
                 </div>
               )}
               <div className={transitioning ? 'animate-drilldown w-full h-full' : 'w-full h-full'}>
-                <FlowCanvas flow={displayFlow} playing={playing} onDrillDown={handleDrillDown} onDrilldownStep={handleAutoDrilldown} />
+                <FlowCanvas flow={displayFlow} playing={playing} onDrillDown={handleDrillDown} onDrilldownStep={handleAutoDrilldown} onCycleComplete={isInSubFlow ? handleCycleComplete : undefined} />
               </div>
             </>
           ) : null}
