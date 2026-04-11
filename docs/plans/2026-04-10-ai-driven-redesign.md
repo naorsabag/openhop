@@ -347,7 +347,7 @@ Checks:
 
 ## UI Design
 
-**Reference images:** `docs/image.png`, `docs/ChatGPT Image Apr 11, 2026, 01_20_09 PM.png`
+**Reference images:** `docs/image.png`, `docs/concept-v1.png`
 
 ### Layout
 
