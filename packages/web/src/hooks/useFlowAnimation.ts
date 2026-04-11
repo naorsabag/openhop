@@ -21,6 +21,8 @@ export interface AnimationState {
   activeStep: FlowStep | null
   nodeProgress: Map<string, number>
   manualPixels: ManualPixel[]
+  activeNodes: Set<string>      // dynamically created nodes currently visible
+  destroyedNodes: Set<string>   // nodes that have been destroyed
 }
 
 interface StepEdgeMapping {
@@ -53,9 +55,13 @@ export function useFlowAnimation(
     activeStep: null,
     nodeProgress: new Map(),
     manualPixels: [],
+    activeNodes: new Set(),
+    destroyedNodes: new Set(),
   })
 
   const nodeProgressRef = useRef<Map<string, number>>(new Map())
+  const activeNodesRef = useRef<Set<string>>(new Set())
+  const destroyedNodesRef = useRef<Set<string>>(new Set())
   const onCycleCompleteRef = useRef(onCycleComplete)
   onCycleCompleteRef.current = onCycleComplete
 
@@ -122,11 +128,31 @@ export function useFlowAnimation(
       }
       // No callback — loop back to start
       nodeProgressRef.current = new Map()
+      activeNodesRef.current = new Set()
+      destroyedNodesRef.current = new Set()
     }
 
     const nextIdx = rawNext % steps.length
     stepIndexRef.current = nextIdx
     const mapping = mappingsRef.current[nextIdx]
+    const currentStep = steps[nextIdx]
+
+    // Handle create/destroy steps
+    if (currentStep && 'create' in currentStep && currentStep.create) {
+      activeNodesRef.current = new Set(activeNodesRef.current)
+      activeNodesRef.current.add(currentStep.create)
+      // Remove from destroyed if it was previously destroyed
+      if (destroyedNodesRef.current.has(currentStep.create)) {
+        destroyedNodesRef.current = new Set(destroyedNodesRef.current)
+        destroyedNodesRef.current.delete(currentStep.create)
+      }
+    }
+    if (currentStep && 'destroy' in currentStep && currentStep.destroy) {
+      destroyedNodesRef.current = new Set(destroyedNodesRef.current)
+      destroyedNodesRef.current.add(currentStep.destroy)
+      activeNodesRef.current = new Set(activeNodesRef.current)
+      activeNodesRef.current.delete(currentStep.destroy)
+    }
 
     for (const nid of mapping.fromIds) {
       nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
@@ -142,6 +168,8 @@ export function useFlowAnimation(
       activeStep: mapping.step,
       nodeProgress: new Map(nodeProgressRef.current),
       manualPixels: prev.manualPixels,
+      activeNodes: new Set(activeNodesRef.current),
+      destroyedNodes: new Set(destroyedNodesRef.current),
     }))
 
     timerRef.current = setTimeout(() => {
@@ -178,6 +206,8 @@ export function useFlowAnimation(
         activeFromIds: new Set<string>(),
         activeToIds: new Set<string>(),
         activeStep: null,
+        activeNodes: new Set<string>(),
+        destroyedNodes: new Set<string>(),
       }))
     }
 

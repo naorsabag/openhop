@@ -137,23 +137,46 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
     }
   }
 
+  // Collect dynamic nodes from create steps and add to layout
+  const dynamicNodeIds = new Set<string>()
+  const dynamicNodeDefs = new Map<string, { id: string; label: string; type?: string; icon?: string; color?: string }>()
+  for (const step of steps) {
+    if ('create' in step && step.create && step.node) {
+      const nodeId = step.create
+      dynamicNodeIds.add(nodeId)
+      dynamicNodeDefs.set(nodeId, step.node as { id: string; label: string; type?: string; icon?: string; color?: string })
+      if (!state.nodeMap.has(nodeId)) {
+        state.nodeMap.set(nodeId, { x: 0, y: state.currentY })
+        state.currentY += Y_SPACING
+      }
+      if (!ordered.includes(nodeId)) {
+        ordered.push(nodeId)
+      }
+      // Count steps referencing this node
+      nodeStepCount.set(nodeId, (nodeStepCount.get(nodeId) ?? 0) + 1)
+    }
+  }
+
   // Build React Flow nodes
   const nodes: Node<FlowNodeData>[] = ordered.map((id) => {
     const flowNode = flowNodeMap.get(id)
+    const dynNode = dynamicNodeDefs.get(id)
     const pos = state.nodeMap.get(id) ?? { x: 0, y: 0 }
+    const isDynamic = dynamicNodeIds.has(id)
 
     return {
       id,
       type: 'flowNode',
       position: { x: pos.x - NODE_WIDTH / 2 + NODE_WIDTH / 2, y: pos.y },
       data: {
-        label: flowNode?.label ?? id,
-        nodeType: flowNode?.type ?? 'service',
-        color: flowNode?.color,
-        icon: flowNode?.icon,
+        label: dynNode?.label ?? flowNode?.label ?? id,
+        nodeType: dynNode?.type ?? flowNode?.type ?? 'service',
+        color: dynNode?.color ?? flowNode?.color,
+        icon: dynNode?.icon ?? flowNode?.icon,
         hasSubFlow: !!flowNode?.flow,
         totalSteps: nodeStepCount.get(id) ?? 0,
         currentStep: 0,
+        isDynamic,
       },
       width: NODE_WIDTH,
       height: NODE_HEIGHT,

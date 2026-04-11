@@ -103,8 +103,17 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   const {
     fireManualPixel, removeManualPixel, setNodeStep,
     manualPixels, nodeProgress,
+    activeNodes, destroyedNodes,
     ...animState
   } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing, onCycleComplete, startFromStep)
+
+  // Helper: check if a node is currently alive (static nodes always are, dynamic nodes need to be in activeNodes and not destroyed)
+  const isNodeAlive = useCallback((nodeId: string) => {
+    const node = baseNodes.find(n => n.id === nodeId)
+    const isDynamic = node?.data?.isDynamic ?? false
+    if (!isDynamic) return true
+    return activeNodes.has(nodeId) && !destroyedNodes.has(nodeId)
+  }, [baseNodes, activeNodes, destroyedNodes])
 
   // Report step changes to parent
   const onStepChangeRef = useRef(onStepChange)
@@ -229,26 +238,42 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     setNodeStep(nodeId, targetStep)
   }, [setNodeStep])
 
-  // Apply active sender/receiver flags to nodes
+  // Apply active sender/receiver flags to nodes, and visibility for dynamic nodes
   const nodes: Node<FlowNodeData>[] = useMemo(() => {
-    return baseNodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        isActiveSender: animState.activeFromIds.has(node.id),
-        isActiveReceiver: animState.activeToIds.has(node.id),
-        currentStep: nodeProgress.get(node.id) ?? 0,
-        outgoingStepCount: nodeOutgoingSteps.get(node.id)?.length ?? 0,
-        onNodeClick: handleNodeClick,
-        onProgressBarClick: handleProgressBarClick,
-        onDrillDown,
-      },
-    }))
-  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, handleNodeClick, handleProgressBarClick, onDrillDown])
+    return baseNodes.map((node) => {
+      const isDynamic = node.data?.isDynamic ?? false
+      const isAlive = !isDynamic || (activeNodes.has(node.id) && !destroyedNodes.has(node.id))
 
-  // Highlight active edges
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          opacity: isAlive ? 1 : 0,
+          transition: 'opacity 0.4s ease, transform 0.4s ease',
+          transform: isAlive ? 'scale(1)' : 'scale(0.5)',
+          pointerEvents: (isAlive ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+        },
+        data: {
+          ...node.data,
+          isActiveSender: animState.activeFromIds.has(node.id),
+          isActiveReceiver: animState.activeToIds.has(node.id),
+          currentStep: nodeProgress.get(node.id) ?? 0,
+          outgoingStepCount: nodeOutgoingSteps.get(node.id)?.length ?? 0,
+          onNodeClick: handleNodeClick,
+          onProgressBarClick: handleProgressBarClick,
+          onDrillDown,
+        },
+      }
+    })
+  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, activeNodes, destroyedNodes, handleNodeClick, handleProgressBarClick, onDrillDown])
+
+  // Highlight active edges, hide edges connected to hidden dynamic nodes
   const edges: Edge[] = useMemo(() => {
     return baseEdges.map((edge) => {
+      const sourceAlive = isNodeAlive(edge.source)
+      const targetAlive = isNodeAlive(edge.target)
+      const bothAlive = sourceAlive && targetAlive
+
       if (animState.activeEdgeIds.has(edge.id)) {
         return {
           ...edge,
@@ -256,13 +281,22 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
             ...edge.style,
             stroke: '#4a9eff',
             strokeWidth: 4,
+            opacity: bothAlive ? 1 : 0,
+            transition: 'opacity 0.4s ease',
           },
           animated: true,
         }
       }
-      return edge
+      return {
+        ...edge,
+        style: {
+          ...edge.style,
+          opacity: bothAlive ? 1 : 0,
+          transition: 'opacity 0.4s ease',
+        },
+      }
     })
-  }, [baseEdges, animState.activeEdgeIds])
+  }, [baseEdges, animState.activeEdgeIds, isNodeAlive])
 
   // Collect active edges for pixel rendering
   const activeEdges = useMemo(() => {
