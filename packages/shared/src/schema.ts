@@ -31,6 +31,7 @@ export const FieldSchema = z.object({
 });
 
 export type Field = z.infer<typeof FieldSchema>;
+export type FlowField = Field;
 
 // --- Data ---
 
@@ -43,6 +44,7 @@ export const DataObjectSchema = z.object({
 export const DataSchema = z.union([z.string(), DataObjectSchema, z.array(DataObjectSchema).min(1)]);
 
 export type Data = z.infer<typeof DataSchema>;
+export type FlowData = z.infer<typeof DataObjectSchema>;
 
 // --- Step schemas ---
 
@@ -64,6 +66,16 @@ export type ParallelStep = z.infer<typeof ParallelStepSchema>;
 export const StepSchema = z.union([MoveStepSchema, ParallelStepSchema]);
 
 export type Step = z.infer<typeof StepSchema>;
+
+/** Flat step interface — all fields optional. Used by frontend code that
+ *  handles both move and parallel steps without discriminated union narrowing. */
+export interface FlowStep {
+  from?: string
+  to?: string | string[]
+  data?: Data
+  drilldown?: boolean
+  parallel?: FlowStep[]
+}
 
 // --- Flow (recursive) ---
 
@@ -114,6 +126,7 @@ export const MetaSchema = z.object({
 });
 
 export type Meta = z.infer<typeof MetaSchema>;
+export type FlowMeta = Meta;
 
 // --- Root ---
 
@@ -123,3 +136,4 @@ export const RootSchema = z.object({
 });
 
 export type Root = z.infer<typeof RootSchema>;
+export type Flow = Root;
