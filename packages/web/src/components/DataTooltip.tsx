@@ -9,7 +9,9 @@ interface DataTooltipProps {
 
 export function DataTooltip({ step, color, x, y }: DataTooltipProps) {
   const data: FlowData =
-    typeof step.data === 'string' ? { label: step.data } : step.data
+    typeof step.data === 'string' ? { label: step.data } :
+    Array.isArray(step.data) ? { label: step.data.map(d => d.label).join(', ') } :
+    step.data
 
   return (
     <div

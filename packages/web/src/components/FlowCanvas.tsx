@@ -13,7 +13,7 @@ import { flowToGraph } from '../lib/flow-to-graph'
 import { useFlowAnimation } from '../hooks/useFlowAnimation'
 import { DataPixel } from './DataPixel'
 import { DataPopup } from './DataPopup'
-import type { Flow, FlowStep } from '../types'
+import type { Flow, FlowStep, FlowData } from '../types'
 
 const nodeTypes: NodeTypes = {
   flowNode: FlowNodeComponent,
@@ -49,14 +49,28 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       setPinnedEdge(null)
       return
     }
-    const edgeSteps: FlowStep[] = [step]
+    // If the step has array data, create virtual steps (one per data object) for pagination
+    let edgeSteps: FlowStep[]
+    if (Array.isArray(step.data)) {
+      edgeSteps = step.data.map(d => ({ ...step, data: d }))
+    } else {
+      edgeSteps = [step]
+    }
     if (id !== '__pixel__') {
       const targetEdge = baseEdges.find(e => e.id === id)
       if (targetEdge) {
         for (const e of baseEdges) {
           if (e.id !== id && e.source === targetEdge.source && e.target === targetEdge.target) {
             const s = (e.data as { step?: FlowStep } | undefined)?.step
-            if (s && !edgeSteps.includes(s)) edgeSteps.push(s)
+            if (s) {
+              if (Array.isArray(s.data)) {
+                for (const d of s.data) {
+                  edgeSteps.push({ ...s, data: d })
+                }
+              } else if (!edgeSteps.includes(s)) {
+                edgeSteps.push(s)
+              }
+            }
           }
         }
       }
@@ -287,7 +301,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 
       {/* Data pixel overlay — automatic */}
       {animState.activeStep &&
-        activeEdges.map((edge) => {
+        activeEdges.flatMap((edge) => {
           const sourceInfo = nodeTypeMap.get(edge.source) ?? {
             type: 'service',
           }
@@ -295,6 +309,24 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
           const edgeStep =
             (edge.data as { step?: FlowStep } | undefined)?.step ??
             animState.activeStep!
+
+          // If the step has array data, render one pixel per data object with stagger
+          if (Array.isArray(edgeStep.data)) {
+            return edgeStep.data.map((dataObj, i) => (
+              <DataPixel
+                key={`${edge.id}-${i}`}
+                edgeId={edge.id}
+                sourceNodeType={sourceInfo.type}
+                sourceNodeColor={sourceInfo.color}
+                step={edgeStep}
+                containerRef={containerRef}
+                onPixelClick={(s, pos) => handlePinPopup(s, pos, edge.id)}
+                delayMs={i * 120}
+                dataOverride={dataObj}
+              />
+            ))
+          }
+
           return (
             <DataPixel
               key={edge.id}

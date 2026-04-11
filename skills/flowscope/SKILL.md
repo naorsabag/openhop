@@ -209,6 +209,19 @@ data:
       changed: true            # optional — yellow highlight (modified)
 ```
 
+**Array** — multiple data objects sent simultaneously:
+```yaml
+data:
+  - label: request body
+    fields:
+      - name: items
+        type: "list[Item]"
+  - label: auth context
+    fields:
+      - name: user_id
+        type: int
+```
+
 ## PATCH Operations
 
 All operations support multiple items. Apply with `flowscope patch <id> <file.yaml>`.

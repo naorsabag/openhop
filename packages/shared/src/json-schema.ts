@@ -18,18 +18,26 @@ export const fieldJsonSchema = {
   required: ['name'],
 }
 
+export const dataObjectJsonSchema = {
+  type: 'object' as const,
+  description: 'Detailed data with optional fields',
+  properties: {
+    label: { type: 'string', description: 'Data description' },
+    color: { type: 'string', description: 'Override pixel color (hex)', pattern: '^#[0-9a-fA-F]{3,8}$' },
+    fields: { type: 'array', items: fieldJsonSchema, description: 'Data fields shown in tooltip' },
+  },
+  required: ['label'],
+}
+
 export const dataJsonSchema = {
   oneOf: [
     { type: 'string' as const, description: 'Simple label (sketch mode)' },
+    dataObjectJsonSchema,
     {
-      type: 'object' as const,
-      description: 'Detailed data with optional fields',
-      properties: {
-        label: { type: 'string', description: 'Data description' },
-        color: { type: 'string', description: 'Override pixel color (hex)', pattern: '^#[0-9a-fA-F]{3,8}$' },
-        fields: { type: 'array', items: fieldJsonSchema, description: 'Data fields shown in tooltip' },
-      },
-      required: ['label'],
+      type: 'array' as const,
+      items: dataObjectJsonSchema,
+      minItems: 1,
+      description: 'Multiple data objects sent simultaneously',
     },
   ],
 }
