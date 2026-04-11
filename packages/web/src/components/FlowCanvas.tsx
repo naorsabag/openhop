@@ -21,10 +21,11 @@ const nodeTypes: NodeTypes = {
 interface FlowCanvasProps {
   flow: Flow
   playing: boolean
+  onDrillDown?: (nodeId: string) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
-function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
+function FlowCanvasInner({ flow, playing, onDrillDown }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { nodes: baseNodes, edges: baseEdges } = useMemo(
@@ -160,9 +161,10 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
         outgoingStepCount: nodeOutgoingSteps.get(node.id)?.length ?? 0,
         onNodeClick: handleNodeClick,
         onProgressBarClick: handleProgressBarClick,
+        onDrillDown,
       },
     }))
-  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, handleNodeClick, handleProgressBarClick])
+  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, handleNodeClick, handleProgressBarClick, onDrillDown])
 
   // Highlight active edges
   const edges: Edge[] = useMemo(() => {
@@ -248,5 +250,5 @@ function FlowCanvasInner({ flow, playing }: FlowCanvasProps) {
 }
 
 export function FlowCanvas(props: FlowCanvasProps) {
-  return <FlowCanvasInner {...props} />
+  return <FlowCanvasInner key={JSON.stringify(props.flow.flow.nodes.map(n => n.id))} {...props} />
 }
