@@ -15,16 +15,29 @@ npm install
 ## Run
 
 ```bash
-# Terminal 1: API server (port 8787)
-npx tsx packages/server/src/index.ts
+# Start both server + frontend:
+npm run dev
 
-# Terminal 2: Frontend (port 5173)
-cd packages/web && npm run dev
+# Or separately:
+npm run serve                    # API server on :8787
+cd packages/web && npm run dev   # Frontend on :5173
 ```
 
 - UI: http://localhost:5173
 - API: http://localhost:8787
 - Swagger: http://localhost:8787/docs
+
+## CLI
+
+From the flowscope directory:
+
+```bash
+npm run flowscope -- push <file.yaml>       # Create a flow
+npm run flowscope -- push -                 # Create from stdin
+npm run flowscope -- patch <id> <file.yaml> # Update a flow
+npm run flowscope -- list                   # List all flows
+npm run flowscope -- remove <id>            # Delete a flow
+```
 
 ## Add the AI Skill
 
@@ -36,6 +49,8 @@ npx skills add yourorg/flowscope
 
 Or manually copy `skills/flowscope/SKILL.md` to `.claude/skills/flowscope/SKILL.md`.
 
+Then ask your AI: *"Show me how data flows through the order processing system"*
+
 ---
 
 ## For AI Agents
@@ -43,15 +58,18 @@ Or manually copy `skills/flowscope/SKILL.md` to `.claude/skills/flowscope/SKILL.
 ### Check if FlowScope is running
 
 ```bash
-curl -s http://localhost:8787/api/flows > /dev/null 2>&1 && echo "running" || echo "not running"
+curl -s http://localhost:8787/health
 ```
 
-If not running, tell the user to start it (see Run section above).
+Returns `{"status":"ok"}` if ready.
+
+### If not running
+
+Follow the Install and Run sections above. The repo should be at `~/flowscope`.
 
 ### Quick flow creation
 
 ```bash
-# Write YAML to a file
 cat > /tmp/my-flow.yaml << 'EOF'
 meta:
   title: My Flow
@@ -73,8 +91,7 @@ flow:
       data: Response
 EOF
 
-# Push it
-npx tsx packages/cli/src/index.ts push /tmp/my-flow.yaml
+cd ~/flowscope && npm run flowscope -- push /tmp/my-flow.yaml
 ```
 
 Or via stdin:
@@ -86,7 +103,7 @@ flow:
     - {id: a, label: Source}
     - {id: b, label: Sink}
   steps:
-    - {from: a, to: b, data: test}' | npx tsx packages/cli/src/index.ts push -
+    - {from: a, to: b, data: test}' | cd ~/flowscope && npm run flowscope -- push -
 ```
 
 ### Update an existing flow
@@ -103,16 +120,7 @@ operations:
       - {from: api, to: db, data: query}
 EOF
 
-npx tsx packages/cli/src/index.ts patch <flow-id> /tmp/patch.yaml
-```
-
-### CLI commands
-
-```bash
-npx tsx packages/cli/src/index.ts push <file | ->       # Create flow
-npx tsx packages/cli/src/index.ts patch <id> <file | ->  # Update flow
-npx tsx packages/cli/src/index.ts list                   # List flows
-npx tsx packages/cli/src/index.ts remove <id>            # Delete flow
+cd ~/flowscope && npm run flowscope -- patch <flow-id> /tmp/patch.yaml
 ```
 
 ### Workflow
@@ -136,3 +144,4 @@ See `skills/flowscope/SKILL.md` for the full schema reference.
 - PATCH API for incremental updates
 - Strict YAML validation with fuzzy typo suggestions
 - Swagger API docs at /docs
+- Health check at /health
