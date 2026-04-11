@@ -249,8 +249,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         style: {
           ...node.style,
           opacity: isAlive ? 1 : 0,
-          transition: 'opacity 0.4s ease, transform 0.4s ease',
-          transform: isAlive ? 'scale(1)' : 'scale(0.5)',
+          transition: 'opacity 0.4s ease',
           pointerEvents: (isAlive ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
         },
         data: {
