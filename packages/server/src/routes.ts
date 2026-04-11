@@ -216,7 +216,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
           description: 'Full stored flow',
           properties: {
             id: { type: 'string' },
-            flow: { type: 'object', description: 'The flow definition (meta + flow)' },
+            flow: { type: 'object', additionalProperties: true, description: 'The flow definition (meta + flow)' },
             version: { type: 'number' },
             createdAt: { type: 'string' },
             updatedAt: { type: 'string' },
