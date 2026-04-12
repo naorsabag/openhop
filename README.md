@@ -21,10 +21,10 @@ npm run dev
 
 # Or separately:
 npm run serve                    # API server on :8787
-cd packages/web && npm run dev   # Frontend on :5173
+cd packages/web && npm run dev   # Frontend on :8788
 ```
 
-- UI: http://localhost:5173
+- UI: http://localhost:8788
 - API: http://localhost:8787
 - Swagger: http://localhost:8787/docs
 

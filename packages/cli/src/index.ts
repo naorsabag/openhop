@@ -92,7 +92,7 @@ program
       }
 
       const data = await res.json() as { id: string; title: string; version: number };
-      const webUrl = opts.server.replace(/:\d+$/, ":5173");
+      const webUrl = opts.server.replace(/:\d+$/, ":8788");
       console.log(green("✓ Flow created"));
       console.log(`  ${bold("ID:")}    ${data.id}`);
       console.log(`  ${bold("Title:")} ${data.title}`);

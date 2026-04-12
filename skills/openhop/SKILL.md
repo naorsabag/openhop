@@ -24,7 +24,7 @@ If not running, follow the install and run instructions in the repo README at `~
 git clone https://github.com/yourorg/openhop.git ~/openhop
 ```
 
-Then follow the README's Install and Run sections. After starting, open http://localhost:5173.
+Then follow the README's Install and Run sections. After starting, open http://localhost:8788.
 
 ## How to Work: Sketch → Detail → Polish
 
@@ -71,7 +71,7 @@ Output:
 ✓ Flow created
   ID:    abc123
   Title: Order Processing
-  URL:   http://localhost:5173/flow/abc123
+  URL:   http://localhost:8788/flow/abc123
 ```
 
 Tell the user to open the URL.
