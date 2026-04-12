@@ -52,7 +52,7 @@ This ensures every test step can use `snapshot -i` to find refs, then `click @re
 
 ### Verify with agent-browser:
 ```
-open http://localhost:5173
+open http://localhost:8788
 wait 3000
 screenshot /tmp/phase1.png
 → Confirm: dark canvas, pixel-art nodes visible, edges connecting them
@@ -77,7 +77,7 @@ screenshot /tmp/phase1.png
 
 ### Verify with agent-browser:
 ```
-open http://localhost:5173
+open http://localhost:8788
 wait 3000
 # Click play
 eval: document.querySelector('[aria-label="Play"]').click()
@@ -105,7 +105,7 @@ screenshot /tmp/phase2-detail.png
 
 ### Verify with agent-browser:
 ```
-open http://localhost:5173
+open http://localhost:8788
 wait 3000
 # Click a node
 eval: document.querySelector('[data-id="api"]').click()
