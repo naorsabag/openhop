@@ -247,31 +247,122 @@ Stardew Valley style, transparent background, facing camera
 
 ### Data Bunny — Blue (user/request data)
 ```
-Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
-cute orange bunny carrying a small blue package on its back,
-4-frame hopping animation (up-down-up-down cycle),
-Stardew Valley style, transparent background
+Pixel art sprite sheet of a tiny bunny hopping, isometric 3/4 view.
+
+The sprite sheet is a single horizontal strip with exactly 4 frames,
+each frame is 32x32 pixels, total image size is 128x32 pixels.
+
+Frame 1 (idle): Bunny standing still, feet on ground, ears up straight.
+Small blue package tied with string visible on its back.
+
+Frame 2 (crouch): Bunny crouching down, legs bent preparing to jump,
+body compressed lower, ears tilted back slightly. Blue package on back.
+
+Frame 3 (mid-air): Bunny fully airborne, legs stretched behind,
+body elongated and leaning forward, ears streaming back. Peak of the hop.
+Blue package on back, slightly bouncing up.
+
+Frame 4 (landing): Bunny front paws touching down, back legs still raised,
+body angled forward, ears bouncing forward from momentum. Blue package settling.
+
+Style: Stardew Valley pixel art, warm orange-brown bunny fur,
+cute proportions (large round head, small body, stubby legs), black dot eyes,
+tiny pink nose, white belly patch.
+Background: fully transparent.
+Outline: 1px dark brown pixel outline on the bunny.
+The blue package is a tiny 5x4 pixel rectangle, sky blue (#4a9eff),
+tied to back with a single brown pixel string.
+Each frame must be cleanly separated with no overlap between frames.
 ```
 
 ### Data Bunny — Green (database data)
 ```
-Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
-cute orange bunny carrying a small green crate on its back,
-4-frame hopping animation, Stardew Valley style, transparent background
+Pixel art sprite sheet of a tiny bunny hopping, isometric 3/4 view.
+
+The sprite sheet is a single horizontal strip with exactly 4 frames,
+each frame is 32x32 pixels, total image size is 128x32 pixels.
+
+Frame 1 (idle): Bunny standing still, feet on ground, ears up straight.
+Small green crate visible on its back.
+
+Frame 2 (crouch): Bunny crouching down, legs bent preparing to jump,
+body compressed lower, ears tilted back slightly. Green crate on back.
+
+Frame 3 (mid-air): Bunny fully airborne, legs stretched behind,
+body elongated and leaning forward, ears streaming back. Peak of the hop.
+Green crate on back, slightly bouncing up.
+
+Frame 4 (landing): Bunny front paws touching down, back legs still raised,
+body angled forward, ears bouncing forward from momentum. Green crate settling.
+
+Style: Stardew Valley pixel art, warm orange-brown bunny fur,
+cute proportions (large round head, small body, stubby legs), black dot eyes,
+tiny pink nose, white belly patch.
+Background: fully transparent.
+Outline: 1px dark brown pixel outline on the bunny.
+The green crate is a tiny 5x4 pixel rectangle, forest green (#4aff7a),
+with a 1px darker green border to look like a wooden crate.
+Each frame must be cleanly separated with no overlap between frames.
 ```
 
 ### Data Bunny — Orange (external API data)
 ```
-Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
-cute orange bunny carrying a small orange scroll on its back,
-4-frame hopping animation, Stardew Valley style, transparent background
+Pixel art sprite sheet of a tiny bunny hopping, isometric 3/4 view.
+
+The sprite sheet is a single horizontal strip with exactly 4 frames,
+each frame is 32x32 pixels, total image size is 128x32 pixels.
+
+Frame 1 (idle): Bunny standing still, feet on ground, ears up straight.
+Small orange scroll visible on its back.
+
+Frame 2 (crouch): Bunny crouching down, legs bent preparing to jump,
+body compressed lower, ears tilted back slightly. Orange scroll on back.
+
+Frame 3 (mid-air): Bunny fully airborne, legs stretched behind,
+body elongated and leaning forward, ears streaming back. Peak of the hop.
+Orange scroll on back, slightly bouncing up.
+
+Frame 4 (landing): Bunny front paws touching down, back legs still raised,
+body angled forward, ears bouncing forward from momentum. Orange scroll settling.
+
+Style: Stardew Valley pixel art, warm orange-brown bunny fur,
+cute proportions (large round head, small body, stubby legs), black dot eyes,
+tiny pink nose, white belly patch.
+Background: fully transparent.
+Outline: 1px dark brown pixel outline on the bunny.
+The orange scroll is a tiny rolled-up paper, 5x3 pixels, warm orange (#ff8a4a),
+with a 1px brown string tied around the middle.
+Each frame must be cleanly separated with no overlap between frames.
 ```
 
 ### Data Bunny — Purple (transform data)
 ```
-Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
-cute orange bunny carrying a small purple gem on its back,
-4-frame hopping animation, Stardew Valley style, transparent background
+Pixel art sprite sheet of a tiny bunny hopping, isometric 3/4 view.
+
+The sprite sheet is a single horizontal strip with exactly 4 frames,
+each frame is 32x32 pixels, total image size is 128x32 pixels.
+
+Frame 1 (idle): Bunny standing still, feet on ground, ears up straight.
+Small purple gem visible on its back, glowing faintly.
+
+Frame 2 (crouch): Bunny crouching down, legs bent preparing to jump,
+body compressed lower, ears tilted back slightly. Purple gem on back.
+
+Frame 3 (mid-air): Bunny fully airborne, legs stretched behind,
+body elongated and leaning forward, ears streaming back. Peak of the hop.
+Purple gem on back, glow slightly brighter at peak height.
+
+Frame 4 (landing): Bunny front paws touching down, back legs still raised,
+body angled forward, ears bouncing forward from momentum. Purple gem settling.
+
+Style: Stardew Valley pixel art, warm orange-brown bunny fur,
+cute proportions (large round head, small body, stubby legs), black dot eyes,
+tiny pink nose, white belly patch.
+Background: fully transparent.
+Outline: 1px dark brown pixel outline on the bunny.
+The purple gem is a tiny 4x4 pixel diamond shape, violet (#b47aff),
+with a 1px lighter purple highlight on the top-left facet.
+Each frame must be cleanly separated with no overlap between frames.
 ```
 
 The bunny hops along the road between buildings. When data gets transformed, the package color changes. Hover the bunny to see the data it carries.
