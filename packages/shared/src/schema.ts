@@ -6,6 +6,8 @@ export const NodeTypeEnum = z.enum([
   "actor",
   "endpoint",
   "transform",
+  "validation",
+  "auth",
   "database",
   "external",
   "cache",

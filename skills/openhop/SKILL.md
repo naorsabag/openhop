@@ -174,7 +174,7 @@ flow:
 ### Node
 - `id` (required): alphanumeric + hyphens + underscores
 - `label` (required): display name
-- `type`: actor | endpoint | transform | database | external | cache | queue | service | custom
+- `type`: actor | endpoint | transform | validation | auth | database | external | cache | queue | service | custom
 - `icon`: Iconify icon ID (e.g. "logos:postgresql"). Browse: https://icon-sets.iconify.design/logos/
 - `color`: hex color
 - `flow`: nested sub-flow { nodes, steps } — makes node expandable with 🔍

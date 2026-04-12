@@ -85,17 +85,19 @@ Every level of the hierarchy is a Flow — the root and every nested sub-flow in
 
 ### NodeType
 
-| Value | Default Color | Description |
-|-------|---------------|-------------|
-| `actor` | #4a9eff (blue) | Human or system |
-| `endpoint` | #4a9eff (blue) | API endpoint |
-| `transform` | #b47aff (purple) | Business logic |
-| `database` | #4aff7a (green) | Data store |
-| `external` | #ff8a4a (orange) | External API |
-| `cache` | #4affee (cyan) | Cache layer |
-| `queue` | #4aeeff (teal) | Message queue |
-| `service` | #888 (gray) | Logical grouping |
-| `custom` | from `color` | AI-defined |
+| Value | Default Color | Building | Description |
+|-------|---------------|----------|-------------|
+| `actor` | #4a9eff (blue) | Rabbit home | Human or system |
+| `endpoint` | #4a9eff (blue) | Burrow entrance | API endpoint |
+| `transform` | #b47aff (purple) | Workshop | Auto data transformation (serialization, mapping) |
+| `validation` | #ffcc4a (yellow) | Checkpoint gate | Input validation, schema checking |
+| `auth` | #ff6b6b (red) | Guard tower | Authentication/authorization check |
+| `database` | #4aff7a (green) | Storage barn | Data store |
+| `external` | #ff8a4a (orange) | Trading post | External API, 3rd party service |
+| `cache` | #4affee (cyan) | Lightning hutch | Cache layer |
+| `queue` | #4aeeff (teal) | Post office | Message queue |
+| `service` | #888 (gray) | Fenced compound | Logical grouping with sub-flow |
+| `custom` | from `color` | Wooden hut | AI-defined, any icon + color |
 
 ### Step
 

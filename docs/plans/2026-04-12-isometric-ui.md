@@ -204,6 +204,24 @@ purple accent roof, Stardew Valley style,
 transparent background, facing camera
 ```
 
+### Building — Validation (Checkpoint Gate)
+```
+Pixel art isometric checkpoint gate, 64x64 pixels on 64x32 base,
+wooden gate with a checkmark sign hanging from a post,
+yellow accent colors, barrier arm that lifts,
+small inspection desk beside the gate, Stardew Valley style,
+transparent background, facing camera
+```
+
+### Building — Auth (Guard Tower)
+```
+Pixel art isometric small guard tower, 64x64 pixels on 64x32 base,
+wooden watchtower with a lock symbol on the front,
+red accent roof, small ladder on the side,
+lantern hanging from the top, Stardew Valley style,
+transparent background, facing camera
+```
+
 ### Building — Actor (User/Start)
 ```
 Pixel art isometric cozy rabbit home, 64x64 pixels on 64x32 base,
