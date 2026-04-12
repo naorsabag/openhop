@@ -4,14 +4,16 @@ import type { FlowData } from '../../types'
 
 /** Node type visual config */
 const NODE_STYLES: Record<string, { bg: string; border: string; icon: string }> = {
-  actor:     { bg: '#1a1a3a', border: '#4a9eff', icon: '👤' },
-  endpoint:  { bg: '#1a1a3a', border: '#4a9eff', icon: '🔌' },
-  transform: { bg: '#2a1a3a', border: '#b47aff', icon: '⚙️' },
-  database:  { bg: '#1a2a1a', border: '#4aff7a', icon: '🗄️' },
-  external:  { bg: '#2a1a0a', border: '#ff8a4a', icon: '🌐' },
-  cache:     { bg: '#1a2a2a', border: '#4affee', icon: '⚡' },
-  queue:     { bg: '#1a2a2a', border: '#4aeeff', icon: '📬' },
-  service:   { bg: '#1a1a1a', border: '#888',    icon: '📦' },
+  actor:      { bg: '#1a1a3a', border: '#4a9eff', icon: '👤' },
+  endpoint:   { bg: '#1a1a3a', border: '#4a9eff', icon: '🔌' },
+  transform:  { bg: '#2a1a3a', border: '#b47aff', icon: '⚙️' },
+  validation: { bg: '#2a2a1a', border: '#ffcc4a', icon: '✅' },
+  auth:       { bg: '#2a1a1a', border: '#ff6b6b', icon: '🔒' },
+  database:   { bg: '#1a2a1a', border: '#4aff7a', icon: '🗄️' },
+  external:   { bg: '#2a1a0a', border: '#ff8a4a', icon: '🌐' },
+  cache:      { bg: '#1a2a2a', border: '#4affee', icon: '⚡' },
+  queue:      { bg: '#1a2a2a', border: '#4aeeff', icon: '📬' },
+  service:    { bg: '#1a1a1a', border: '#888',    icon: '📦' },
 }
 
 export type FlowNodeData = {
