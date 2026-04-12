@@ -172,6 +172,30 @@ grass on outside of turn, warm brown stones, Stardew Valley style,
 transparent background
 ```
 
+### Road — T-Junction
+```
+Pixel art isometric cobblestone T-junction, 64x32 diamond,
+road comes from top-left, splits to bottom-left and bottom-right,
+grass fills the top-right corner, warm brown stones,
+Stardew Valley style, transparent background
+```
+
+### Road — Crossroads
+```
+Pixel art isometric cobblestone crossroads, 64x32 diamond,
+road goes in all 4 isometric directions (NE, NW, SE, SW),
+no grass visible — full road coverage, warm brown stones,
+Stardew Valley style, transparent background
+```
+
+### Road — Dead End
+```
+Pixel art isometric cobblestone dead end, 64x32 diamond,
+road enters from one side and ends with rounded cobblestones,
+grass fills the other three sides, small decorative stone border,
+Stardew Valley style, transparent background
+```
+
 ### Building — API Endpoint (Burrow Entrance)
 ```
 Pixel art isometric rabbit burrow entrance, 64x64 pixels on 64x32 base,
