@@ -79,19 +79,21 @@ Replace placeholder diamonds with actual building sprites.
 
 **Verify:** pixel art buildings on isometric grid, clickable
 
-### Phase C: Path Tiles + Data Packets
+### Phase C: Road Tiles + Data Bunnies
 
-Replace line paths with dirt/road tiles. Add animated data packet sprites.
+Replace line paths with cobblestone road tiles. Add animated bunny sprites.
 
-1. Create path tile sprites (straight, turn, cross)
-2. Compute path routing between buildings on the grid
-3. Render path tiles along routes
-4. Create data packet sprite (animated, colored by type)
-5. Animate packets along paths using `useTick()` game loop
-6. Multiple packets on same path (staggered)
-7. Packet labels floating next to them
+1. Create road tile sprites (straight NE-SW, straight NW-SE, turns, T-junctions, crossroads)
+2. Compute road routing between buildings on the grid
+3. Place road tiles along routes
+4. Create bunny sprite with 4-frame hopping animation (colored by data source)
+5. Animate bunnies hopping along roads using `useTick()` game loop
+6. Multiple bunnies on same road (staggered)
+7. Bunny carries tiny colored package (blue=user, green=db, orange=external, purple=transform)
+8. Hover bunny → data tooltip
+9. Click bunny or road → data popup
 
-**Verify:** data packets hopping along dirt paths between buildings
+**Verify:** bunnies hopping along cobblestone roads between buildings
 
 ### Phase D: Animation Integration
 
@@ -140,11 +142,34 @@ Stardew Valley style, green grass with subtle texture,
 transparent background, no shadow, crisp pixels
 ```
 
-### Dirt Path
+### Road Tiles (need all directions)
 ```
-Pixel art isometric dirt path tile, 64x32 pixels, diamond shape,
-brown earth with small stones, Stardew Valley style,
-transparent background, connecting left-right
+Pixel art isometric cobblestone road tile, 64x32 pixels, diamond shape,
+warm brown cobblestone with grass edges, Stardew Valley style,
+transparent background
+```
+Need variants for: straight (NE-SW), straight (NW-SE), turn (all 4 corners), T-junction, crossroads, dead-end. Total ~10 road tiles.
+
+### Road — Straight NE-SW
+```
+Pixel art isometric cobblestone road, 64x32 diamond,
+road runs from top-right to bottom-left, grass on sides,
+warm brown stones, Stardew Valley pixel art style, transparent background
+```
+
+### Road — Straight NW-SE
+```
+Pixel art isometric cobblestone road, 64x32 diamond,
+road runs from top-left to bottom-right, grass on sides,
+warm brown stones, Stardew Valley pixel art style, transparent background
+```
+
+### Road — Turn
+```
+Pixel art isometric cobblestone road corner, 64x32 diamond,
+road turns from top-right to bottom-right (L-shaped),
+grass on outside of turn, warm brown stones, Stardew Valley style,
+transparent background
 ```
 
 ### Building — API Endpoint (Burrow Entrance)
@@ -195,12 +220,61 @@ has a magnifying glass icon on the gate (expandable),
 transparent background, facing camera
 ```
 
-### Data Packet (Carrot)
+### Building — Custom / Generic (Wooden Hut)
 ```
-Pixel art isometric carrot, 16x16 pixels,
-bright orange carrot with green top, glowing slightly,
-transparent background, 4 frames of bobbing animation
+Pixel art isometric small wooden hut, 64x64 pixels on 64x32 base,
+simple A-frame cabin with a question mark sign on the door,
+neutral brown wood, Stardew Valley style,
+transparent background, facing camera
 ```
+Used for `type: custom` nodes or when no specific building matches.
+
+### Building — Cache (Lightning Hutch)
+```
+Pixel art isometric small hutch with lightning bolt, 64x64 pixels on 64x32 base,
+fast-looking small structure with cyan/electric accents,
+lightning bolt symbol on the side, Stardew Valley style,
+transparent background, facing camera
+```
+
+### Building — Queue (Post Office)
+```
+Pixel art isometric small post office, 64x64 pixels on 64x32 base,
+row of wooden mailboxes in front of a small hut,
+warm teal accents, letters sticking out of boxes,
+Stardew Valley style, transparent background, facing camera
+```
+
+### Data Bunny — Blue (user/request data)
+```
+Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
+cute orange bunny carrying a small blue package on its back,
+4-frame hopping animation (up-down-up-down cycle),
+Stardew Valley style, transparent background
+```
+
+### Data Bunny — Green (database data)
+```
+Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
+cute orange bunny carrying a small green crate on its back,
+4-frame hopping animation, Stardew Valley style, transparent background
+```
+
+### Data Bunny — Orange (external API data)
+```
+Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
+cute orange bunny carrying a small orange scroll on its back,
+4-frame hopping animation, Stardew Valley style, transparent background
+```
+
+### Data Bunny — Purple (transform data)
+```
+Pixel art tiny hopping bunny, 24x24 pixels, isometric view,
+cute orange bunny carrying a small purple gem on its back,
+4-frame hopping animation, Stardew Valley style, transparent background
+```
+
+The bunny hops along the road between buildings. When data gets transformed, the package color changes. Hover the bunny to see the data it carries.
 
 ### START/END Signs
 ```
@@ -233,7 +307,7 @@ packages/web/
 │       └── sprites/
 │           ├── tiles/              # Ground tiles
 │           ├── buildings/          # Building sprites per node type
-│           ├── packets/            # Data packet sprites
+│           ├── bunnies/            # Data bunny sprites (hopping animation)
 │           ├── signs/              # START/END signs
 │           └── spritesheet.json    # Combined atlas
 ```
