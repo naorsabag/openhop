@@ -148,19 +148,13 @@ Pixel art isometric cobblestone road tile, 64x32 pixels, diamond shape,
 warm brown cobblestone with grass edges, Stardew Valley style,
 transparent background
 ```
-Need variants for: straight (NE-SW), straight (NW-SE), turn (all 4 corners), T-junction, crossroads, dead-end. Total ~10 road tiles.
 
-### Road — Straight NE-SW
+4 road tiles total. The engine rotates/flips them as needed for different directions.
+
+### Road — Straight
 ```
 Pixel art isometric cobblestone road, 64x32 diamond,
-road runs from top-right to bottom-left, grass on sides,
-warm brown stones, Stardew Valley pixel art style, transparent background
-```
-
-### Road — Straight NW-SE
-```
-Pixel art isometric cobblestone road, 64x32 diamond,
-road runs from top-left to bottom-right, grass on sides,
+road runs from top-right to bottom-left with grass on both sides,
 warm brown stones, Stardew Valley pixel art style, transparent background
 ```
 
@@ -183,16 +177,8 @@ Stardew Valley style, transparent background
 ### Road — Crossroads
 ```
 Pixel art isometric cobblestone crossroads, 64x32 diamond,
-road goes in all 4 isometric directions (NE, NW, SE, SW),
+road goes in all 4 isometric directions,
 no grass visible — full road coverage, warm brown stones,
-Stardew Valley style, transparent background
-```
-
-### Road — Dead End
-```
-Pixel art isometric cobblestone dead end, 64x32 diamond,
-road enters from one side and ends with rounded cobblestones,
-grass fills the other three sides, small decorative stone border,
 Stardew Valley style, transparent background
 ```
 
