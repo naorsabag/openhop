@@ -1,13 +1,12 @@
 import { Application, extend } from '@pixi/react'
-import { Container, Sprite, Graphics, Text } from 'pixi.js'
+import { Container, Sprite, Text, Assets, Texture } from 'pixi.js'
 import { useEffect, useRef, useState, useMemo } from 'react'
 import type { Flow } from '../../types'
 import { computeLayout } from '../../lib/iso-layout'
 import { gridToScreen, TILE_WIDTH, TILE_HEIGHT } from '../../lib/iso-math'
 import { NODE_SPRITES, TILE_SPRITES } from '../../lib/sprite-map'
 
-// Extend pixi-react with the PixiJS classes we need
-extend({ Container, Sprite, Graphics, Text })
+extend({ Container, Sprite, Text })
 
 interface IsoCanvasProps {
   flow: Flow
@@ -19,8 +18,9 @@ interface IsoCanvasProps {
 export function IsoCanvas({ flow, playing, onNodeClick, onDrillDown }: IsoCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
+  const [textures, setTextures] = useState<Record<string, Texture>>({})
+  const [loaded, setLoaded] = useState(false)
 
-  // Compute isometric layout from flow
   const layout = useMemo(() => computeLayout(flow), [flow])
 
   // Resize observer
@@ -29,13 +29,60 @@ export function IsoCanvas({ flow, playing, onNodeClick, onDrillDown }: IsoCanvas
     if (!el) return
     const observer = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect
-      setDimensions({ width, height })
+      if (width > 0 && height > 0) setDimensions({ width, height })
     })
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
 
-  // Compute the center offset so the layout is centered in the viewport
+  // Pre-load all sprite textures
+  useEffect(() => {
+    const allPaths: Record<string, string> = {}
+
+    // Node sprites
+    for (const [type, path] of Object.entries(NODE_SPRITES)) {
+      allPaths[`node-${type}`] = path
+    }
+    // Tile sprites
+    for (const [type, path] of Object.entries(TILE_SPRITES)) {
+      allPaths[`tile-${type}`] = path
+    }
+
+    Assets.load(Object.values(allPaths)).then((loaded) => {
+      const textureMap: Record<string, Texture> = {}
+      const paths = Object.entries(allPaths)
+      // Assets.load with array returns array of textures in same order
+      if (Array.isArray(loaded)) {
+        paths.forEach(([key, _], i) => {
+          textureMap[key] = loaded[i]
+        })
+      } else {
+        // Single texture or record
+        for (const [key, path] of paths) {
+          textureMap[key] = Assets.get(path)
+        }
+      }
+      setTextures(textureMap)
+      setLoaded(true)
+    }).catch(err => {
+      console.error('Failed to load sprites:', err)
+      // Try loading one by one as fallback
+      const textureMap: Record<string, Texture> = {}
+      Promise.allSettled(
+        Object.entries(allPaths).map(async ([key, path]) => {
+          try {
+            const tex = await Assets.load(path)
+            textureMap[key] = tex
+          } catch { /* skip failed */ }
+        })
+      ).then(() => {
+        setTextures(textureMap)
+        setLoaded(true)
+      })
+    })
+  }, [])
+
+  // Center the layout in the viewport
   const centerOffset = useMemo(() => {
     if (layout.nodes.length === 0) return { x: 0, y: 0 }
     const positions = layout.nodes.map(n => gridToScreen(n.gridX, n.gridY))
@@ -43,26 +90,19 @@ export function IsoCanvas({ flow, playing, onNodeClick, onDrillDown }: IsoCanvas
     const maxX = Math.max(...positions.map(p => p.x))
     const minY = Math.min(...positions.map(p => p.y))
     const maxY = Math.max(...positions.map(p => p.y))
-    const layoutCenterX = (minX + maxX) / 2
-    const layoutCenterY = (minY + maxY) / 2
     return {
-      x: dimensions.width / 2 - layoutCenterX,
-      y: dimensions.height / 2 - layoutCenterY - 32, // offset up slightly for building height
+      x: dimensions.width / 2 - (minX + maxX) / 2,
+      y: dimensions.height / 2 - (minY + maxY) / 2 - 32,
     }
   }, [layout, dimensions])
 
-  // Suppress unused variable warnings -- these will be used in later phases
   void playing
   void onDrillDown
 
   return (
     <div
       ref={containerRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        imageRendering: 'pixelated',
-      }}
+      style={{ width: '100%', height: '100%' }}
       aria-label="Isometric canvas"
     >
       <Application
@@ -72,68 +112,66 @@ export function IsoCanvas({ flow, playing, onNodeClick, onDrillDown }: IsoCanvas
         antialias={false}
         roundPixels={true}
       >
-        {/* Ground tiles -- render grass under each node position */}
-        {layout.nodes.map(node => {
-          const pos = gridToScreen(node.gridX, node.gridY)
-          return (
-            <pixiSprite
-              key={`tile-${node.id}`}
-              image={TILE_SPRITES.grass}
-              x={pos.x + centerOffset.x}
-              y={pos.y + centerOffset.y}
-              anchor={{ x: 0.5, y: 0.5 }}
-              width={TILE_WIDTH}
-              height={TILE_HEIGHT}
-              zIndex={node.gridX + node.gridY}
-            />
-          )
-        })}
+        <pixiContainer sortableChildren={true}>
+          {/* Grass tiles under each node */}
+          {loaded && layout.nodes.map(node => {
+            const pos = gridToScreen(node.gridX, node.gridY)
+            const tex = textures['tile-grass']
+            if (!tex) return null
+            return (
+              <pixiSprite
+                key={`tile-${node.id}`}
+                texture={tex}
+                x={pos.x + centerOffset.x}
+                y={pos.y + centerOffset.y}
+                anchor={{ x: 0.5, y: 0.5 }}
+                zIndex={node.gridX + node.gridY}
+              />
+            )
+          })}
 
-        {/* Building sprites at isometric positions */}
-        {layout.nodes.map(node => {
-          const pos = gridToScreen(node.gridX, node.gridY)
-          const spritePath = NODE_SPRITES[node.nodeType] || NODE_SPRITES.custom
-          return (
-            <pixiSprite
-              key={node.id}
-              image={spritePath}
-              x={pos.x + centerOffset.x}
-              y={pos.y + centerOffset.y - TILE_HEIGHT / 2}
-              anchor={{ x: 0.5, y: 0.5 }}
-              zIndex={(node.gridX + node.gridY) * 10 + 1}
-              eventMode="static"
-              cursor="pointer"
-              onPointerDown={() => onNodeClick?.(node.id)}
-            />
-          )
-        })}
+          {/* Building sprites */}
+          {loaded && layout.nodes.map(node => {
+            const pos = gridToScreen(node.gridX, node.gridY)
+            const texKey = `node-${node.nodeType}`
+            const tex = textures[texKey] || textures['node-custom']
+            if (!tex) return null
+            return (
+              <pixiSprite
+                key={`building-${node.id}`}
+                texture={tex}
+                x={pos.x + centerOffset.x}
+                y={pos.y + centerOffset.y - TILE_HEIGHT / 2}
+                anchor={{ x: 0.5, y: 0.5 }}
+                zIndex={(node.gridX + node.gridY) * 10 + 1}
+                eventMode="static"
+                cursor="pointer"
+                onPointerDown={() => onNodeClick?.(node.id)}
+              />
+            )
+          })}
 
-        {/* Node labels */}
-        {layout.nodes.map(node => {
-          const pos = gridToScreen(node.gridX, node.gridY)
-          return (
-            <pixiText
-              key={`label-${node.id}`}
-              text={node.label}
-              x={pos.x + centerOffset.x}
-              y={pos.y + centerOffset.y + 24}
-              anchor={{ x: 0.5, y: 0 }}
-              zIndex={(node.gridX + node.gridY) * 10 + 2}
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: 8,
-                fill: '#e0e0e0',
-                align: 'center',
-                dropShadow: {
-                  alpha: 0.8,
-                  color: '#000000',
-                  blur: 2,
-                  distance: 1,
-                },
-              }}
-            />
-          )
-        })}
+          {/* Labels */}
+          {layout.nodes.map(node => {
+            const pos = gridToScreen(node.gridX, node.gridY)
+            return (
+              <pixiText
+                key={`label-${node.id}`}
+                text={node.label}
+                x={pos.x + centerOffset.x}
+                y={pos.y + centerOffset.y + 24}
+                anchor={{ x: 0.5, y: 0 }}
+                zIndex={(node.gridX + node.gridY) * 10 + 2}
+                style={{
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: 8,
+                  fill: '#ffffff',
+                  align: 'center',
+                }}
+              />
+            )
+          })}
+        </pixiContainer>
       </Application>
     </div>
   )
