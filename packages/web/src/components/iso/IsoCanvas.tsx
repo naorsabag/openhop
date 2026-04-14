@@ -141,7 +141,7 @@ export function IsoCanvas({ flow, playing, onNodeClick, onDrillDown }: IsoCanvas
                 key={`building-${node.id}`}
                 texture={tex}
                 x={pos.x + centerOffset.x}
-                y={pos.y + centerOffset.y - TILE_HEIGHT / 2}
+                y={pos.y + centerOffset.y - 40}
                 anchor={{ x: 0.5, y: 0.5 }}
                 zIndex={(node.gridX + node.gridY) * 10 + 1}
                 eventMode="static"
@@ -164,7 +164,7 @@ export function IsoCanvas({ flow, playing, onNodeClick, onDrillDown }: IsoCanvas
                 zIndex={(node.gridX + node.gridY) * 10 + 2}
                 style={{
                   fontFamily: '"Press Start 2P", monospace',
-                  fontSize: 8,
+                  fontSize: 10,
                   fill: '#ffffff',
                   align: 'center',
                 }}
