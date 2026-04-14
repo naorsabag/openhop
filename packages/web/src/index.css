@@ -16,6 +16,12 @@ html {
   color-scheme: dark;
 }
 
+/* Pixel-art crispness for PixiJS canvas */
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 body {
   @apply bg-bg text-text font-terminal;
   margin: 0;

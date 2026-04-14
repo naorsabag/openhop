@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@openhop/shared": "*",
+    "@pixi/react": "^8.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "@xyflow/react": "^12.10.2",
+    "pixi-viewport": "^5.0.0",
+    "pixi.js": "^8.0.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
 
