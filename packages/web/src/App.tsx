@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
-import { FlowCanvas } from './components/FlowCanvas'
+import { IsoCanvas } from './components/iso/IsoCanvas'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import type { FlowNode, FlowStep, Flow } from './types'
 
@@ -260,14 +260,11 @@ function App() {
                 </div>
               )}
               <div className={`w-full h-full ${transitionClass}`}>
-                <FlowCanvas
+                <IsoCanvas
                   flow={displayFlow}
                   playing={playing}
+                  onNodeClick={handleDrillDown}
                   onDrillDown={handleDrillDown}
-                  onDrilldownStep={handleAutoDrilldown}
-                  onCycleComplete={isInSubFlow ? handleCycleComplete : undefined}
-                  startFromStep={currentFlowBody?.resumeFromStep}
-                  onStepChange={handleStepChange}
                 />
               </div>
             </>
