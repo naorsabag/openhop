@@ -1,0 +1,22 @@
+services:
+  openhop:
+    image: node:22-alpine
+    container_name: openhop
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "8787:8787"
+      - "8788:8788"
+    volumes:
+      - /mnt/c/Users/nsabag/Documents/dev/openhop:/app
+      - openhop-node-modules:/app/node_modules
+      - openhop-web-modules:/app/packages/web/node_modules
+      - openhop-flows:/root/.openhop
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    restart: unless-stopped
+
+volumes:
+  openhop-node-modules:
+  openhop-web-modules:
+  openhop-flows:
