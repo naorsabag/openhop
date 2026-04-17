@@ -1,8 +1,10 @@
 // Tile dimensions — spacing between grid cells
 // Buildings are 128x128 but the isometric diamond footprint is 128x64
 // We use wider spacing so buildings don't overlap vertically
-export const TILE_WIDTH = 200
-export const TILE_HEIGHT = 120
+// Tile dimensions — must match grass sprite exactly (128x64) for seamless tiling.
+// Buildings use 2x grid step in the layout to avoid overlap.
+export const TILE_WIDTH = 128
+export const TILE_HEIGHT = 64
 
 // Convert grid position to screen position
 export function gridToScreen(gridX: number, gridY: number): { x: number; y: number } {

@@ -29,60 +29,90 @@ export interface IsoLayout {
 export function computeLayout(flow: Flow): IsoLayout {
   const { nodes: flowNodes, steps } = flow.flow
 
-  // Simple layout: place nodes in a vertical chain
-  // Fan out for broadcast, side-by-side for parallel
+  // Layout: place nodes in a horizontal chain (left → right)
+  // Fan out for broadcast vertically (±y), sequential steps advance right (+x)
   const isoNodes: IsoNode[] = []
   const placed = new Map<string, { gridX: number; gridY: number }>()
 
   // Walk steps to determine order
-  let currentY = 0
+  // Grid step of 2 between buildings so 128x128 sprites don't overlap on a 128x64 tile grid
+  const STEP = 2
+  let currentX = 0
   const visited = new Set<string>()
+  const occupied = new Set<string>() // "gridX,gridY" keys for collision detection
+
+  function placeNode(id: string, gridX: number, gridY: number) {
+    placed.set(id, { gridX, gridY })
+    visited.add(id)
+    occupied.add(`${gridX},${gridY}`)
+  }
+
+  function isOccupied(gridX: number, gridY: number) {
+    return occupied.has(`${gridX},${gridY}`)
+  }
+
+  // Find a free position near (gridX, gridY) by spiraling outward
+  function findFreeNear(gridX: number, gridY: number): { gridX: number; gridY: number } {
+    if (!isOccupied(gridX, gridY)) return { gridX, gridY }
+    // Try offsets: down, right-down, up, further down...
+    const offsets = [
+      [0, 1], [1, 0], [1, 1], [0, -1], [-1, 0],
+      [0, 2], [2, 0], [1, 2], [2, 1], [1, -1], [-1, 1],
+    ]
+    for (const [dx, dy] of offsets) {
+      if (!isOccupied(gridX + dx, gridY + dy)) return { gridX: gridX + dx, gridY: gridY + dy }
+    }
+    return { gridX, gridY: gridY + 2 }
+  }
 
   for (const step of (steps ?? [])) {
     if (step.parallel) {
-      // Parallel steps -- place targets side by side
+      // Parallel steps -- place targets stacked vertically at same X
       for (const ps of step.parallel) {
         if (ps.from && !visited.has(ps.from)) {
-          placed.set(ps.from, { gridX: 0, gridY: currentY })
-          visited.add(ps.from)
-          currentY++
+          placeNode(ps.from, currentX, 0)
+          currentX += STEP
         }
       }
     } else if (step.create && step.from) {
-      // Create step: place creator, then created node to the side
+      // Create step: place creator, then created node beside it
       if (step.from && !visited.has(step.from)) {
-        placed.set(step.from, { gridX: 0, gridY: currentY })
-        visited.add(step.from)
-        currentY++
+        placeNode(step.from, currentX, 0)
+        currentX += STEP
       }
       if (step.create && !visited.has(step.create)) {
-        placed.set(step.create, { gridX: 2, gridY: currentY - 1 }) // side position
-        visited.add(step.create)
+        // Place beside the creator — find free spot near parent
+        const parentPos = placed.get(step.from!)
+        if (parentPos) {
+          const target = findFreeNear(parentPos.gridX + STEP, parentPos.gridY + STEP)
+          placeNode(step.create, target.gridX, target.gridY)
+        } else {
+          const target = findFreeNear(currentX, STEP)
+          placeNode(step.create, target.gridX, target.gridY)
+        }
       }
     } else {
       if (step.from && !visited.has(step.from)) {
-        placed.set(step.from, { gridX: 0, gridY: currentY })
-        visited.add(step.from)
-        currentY++
+        placeNode(step.from, currentX, 0)
+        currentX += STEP
       }
       if (step.to) {
         const targets = Array.isArray(step.to) ? step.to : [step.to]
         if (targets.length > 1) {
-          // Broadcast: fan out
-          const startX = -(targets.length - 1)
-          targets.forEach((t, i) => {
+          // Broadcast: fan out vertically
+          const startY = -(targets.length - 1) * STEP
+          targets.forEach((t: string, i: number) => {
             if (!visited.has(t)) {
-              placed.set(t, { gridX: startX + i * 2, gridY: currentY })
-              visited.add(t)
+              const pos = findFreeNear(currentX, startY + i * STEP * 2)
+              placeNode(t, pos.gridX, pos.gridY)
             }
           })
-          currentY++
+          currentX += STEP
         } else {
           const t = targets[0]
           if (t && !visited.has(t)) {
-            placed.set(t, { gridX: 0, gridY: currentY })
-            visited.add(t)
-            currentY++
+            placeNode(t, currentX, 0)
+            currentX += STEP
           }
         }
       }
@@ -92,17 +122,25 @@ export function computeLayout(flow: Flow): IsoLayout {
   // Add any unplaced nodes
   for (const node of flowNodes) {
     if (!visited.has(node.id)) {
-      placed.set(node.id, { gridX: 0, gridY: currentY })
-      currentY++
+      const pos = findFreeNear(currentX, 0)
+      placeNode(node.id, pos.gridX, pos.gridY)
+      currentX += STEP
     }
   }
 
-  // Also handle dynamic nodes from create steps
+  // Also handle dynamic nodes from create steps that weren't placed in the main loop
   for (const step of (steps ?? [])) {
     if ('create' in step && step.create && step.node) {
-      if (!visited.has(step.create)) {
-        placed.set(step.create, { gridX: 2, gridY: currentY })
-        currentY++
+      if (!placed.has(step.create)) {
+        const parentPos = step.from ? placed.get(step.from) : null
+        if (parentPos) {
+          const target = findFreeNear(parentPos.gridX + STEP, parentPos.gridY + STEP)
+          placeNode(step.create, target.gridX, target.gridY)
+        } else {
+          const target = findFreeNear(currentX, STEP)
+          placeNode(step.create, target.gridX, target.gridY)
+          currentX += STEP
+        }
       }
     }
   }
@@ -156,12 +194,12 @@ export function computeLayout(flow: Flow): IsoLayout {
     })
   }
 
-  const gridXValues = Array.from(placed.values()).map(p => p.gridX)
+  const gridYValues = Array.from(placed.values()).map(p => p.gridY)
 
   return {
     nodes: isoNodes,
     edges: isoEdges,
-    gridWidth: gridXValues.length > 0 ? Math.max(...gridXValues) + 1 : 1,
-    gridHeight: currentY,
+    gridWidth: currentX,
+    gridHeight: gridYValues.length > 0 ? Math.max(...gridYValues) + 1 : 1,
   }
 }
