@@ -71,23 +71,14 @@ function PulseRect({
 export function ActorBuilding({ color, active }: BuildingProps) {
   return (
     <svg width={72} height={72} viewBox="0 0 72 72" shapeRendering="crispEdges">
-      {/* outer earthen ring — thick dark wall */}
-      <circle cx="36" cy="36" r="30" fill={color} fillOpacity=".22" stroke={color} strokeWidth="5" />
-      {/* worn path ring */}
-      <circle cx="36" cy="36" r="22" fill={color} fillOpacity=".18" stroke={color} strokeWidth="2.5" strokeOpacity=".70" />
-      {/* inner burrow floor */}
-      <circle cx="36" cy="36" r="13" fill={color} fillOpacity=".30" stroke={color} strokeWidth="2" strokeOpacity=".80" />
-      {/* burrow hole — dark center pit */}
-      <circle cx="36" cy="36" r="6" fill={color} fillOpacity=".65" stroke={color} strokeWidth="1.5" />
-      {/* bunny silhouette — ears (two tall rounded rects) + head */}
-      {/* left ear */}
-      <rect x="29" y="20" width="5" height="11" rx="2" fill={color} fillOpacity=".85" />
-      {/* right ear */}
-      <rect x="38" y="20" width="5" height="11" rx="2" fill={color} fillOpacity=".85" />
-      {/* head */}
-      <rect x="29" y="29" width="14" height="11" rx="3" fill={color} fillOpacity=".85" />
-      {/* nose dot */}
-      <rect x="34" y="37" width="4" height="3" rx="1" fill={color} fillOpacity=".40" />
+      <image
+        href="/sprites/user_node.svg"
+        x="0"
+        y="0"
+        width="72"
+        height="72"
+        preserveAspectRatio="xMidYMid meet"
+      />
       {active && <PulseRing color={color} cx={36} cy={36} r={33} />}
     </svg>
   )

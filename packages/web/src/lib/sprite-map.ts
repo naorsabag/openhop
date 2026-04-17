@@ -1,5 +1,5 @@
 export const NODE_SPRITES: Record<string, string> = {
-  actor: '/sprites/bunny.png',
+  actor: '/sprites/user_node.svg',
   endpoint: '/sprites/endpoint_node.png',
   transform: '/sprites/transform_node.png',
   validation: '/sprites/validation_node.png',
