@@ -17,6 +17,10 @@ const NODE_STYLES: Record<string, { bg: string; border: string }> = {
   service:    { bg: '#111111', border: '#888'    },
 }
 
+const NODE_ART_SIZE = 72
+const NODE_BOX_WIDTH = 160
+const HORIZONTAL_HANDLE_INSET = (NODE_BOX_WIDTH - NODE_ART_SIZE) / 2
+
 export type FlowNodeData = {
   label: string
   nodeType: string
@@ -112,6 +116,16 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     pointerEvents: 'none',
   }
 
+  const leftHandleStyle: React.CSSProperties = {
+    ...hiddenHandleStyle,
+    left: HORIZONTAL_HANDLE_INSET,
+  }
+
+  const rightHandleStyle: React.CSSProperties = {
+    ...hiddenHandleStyle,
+    right: HORIZONTAL_HANDLE_INSET,
+  }
+
   return (
     <div
       role="group"
@@ -132,10 +146,10 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
       <Handle id="top" type="source" position={Position.Top} style={hiddenHandleStyle} />
       <Handle id="bottom" type="target" position={Position.Bottom} style={hiddenHandleStyle} />
       <Handle id="bottom" type="source" position={Position.Bottom} style={hiddenHandleStyle} />
-      <Handle id="left" type="target" position={Position.Left} style={hiddenHandleStyle} />
-      <Handle id="left" type="source" position={Position.Left} style={hiddenHandleStyle} />
-      <Handle id="right" type="target" position={Position.Right} style={hiddenHandleStyle} />
-      <Handle id="right" type="source" position={Position.Right} style={hiddenHandleStyle} />
+      <Handle id="left" type="target" position={Position.Left} style={leftHandleStyle} />
+      <Handle id="left" type="source" position={Position.Left} style={leftHandleStyle} />
+      <Handle id="right" type="target" position={Position.Right} style={rightHandleStyle} />
+      <Handle id="right" type="source" position={Position.Right} style={rightHandleStyle} />
 
       {/* Building SVG — full node visual */}
       <div
