@@ -401,7 +401,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         minZoom={0.1}
         maxZoom={6}
       >
-        <Background variant={'lines' as any} gap={32} size={1} color="#1a3a1e" />
+        <Background variant={'lines' as any} gap={32} size={1} color="#1F3E2F" />
         <Controls
           showInteractive={false}
           style={{ background: '#0d2612', borderColor: '#1a4a22' }}
