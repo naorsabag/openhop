@@ -3,14 +3,16 @@ import {
   Background,
   Controls,
   type NodeTypes,
+  type EdgeTypes,
   type Node,
   type Edge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
+import { RoadEdge } from './edges/RoadEdge'
 import { flowToGraph } from '../lib/flow-to-graph'
-import { useFlowAnimation } from '../hooks/useFlowAnimation'
+import { useFlowAnimation, type EdgeFlowRef, type StepEdgeMapping } from '../hooks/useFlowAnimation'
 import { DataPixel } from './DataPixel'
 import { DataPopup } from './DataPopup'
 import type { Flow, FlowStep } from '../types'
@@ -18,6 +20,12 @@ import type { Flow, FlowStep } from '../types'
 const nodeTypes: NodeTypes = {
   flowNode: FlowNodeComponent,
 }
+
+const edgeTypes: EdgeTypes = {
+  road: RoadEdge,
+}
+
+const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`)
 
 interface FlowCanvasProps {
   flow: Flow
@@ -43,6 +51,81 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     [flow],
   )
 
+  const pairEdgeMap = useMemo(() => {
+    const map = new Map<string, Edge>()
+    for (const edge of baseEdges) {
+      map.set(pairKey(edge.source, edge.target), edge)
+    }
+    return map
+  }, [baseEdges])
+
+  const resolveEdgeFlow = useCallback((fromId: string, toId: string, step: FlowStep): EdgeFlowRef | null => {
+    const edge = pairEdgeMap.get(pairKey(fromId, toId))
+    if (!edge) return null
+
+    return {
+      edgeId: edge.id,
+      fromId,
+      toId,
+      reverse: edge.source !== fromId || edge.target !== toId,
+      step,
+    }
+  }, [pairEdgeMap])
+
+  const stepMappings = useMemo<StepEdgeMapping[]>(() => {
+    return flow.flow.steps.map((step, stepIndex) => {
+      const edgeFlows: EdgeFlowRef[] = []
+      const fromIds: string[] = []
+      const toIds: string[] = []
+
+      if (step.parallel) {
+        for (const ps of step.parallel) {
+          if (ps.from) fromIds.push(ps.from)
+          if (ps.to) {
+            const targets = Array.isArray(ps.to) ? ps.to : [ps.to]
+            toIds.push(...targets)
+            for (const target of targets) {
+              if (!ps.from) continue
+              const edgeFlow = resolveEdgeFlow(ps.from, target, ps)
+              if (edgeFlow) edgeFlows.push(edgeFlow)
+            }
+          }
+        }
+      } else {
+        if (step.from) fromIds.push(step.from)
+        if (step.to) {
+          const targets = Array.isArray(step.to) ? step.to : [step.to]
+          toIds.push(...targets)
+          for (const target of targets) {
+            if (!step.from) continue
+            const edgeFlow = resolveEdgeFlow(step.from, target, step)
+            if (edgeFlow) edgeFlows.push(edgeFlow)
+          }
+        }
+      }
+
+      return { stepIndex, edgeFlows, fromIds, toIds, step }
+    })
+  }, [flow.flow.steps, resolveEdgeFlow])
+
+  const edgeStepsById = useMemo(() => {
+    const map = new Map<string, FlowStep[]>()
+
+    const pushStep = (edgeId: string, step: FlowStep) => {
+      const steps = map.get(edgeId) ?? []
+      if (!steps.includes(step)) steps.push(step)
+      map.set(edgeId, steps)
+    }
+
+    for (const mapping of stepMappings) {
+      for (const edgeFlow of mapping.edgeFlows) {
+        pushStep(edgeFlow.edgeId, edgeFlow.step)
+      }
+    }
+
+    return map
+  }, [stepMappings])
+
   const handlePinPopup = useCallback((step: FlowStep, position: { x: number; y: number }, edgeId?: string) => {
     const id = edgeId ?? '__pixel__'
     if (pinnedEdge?.edgeId === id) {
@@ -57,39 +140,20 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       edgeSteps = [step]
     }
     if (id !== '__pixel__') {
-      const targetEdge = baseEdges.find(e => e.id === id)
-      if (targetEdge) {
-        for (const e of baseEdges) {
-          if (e.id !== id && e.source === targetEdge.source && e.target === targetEdge.target) {
-            const s = (e.data as { step?: FlowStep } | undefined)?.step
-            if (s) {
-              if (Array.isArray(s.data)) {
-                for (const d of s.data) {
-                  edgeSteps.push({ ...s, data: d })
-                }
-              } else if (!edgeSteps.includes(s)) {
-                edgeSteps.push(s)
-              }
-            }
+      const relatedSteps = edgeStepsById.get(id) ?? []
+      for (const relatedStep of relatedSteps) {
+        if (relatedStep === step) continue
+        if (Array.isArray(relatedStep.data)) {
+          for (const d of relatedStep.data) {
+            edgeSteps.push({ ...relatedStep, data: d })
           }
+        } else {
+          edgeSteps.push(relatedStep)
         }
       }
     }
     setPinnedEdge({ edgeId: id, steps: edgeSteps, position })
-  }, [pinnedEdge, baseEdges])
-
-  // Build step-to-edge mapping from edge data
-  const edgeStepMap = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const edge of baseEdges) {
-      const stepIndex = (edge.data as { stepIndex: number } | undefined)
-        ?.stepIndex
-      if (stepIndex !== undefined) {
-        map.set(edge.id, stepIndex)
-      }
-    }
-    return map
-  }, [baseEdges])
+  }, [pinnedEdge, edgeStepsById])
 
   // Build a map from node id to node type for pixel coloring
   const nodeTypeMap = useMemo(() => {
@@ -105,7 +169,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     manualPixels, nodeProgress,
     activeNodes, destroyedNodes,
     ...animState
-  } = useFlowAnimation(flow.flow.steps, edgeStepMap, playing, onCycleComplete, startFromStep)
+  } = useFlowAnimation(flow.flow.steps, stepMappings, playing, onCycleComplete, startFromStep)
 
   // Helper: check if a node is currently alive (static nodes always are, dynamic nodes need to be in activeNodes and not destroyed)
   const isNodeAlive = useCallback((nodeId: string) => {
@@ -125,9 +189,9 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   }, [animState.currentStepIndex])
 
   // Build a map: nodeId -> list of outgoing logical steps
-  // A broadcast (to: [db, cache]) is ONE logical step with multiple edgeIds
+  // A broadcast (to: [db, cache]) is ONE logical step with multiple edge flows.
   const nodeOutgoingSteps = useMemo(() => {
-    const map = new Map<string, Array<{ stepIndex: number; step: FlowStep; edgeIds: string[] }>>()
+    const map = new Map<string, Array<{ stepIndex: number; step: FlowStep; edgeFlows: EdgeFlowRef[] }>>()
     const { steps } = flow.flow
     for (let si = 0; si < steps.length; si++) {
       const step = steps[si]
@@ -136,46 +200,40 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
           if (ps.from) {
             const entries = map.get(ps.from) ?? []
             const targets = Array.isArray(ps.to) ? ps.to : ps.to ? [ps.to] : []
-            const edgeIds: string[] = []
+            const edgeFlows: EdgeFlowRef[] = []
             for (const t of targets) {
-              const edgeId = baseEdges.find(
-                (e) => e.source === ps.from && e.target === t && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
-              )?.id
-              if (edgeId) edgeIds.push(edgeId)
+              const edgeFlow = resolveEdgeFlow(ps.from, t, ps)
+              if (edgeFlow) edgeFlows.push(edgeFlow)
             }
-            if (edgeIds.length > 0) entries.push({ stepIndex: si, step: ps, edgeIds })
+            if (edgeFlows.length > 0) entries.push({ stepIndex: si, step: ps, edgeFlows })
             map.set(ps.from, entries)
           }
         }
       } else if (step.destroy) {
         // Destroy step: outgoing action for the destroyed node (no edge, just triggers deactivation)
         const entries = map.get(step.destroy) ?? []
-        entries.push({ stepIndex: si, step, edgeIds: [] })
+        entries.push({ stepIndex: si, step, edgeFlows: [] })
         map.set(step.destroy, entries)
       } else if (step.create && step.from) {
         // Create step: from → newly created node
         const entries = map.get(step.from) ?? []
-        const edgeId = baseEdges.find(
-          (e) => e.source === step.from && e.target === step.create && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
-        )?.id
-        if (edgeId) entries.push({ stepIndex: si, step, edgeIds: [edgeId] })
+        const edgeFlow = resolveEdgeFlow(step.from, step.create, step)
+        if (edgeFlow) entries.push({ stepIndex: si, step, edgeFlows: [edgeFlow] })
         map.set(step.from, entries)
       } else if (step.from) {
         const entries = map.get(step.from) ?? []
         const targets = Array.isArray(step.to) ? step.to : step.to ? [step.to] : []
-        const edgeIds: string[] = []
+        const edgeFlows: EdgeFlowRef[] = []
         for (const t of targets) {
-          const edgeId = baseEdges.find(
-            (e) => e.source === step.from && e.target === t && (e.data as { stepIndex: number } | undefined)?.stepIndex === si,
-          )?.id
-          if (edgeId) edgeIds.push(edgeId)
+          const edgeFlow = resolveEdgeFlow(step.from, t, step)
+          if (edgeFlow) edgeFlows.push(edgeFlow)
         }
-        if (edgeIds.length > 0) entries.push({ stepIndex: si, step, edgeIds })
+        if (edgeFlows.length > 0) entries.push({ stepIndex: si, step, edgeFlows })
         map.set(step.from, entries)
       }
     }
     return map
-  }, [flow.flow, baseEdges])
+  }, [flow.flow, resolveEdgeFlow])
 
   // Track which specific (nodeId, stepIndex) combos have a pixel in flight
   const activePixelSteps = useMemo(() => {
@@ -245,11 +303,12 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       return // no pixel to fire
     }
 
-    // Fire a pixel for EACH edge in this logical step (broadcast = multiple edges)
-    for (const edgeId of entry.edgeIds) {
+    // Fire a pixel for EACH edge flow in this logical step (broadcast = multiple edges)
+    for (const edgeFlow of entry.edgeFlows) {
       fireManualPixel({
-        edgeId,
-        step: entry.step,
+        edgeId: edgeFlow.edgeId,
+        reverse: edgeFlow.reverse,
+        step: edgeFlow.step,
         sourceNodeId: nodeId,
         sourceStepIndex: currentProg,
         sourceNodeType: sourceInfo.type,
@@ -292,44 +351,37 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 
   // Highlight active edges, hide edges connected to hidden dynamic nodes
   const edges: Edge[] = useMemo(() => {
-    return baseEdges.map((edge) => {
+    return baseEdges
+      .filter((edge) => isNodeAlive(edge.source) && isNodeAlive(edge.target))
+      .map((edge) => {
       const sourceAlive = isNodeAlive(edge.source)
       const targetAlive = isNodeAlive(edge.target)
       const bothAlive = sourceAlive && targetAlive
+      const isActive = animState.activeEdgeIds.has(edge.id)
 
-      if (animState.activeEdgeIds.has(edge.id)) {
-        return {
-          ...edge,
-          interactionWidth: bothAlive ? undefined : 0,
-          style: {
-            ...edge.style,
-            stroke: '#4a9eff',
-            strokeWidth: 4,
-            opacity: bothAlive ? 1 : 0,
-            pointerEvents: (bothAlive ? 'auto' : 'none') as any,
-            transition: 'opacity 0.4s ease',
-          },
-          animated: true,
-        }
-      }
       return {
         ...edge,
-        interactionWidth: bothAlive ? undefined : 0,
+        interactionWidth: undefined,
         style: {
           ...edge.style,
-          opacity: bothAlive ? 1 : 0,
-          pointerEvents: (bothAlive ? 'auto' : 'none') as any,
+          opacity: 1,
+          pointerEvents: 'auto' as any,
           transition: 'opacity 0.4s ease',
         },
+        data: {
+          ...edge.data,
+          active: isActive,
+          visible: bothAlive,
+        },
       }
-    })
+      })
   }, [baseEdges, animState.activeEdgeIds, isNodeAlive])
 
   // Collect active edges for pixel rendering
-  const activeEdges = useMemo(() => {
+  const activeEdgeFlows = useMemo(() => {
     if (!animState.activeStep) return []
-    return baseEdges.filter((e) => animState.activeEdgeIds.has(e.id))
-  }, [baseEdges, animState.activeEdgeIds, animState.activeStep])
+    return animState.activeEdgeFlows
+  }, [animState.activeEdgeFlows, animState.activeStep])
 
   return (
     <div className="w-full h-full relative" ref={containerRef} aria-label="Flow canvas">
@@ -337,16 +389,8 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
-        onEdgeClick={(event, edge) => {
-          // Don't show popup for edges where either node is hidden (dynamic + not yet created)
-          const srcAlive = isNodeAlive(edge.source)
-          const tgtAlive = isNodeAlive(edge.target)
-          if (!srcAlive || !tgtAlive) return
-          const edgeStep = (edge.data as { step?: FlowStep } | undefined)?.step
-          if (!edgeStep) return
-          handlePinPopup(edgeStep, { x: event.clientX, y: event.clientY }, edge.id)
-        }}
         onPaneClick={() => setPinnedEdge(null)}
         nodesConnectable={false}
         edgesFocusable={false}
@@ -354,39 +398,37 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         fitView
         fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
-        minZoom={0.2}
-        maxZoom={2}
+        minZoom={0.1}
+        maxZoom={6}
       >
-        <Background gap={20} color="#1a1a2e" />
+        <Background variant={'lines' as any} gap={32} size={1} color="#1a3a1e" />
         <Controls
           showInteractive={false}
-          style={{ background: '#1a1a2e', borderColor: '#2a2a4a' }}
+          style={{ background: '#0d2612', borderColor: '#1a4a22' }}
         />
       </ReactFlow>
 
       {/* Data pixel overlay — automatic */}
       {animState.activeStep &&
-        activeEdges.flatMap((edge) => {
-          const sourceInfo = nodeTypeMap.get(edge.source) ?? {
+        activeEdgeFlows.flatMap((edgeFlow, edgeFlowIndex) => {
+          const sourceInfo = nodeTypeMap.get(edgeFlow.fromId) ?? {
             type: 'service',
           }
-          // Use the sub-step if parallel, otherwise the main step
-          const edgeStep =
-            (edge.data as { step?: FlowStep } | undefined)?.step ??
-            animState.activeStep!
+          const edgeStep = edgeFlow.step ?? animState.activeStep!
 
           // If the step has array data, render one pixel per data object with stagger
           if (Array.isArray(edgeStep.data)) {
-            return edgeStep.data.map((dataObj, i) => (
+            return edgeStep.data.map((dataObj, dataIndex) => (
               <DataPixel
-                key={`${edge.id}-${i}`}
-                edgeId={edge.id}
+                key={`${edgeFlow.edgeId}-${edgeFlow.reverse ? 'r' : 'f'}-${edgeFlowIndex}-${dataIndex}`}
+                edgeId={edgeFlow.edgeId}
+                reverse={edgeFlow.reverse}
                 sourceNodeType={sourceInfo.type}
                 sourceNodeColor={sourceInfo.color}
                 step={edgeStep}
                 containerRef={containerRef}
-                onPixelClick={(s, pos) => handlePinPopup(s, pos, edge.id)}
-                delayMs={i * 120}
+                onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
+                delayMs={dataIndex * 120}
                 dataOverride={dataObj}
               />
             ))
@@ -394,13 +436,14 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 
           return (
             <DataPixel
-              key={edge.id}
-              edgeId={edge.id}
+              key={`${edgeFlow.edgeId}-${edgeFlow.reverse ? 'r' : 'f'}-${edgeFlowIndex}`}
+              edgeId={edgeFlow.edgeId}
+              reverse={edgeFlow.reverse}
               sourceNodeType={sourceInfo.type}
               sourceNodeColor={sourceInfo.color}
               step={edgeStep}
               containerRef={containerRef}
-              onPixelClick={(s, pos) => handlePinPopup(s, pos, edge.id)}
+              onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
             />
           )
         })}
@@ -410,6 +453,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         <DataPixel
           key={mp.id}
           edgeId={mp.edgeId}
+          reverse={mp.reverse}
           sourceNodeType={mp.sourceNodeType}
           sourceNodeColor={mp.sourceNodeColor}
           step={mp.step}

@@ -1,19 +1,20 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
+import { NODE_BUILDINGS, CustomBuilding } from './NodeBuilding'
 
-/** Node type visual config */
-const NODE_STYLES: Record<string, { bg: string; border: string; icon: string }> = {
-  actor:      { bg: '#1a1a3a', border: '#4a9eff', icon: '👤' },
-  endpoint:   { bg: '#1a1a3a', border: '#4a9eff', icon: '🔌' },
-  transform:  { bg: '#2a1a3a', border: '#b47aff', icon: '⚙️' },
-  validation: { bg: '#2a2a1a', border: '#ffcc4a', icon: '✅' },
-  auth:       { bg: '#2a1a1a', border: '#ff6b6b', icon: '🔒' },
-  database:   { bg: '#1a2a1a', border: '#4aff7a', icon: '🗄️' },
-  external:   { bg: '#2a1a0a', border: '#ff8a4a', icon: '🌐' },
-  cache:      { bg: '#1a2a2a', border: '#4affee', icon: '⚡' },
-  queue:      { bg: '#1a2a2a', border: '#4aeeff', icon: '📬' },
-  service:    { bg: '#1a1a1a', border: '#888',    icon: '📦' },
+/** Node type color config */
+const NODE_STYLES: Record<string, { bg: string; border: string }> = {
+  actor:      { bg: '#0a1230', border: '#4a9eff' },
+  endpoint:   { bg: '#0a1230', border: '#4a9eff' },
+  transform:  { bg: '#1a0a2a', border: '#b47aff' },
+  validation: { bg: '#1a1a08', border: '#ffcc4a' },
+  auth:       { bg: '#1a0808', border: '#ff6b6b' },
+  database:   { bg: '#081a08', border: '#4aff7a' },
+  external:   { bg: '#1a0c04', border: '#ff8a4a' },
+  cache:      { bg: '#081a1a', border: '#4affee' },
+  queue:      { bg: '#081618', border: '#4aeeff' },
+  service:    { bg: '#111111', border: '#888'    },
 }
 
 export type FlowNodeData = {
@@ -49,39 +50,33 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   const progressCurrent = Math.min(currentStep, progressTotal)
 
   const isCustom = nodeType === 'custom'
-  const style = NODE_STYLES[nodeType] ?? {
-    bg: color ?? '#1a1a1a',
-    border: color ?? '#666',
-    icon: '❓',
-  }
+  const style = NODE_STYLES[nodeType] ?? { bg: '#111111', border: color ?? '#666' }
 
-  const bg = isCustom ? (color ? adjustAlpha(color) : '#1a1a1a') : style.bg
   const borderColor = isCustom ? (color ?? '#666') : style.border
 
-  // Build icon element — use Iconify API for "prefix:name" icons
-  let iconElement: React.ReactNode = <span className="text-base leading-none">{style.icon}</span>
+  // Pick the building component for this node type
+  const BuildingComponent = NODE_BUILDINGS[nodeType] ?? CustomBuilding
 
+  // For custom nodes with an explicit icon override, show emoji/iconify inside the custom building
+  let customIconOverlay: React.ReactNode = null
   if (isCustom && icon) {
     if (icon.includes(':')) {
-      // Iconify URL: "logos:postgresql" → "https://api.iconify.design/logos/postgresql.svg"
       const [prefix, name] = icon.split(':')
       const url = `https://api.iconify.design/${prefix}/${name}.svg`
-      iconElement = (
+      customIconOverlay = (
         <img
           src={url}
           alt={label}
-          style={{ width: 20, height: 20, imageRendering: 'auto' }}
-          onError={(e) => {
-            // Fallback to emoji if image fails to load
-            const span = document.createElement('span')
-            span.textContent = '🔷'
-            span.className = 'text-base leading-none'
-            ;(e.target as HTMLElement).replaceWith(span)
-          }}
+          style={{ width: 24, height: 24, position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', imageRendering: 'auto' }}
+          onError={(e) => { (e.target as HTMLElement).style.display = 'none' }}
         />
       )
     } else {
-      iconElement = <span className="text-base leading-none">{icon}</span>
+      customIconOverlay = (
+        <span style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)', fontSize: 22, lineHeight: 1 }}>
+          {icon}
+        </span>
+      )
     }
   }
 
@@ -101,6 +96,22 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     onProgressBarClick(id, targetStep)
   }
 
+  const isActive = isActiveSender || isActiveReceiver
+
+  const handleStyle: React.CSSProperties = {
+    width: 6,
+    height: 6,
+    background: borderColor,
+    border: 'none',
+    borderRadius: 3,
+  }
+
+  const hiddenHandleStyle: React.CSSProperties = {
+    ...handleStyle,
+    opacity: 0,
+    pointerEvents: 'none',
+  }
+
   return (
     <div
       role="group"
@@ -108,30 +119,38 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
       data-id={id}
       onClick={handleNodeClick}
       style={{
-        background: bg,
-        borderColor,
-        borderWidth: 3,
-        borderStyle: 'solid',
-        boxShadow: isActiveSender
-          ? `0 0 20px ${borderColor}, 4px 4px 0px 0px ${borderColor}40`
-          : isActiveReceiver
-            ? `0 0 10px ${borderColor}60, 4px 4px 0px 0px ${borderColor}40`
-            : `4px 4px 0px 0px ${borderColor}40`,
-        minWidth: 180,
-        transition: 'box-shadow 0.2s ease',
+        position: 'relative',
+        background: 'transparent',
+        border: 'none',
         cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
-      className="px-3 py-2 rounded-sm"
     >
-      <Handle type="target" position={Position.Top} style={{ background: borderColor, width: 8, height: 8, border: 'none' }} />
-      <div className="flex items-center gap-2">
-        {iconElement}
-        <span
-          className="font-pixel text-white"
-          style={{ fontSize: 10, lineHeight: '14px', whiteSpace: 'nowrap' }}
-        >
-          {label}
-        </span>
+      <Handle id="top" type="target" position={Position.Top} style={hiddenHandleStyle} />
+      <Handle id="top" type="source" position={Position.Top} style={hiddenHandleStyle} />
+      <Handle id="bottom" type="target" position={Position.Bottom} style={hiddenHandleStyle} />
+      <Handle id="bottom" type="source" position={Position.Bottom} style={hiddenHandleStyle} />
+      <Handle id="left" type="target" position={Position.Left} style={hiddenHandleStyle} />
+      <Handle id="left" type="source" position={Position.Left} style={hiddenHandleStyle} />
+      <Handle id="right" type="target" position={Position.Right} style={hiddenHandleStyle} />
+      <Handle id="right" type="source" position={Position.Right} style={hiddenHandleStyle} />
+
+      {/* Building SVG — full node visual */}
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'center',
+          filter: isActive
+            ? `drop-shadow(0 0 8px ${borderColor})`
+            : undefined,
+          transition: 'filter 0.2s ease',
+        }}
+      >
+        <BuildingComponent color={borderColor} active={isActive} />
+        {customIconOverlay}
         {hasSubFlow && (
           <button
             aria-label="Drill down"
@@ -140,14 +159,42 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
               e.stopPropagation()
               if (onDrillDown) onDrillDown(id)
             }}
-            className="text-xs leading-none ml-auto hover:opacity-70 transition-opacity"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 12,
+              lineHeight: 1,
+              opacity: 0.85,
+            }}
             title="Has sub-flow"
           >
             🔍
           </button>
         )}
       </div>
+
+      {/* Label — floats below building, no background */}
+      <span
+        style={{
+          color: borderColor,
+          fontSize: 10,
+          fontFamily: 'monospace',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+          textShadow: '0 1px 3px #000, 0 0 6px #000',
+          marginTop: 2,
+          display: 'block',
+        }}
+      >
+        {label}
+      </span>
+
+      {/* Progress bar — 56px wide, matches building width */}
       {progressTotal > 0 && (
         <div
           data-testid="progress-bar"
@@ -157,9 +204,9 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           aria-label={`Progress: ${progressCurrent} of ${progressTotal} steps`}
           onClick={handleProgressBarClick}
           style={{
-            width: '100%',
-            height: 4,
-            marginTop: 4,
+            width: 56,
+            height: 3,
+            marginTop: 3,
             background: `${borderColor}33`,
             borderRadius: 1,
             cursor: 'pointer',
@@ -177,15 +224,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           />
         </div>
       )}
-      <Handle type="source" position={Position.Bottom} style={{ background: borderColor, width: 8, height: 8, border: 'none' }} />
     </div>
   )
 }
 
-/** Darken a hex color to create a subtle background tint */
-function adjustAlpha(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgb(${Math.round(r * 0.15)}, ${Math.round(g * 0.15)}, ${Math.round(b * 0.15)})`
-}
