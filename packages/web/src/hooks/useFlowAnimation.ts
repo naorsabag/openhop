@@ -1,9 +1,18 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { FlowStep } from '../types'
+
+export interface EdgeFlowRef {
+  edgeId: string
+  fromId: string
+  toId: string
+  reverse: boolean
+  step: FlowStep
+}
 
 export interface ManualPixel {
   id: string
   edgeId: string
+  reverse: boolean
   step: FlowStep
   sourceNodeId: string
   sourceStepIndex: number
@@ -16,6 +25,7 @@ export interface AnimationState {
   currentStepIndex: number
   totalSteps: number
   activeEdgeIds: Set<string>
+  activeEdgeFlows: EdgeFlowRef[]
   activeFromIds: Set<string>
   activeToIds: Set<string>
   activeStep: FlowStep | null
@@ -25,9 +35,9 @@ export interface AnimationState {
   destroyedNodes: Set<string>   // nodes that have been destroyed
 }
 
-interface StepEdgeMapping {
+export interface StepEdgeMapping {
   stepIndex: number
-  edgeIds: string[]
+  edgeFlows: EdgeFlowRef[]
   fromIds: string[]
   toIds: string[]
   step: FlowStep
@@ -40,7 +50,7 @@ const PIXEL_DURATION_BASE = 1800
 
 export function useFlowAnimation(
   steps: FlowStep[],
-  edgeStepMap: Map<string, number>,
+  stepMappings: StepEdgeMapping[],
   playing: boolean,
   onCycleComplete?: () => void,
   startFromStep?: number,
@@ -50,6 +60,7 @@ export function useFlowAnimation(
     currentStepIndex: -1,
     totalSteps: steps.length,
     activeEdgeIds: new Set(),
+    activeEdgeFlows: [],
     activeFromIds: new Set(),
     activeToIds: new Set(),
     activeStep: null,
@@ -69,36 +80,6 @@ export function useFlowAnimation(
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const playingRef = useRef(playing)
   playingRef.current = playing
-
-  const stepMappings = useMemo<StepEdgeMapping[]>(() => {
-    return steps.map((step, idx) => {
-      const edgeIds: string[] = []
-      const fromIds: string[] = []
-      const toIds: string[] = []
-
-      edgeStepMap.forEach((stepIdx, edgeId) => {
-        if (stepIdx === idx) edgeIds.push(edgeId)
-      })
-
-      if (step.parallel) {
-        for (const ps of step.parallel) {
-          if (ps.from) fromIds.push(ps.from)
-          if (ps.to) {
-            const targets = Array.isArray(ps.to) ? ps.to : [ps.to]
-            toIds.push(...targets)
-          }
-        }
-      } else {
-        if (step.from) fromIds.push(step.from)
-        if (step.to) {
-          const targets = Array.isArray(step.to) ? step.to : [step.to]
-          toIds.push(...targets)
-        }
-      }
-
-      return { stepIndex: idx, edgeIds, fromIds, toIds, step }
-    })
-  }, [steps, edgeStepMap])
 
   const mappingsRef = useRef(stepMappings)
   mappingsRef.current = stepMappings
@@ -175,7 +156,8 @@ export function useFlowAnimation(
       playing: true,
       currentStepIndex: nextIdx,
       totalSteps: steps.length,
-      activeEdgeIds: new Set(mapping.edgeIds),
+      activeEdgeIds: new Set(mapping.edgeFlows.map((flow) => flow.edgeId)),
+      activeEdgeFlows: mapping.edgeFlows,
       activeFromIds: new Set(mapping.fromIds),
       activeToIds: new Set(mapping.toIds),
       activeStep: mapping.step,
@@ -191,6 +173,7 @@ export function useFlowAnimation(
       setState((prev) => ({
         ...prev,
         activeEdgeIds: new Set<string>(),
+        activeEdgeFlows: [],
         activeFromIds: new Set<string>(),
         activeToIds: new Set<string>(),
         activeStep: null,
@@ -216,6 +199,7 @@ export function useFlowAnimation(
         ...prev,
         playing: false,
         activeEdgeIds: new Set<string>(),
+        activeEdgeFlows: [],
         activeFromIds: new Set<string>(),
         activeToIds: new Set<string>(),
         activeStep: null,

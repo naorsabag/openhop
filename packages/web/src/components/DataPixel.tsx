@@ -16,6 +16,7 @@ const NODE_COLORS: Record<string, string> = {
 
 interface DataPixelProps {
   edgeId: string
+  reverse?: boolean
   sourceNodeType: string
   sourceNodeColor?: string
   step: FlowStep
@@ -27,12 +28,15 @@ interface DataPixelProps {
   dataOverride?: FlowData
 }
 
-const PIXEL_SIZE = 20
+const PIXEL_SIZE = 28
+const CARROT_FRAME_COUNT = 4
+const CARROT_FRAME_MS = 150
 const getSpeed = () => (window as any).__flowSpeed ?? 1
 const ANIMATION_DURATION_BASE = 1800
 
 export function DataPixel({
   edgeId,
+  reverse = false,
   sourceNodeType,
   sourceNodeColor,
   step,
@@ -51,6 +55,15 @@ export function DataPixel({
   onCompleteRef.current = onAnimationComplete
   const [hovered, setHovered] = useState(false)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
+  const [frameIndex, setFrameIndex] = useState(0)
+
+  // Cycle through carrot animation frames
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrameIndex(prev => (prev + 1) % CARROT_FRAME_COUNT)
+    }, CARROT_FRAME_MS)
+    return () => clearInterval(interval)
+  }, [])
 
   // Determine pixel color from source node type
   const color =
@@ -95,7 +108,7 @@ export function DataPixel({
           ? 4 * progress * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 3) / 2
 
-      const point = edgePath.getPointAtLength(eased * totalLength)
+      const point = edgePath.getPointAtLength((reverse ? 1 - eased : eased) * totalLength)
 
       // Get the viewport transform to convert SVG coordinates to screen coordinates
       const viewportTransform = viewport.style.transform
@@ -135,7 +148,7 @@ export function DataPixel({
 
     startTimeRef.current = 0
     rafRef.current = requestAnimationFrame(tick)
-  }, [edgeId, containerRef, delayMs])
+  }, [edgeId, reverse, containerRef, delayMs])
 
   useEffect(() => {
     animate()
@@ -163,15 +176,24 @@ export function DataPixel({
           left: 0,
           width: PIXEL_SIZE,
           height: PIXEL_SIZE,
-          borderRadius: 2,
-          background: color,
-          boxShadow: `0 0 8px ${color}, 0 0 4px ${color}`,
           opacity: 0,
           pointerEvents: 'auto',
           zIndex: 1000,
           cursor: 'pointer',
+          filter: `drop-shadow(0 0 6px ${color})`,
         }}
-      />
+      >
+        <img
+          src={`/sprites/carrot_${frameIndex + 1}.png`}
+          alt=""
+          style={{
+            width: PIXEL_SIZE,
+            height: PIXEL_SIZE,
+            imageRendering: 'pixelated',
+            display: 'block',
+          }}
+        />
+      </div>
       <div
         ref={labelRef}
         style={{

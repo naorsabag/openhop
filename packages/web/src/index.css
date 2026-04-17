@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --font-pixel: "Press Start 2P", monospace;
-  --font-terminal: "VT323", monospace;
+  --font-pixel: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
+  --font-terminal: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
 
-  --color-bg: #0f0f0f;
-  --color-surface: #1a1a2e;
-  --color-border: #2a2a4a;
-  --color-text: #e0e0e0;
+  --color-bg: #0a1f0e;
+  --color-surface: #0d2612;
+  --color-border: #1a4a22;
+  --color-text: #c8e6c9;
   --color-accent: #f5a623;
   --color-accent-dim: #c4841d;
 }
@@ -16,11 +16,6 @@ html {
   color-scheme: dark;
 }
 
-/* Pixel-art crispness for PixiJS canvas */
-canvas {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
 
 body {
   @apply bg-bg text-text font-terminal;
@@ -47,4 +42,38 @@ body {
 }
 .animate-drilldown-exit {
   animation: drilldown-exit 0.4s ease-out;
+}
+
+@keyframes building-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+.building-active-ring {
+  animation: building-pulse 1.2s ease-in-out infinite;
+}
+
+/* ─── Data Conduit Roads ──────────────────────────────────────────────── */
+:root {
+  --road-bright: #5AFEE6;
+  --road-mid: #76ABA5;
+  --road-dark: #61827B;
+  --road-glow: rgba(90, 254, 230, 0.38);
+}
+
+/* Straight segments: orientation via --rd (default: to bottom for horizontal). */
+.conduit-road {
+  background-color: var(--road-dark);
+  background-image: linear-gradient(var(--rd, to bottom),
+    var(--road-bright) 0 2px, transparent 2px 5px, var(--road-mid) 5px 8px,
+    var(--road-bright) 8px 14px, var(--road-mid) 14px 17px, transparent 17px 20px,
+    var(--road-bright) 20px 22px);
+}
+.conduit-corner {
+  display: block;
+}
+.conduit-road--active { filter: brightness(1.25) saturate(1.2); }
+
+/* Single glow on the shared portal container so junctions don't double. */
+.react-flow__edgelabel-renderer {
+  filter: drop-shadow(0 0 8px var(--road-glow));
 }

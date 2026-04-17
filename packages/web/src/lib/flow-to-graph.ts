@@ -1,15 +1,15 @@
 import type { Node, Edge } from '@xyflow/react'
-import type { Flow, FlowStep } from '../types'
+import type { Flow } from '../types'
 import type { FlowNodeData } from '../components/nodes/FlowNode'
 
 const NODE_WIDTH = 160
 const NODE_HEIGHT = 60
-const X_SPACING = 200
-const Y_SPACING = 120
+const CELL_W = 220  // horizontal spacing between nodes (left → right)
+const CELL_H = 160  // vertical spacing for fanout (broadcast targets)
 
 interface LayoutState {
   nodeMap: Map<string, { x: number; y: number }>
-  currentY: number
+  currentX: number
 }
 
 /**
@@ -96,48 +96,48 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
   }
 
   // Phase 3: Layout — assign (x, y) positions by walking steps sequentially.
-  // Strategy: build a vertical chain at x=0. Special cases:
-  //   - Fan-out (to is array with 2+ targets): spread targets horizontally, centered on x=0.
-  //   - Parallel steps: don't advance Y — they represent concurrent responses converging back.
-  //   - Create steps: dynamically-created nodes are placed at the next Y position.
+  // Strategy: build a horizontal chain at y=0 (left → right).  Special cases:
+  //   - Fan-out (to is array with 2+ targets): spread targets vertically, centered on y=0.
+  //   - Parallel steps: don't advance X — they represent concurrent responses converging back.
+  //   - Create steps: dynamically-created nodes are placed at the next X position.
   // Nodes are only placed once (first occurrence wins).
   const state: LayoutState = {
     nodeMap: new Map(),
-    currentY: 0,
+    currentX: 0,
   }
   for (const step of steps) {
     if (step.to && Array.isArray(step.to) && step.to.length > 1) {
-      // Fan-out: place targets side by side
+      // Fan-out: spread targets vertically
       const targets = step.to
-      const totalWidth = (targets.length - 1) * X_SPACING
-      const startX = -totalWidth / 2
+      const totalHeight = (targets.length - 1) * CELL_H
+      const startY = -totalHeight / 2
 
       // Place source first if not placed
       if (step.from && !state.nodeMap.has(step.from)) {
-        state.nodeMap.set(step.from, { x: 0, y: state.currentY })
-        state.currentY += Y_SPACING
+        state.nodeMap.set(step.from, { x: state.currentX, y: 0 })
+        state.currentX += CELL_W
       }
 
       targets.forEach((t, i) => {
         if (!state.nodeMap.has(t)) {
-          state.nodeMap.set(t, { x: startX + i * X_SPACING, y: state.currentY })
+          state.nodeMap.set(t, { x: state.currentX, y: startY + i * CELL_H })
         }
       })
-      state.currentY += Y_SPACING
+      state.currentX += CELL_W
     } else if (step.parallel) {
-      // Parallel steps don't advance Y — they're responses converging back
+      // Parallel steps don't advance X — they're responses converging back
       // Don't advance layout, edges will connect back
     } else {
       // Simple edge
       if (step.from && !state.nodeMap.has(step.from)) {
-        state.nodeMap.set(step.from, { x: 0, y: state.currentY })
-        state.currentY += Y_SPACING
+        state.nodeMap.set(step.from, { x: state.currentX, y: 0 })
+        state.currentX += CELL_W
       }
       if (step.to) {
         const target = Array.isArray(step.to) ? step.to[0] : step.to
         if (target && !state.nodeMap.has(target)) {
-          state.nodeMap.set(target, { x: 0, y: state.currentY })
-          state.currentY += Y_SPACING
+          state.nodeMap.set(target, { x: state.currentX, y: 0 })
+          state.currentX += CELL_W
         }
       }
     }
@@ -152,8 +152,8 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
       dynamicNodeIds.add(nodeId)
       dynamicNodeDefs.set(nodeId, step.node as { id: string; label: string; type?: string; icon?: string; color?: string })
       if (!state.nodeMap.has(nodeId)) {
-        state.nodeMap.set(nodeId, { x: 0, y: state.currentY })
-        state.currentY += Y_SPACING
+        state.nodeMap.set(nodeId, { x: state.currentX, y: 0 })
+        state.currentX += CELL_W
       }
       if (!ordered.includes(nodeId)) {
         ordered.push(nodeId)
@@ -189,54 +189,91 @@ export function flowToGraph(flow: Flow): { nodes: Node<FlowNodeData>[]; edges: E
     }
   })
 
-  // Phase 5: Build React Flow edges — one edge per (source, target) per step.
-  // Parallel sub-steps and broadcast targets each produce their own edge.
+  // Build a position map used by handle selection so each edge picks the shortest
+  // straight-line or L-shaped path based on relative node positions.
+  const positionMap = new Map<string, { x: number; y: number }>()
+  for (const n of nodes) positionMap.set(n.id, n.position)
+
+  // Phase 5: Build React Flow edges — one canonical rendered edge per unordered node pair.
+  // Directional flow steps are tracked separately by the animation layer so a single
+  // visible road can still carry pixels in either direction.
   const edges: Edge[] = []
+  const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`)
+  const seenPairs = new Set<string>()
   let edgeIdx = 0
 
-  for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
-    const step = steps[stepIndex]
+  const pushEdge = (src: string, tgt: string) => {
+    const key = pairKey(src, tgt)
+    if (seenPairs.has(key)) return
+    seenPairs.add(key)
+    edges.push(makeEdge(edgeIdx++, src, tgt, positionMap))
+  }
+
+  for (const step of steps) {
     if (step.parallel) {
       for (const ps of step.parallel) {
         if (ps.from && ps.to) {
           const targets = Array.isArray(ps.to) ? ps.to : [ps.to]
-          for (const t of targets) {
-            edges.push(makeEdge(edgeIdx++, ps.from, t, ps, stepIndex))
-          }
+          for (const t of targets) pushEdge(ps.from, t)
         }
       }
     } else if ('create' in step && step.create && step.from) {
-      // Create step: edge from creator to new node
-      edges.push(makeEdge(edgeIdx++, step.from, step.create, step, stepIndex))
+      pushEdge(step.from, step.create)
     } else if (step.from && step.to) {
       const targets = Array.isArray(step.to) ? step.to : [step.to]
-      for (const t of targets) {
-        edges.push(makeEdge(edgeIdx++, step.from, t, step, stepIndex))
-      }
+      for (const t of targets) pushEdge(step.from, t)
     }
   }
 
   return { nodes, edges }
 }
 
+/**
+ * Picks the best (sourceHandle, targetHandle) pair for an edge given the two node positions.
+ * Goal: shortest straight-line or L-shaped path. No S-curves.
+ *
+ * Rule:
+ *   - If |dx| >= |dy|: use horizontal handles (source exits right/left, target enters left/right)
+ *   - Else:            use vertical handles   (source exits bottom/top, target enters top/bottom)
+ *
+ * dx = target.x - source.x
+ * dy = target.y - source.y
+ */
+function pickHandles(
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+): { sourceHandle: string; targetHandle: string } {
+  const dx = target.x - source.x
+  const dy = target.y - source.y
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    // Horizontal dominant
+    if (dx >= 0) return { sourceHandle: 'right', targetHandle: 'left' }
+    return { sourceHandle: 'left', targetHandle: 'right' }
+  } else {
+    // Vertical dominant
+    if (dy >= 0) return { sourceHandle: 'bottom', targetHandle: 'top' }
+    return { sourceHandle: 'top', targetHandle: 'bottom' }
+  }
+}
+
 /** Create a React Flow edge with consistent styling and step metadata. */
-function makeEdge(idx: number, source: string, target: string, step: FlowStep, stepIndex: number): Edge {
-  // Extract a human-readable label from the step's data payload
-  const label = typeof step.data === 'string'
-    ? step.data
-    : Array.isArray(step.data)
-      ? step.data.map(d => d.label).join(', ')
-      : step.data?.label ?? ''
+function makeEdge(
+  idx: number,
+  source: string,
+  target: string,
+  positionMap: Map<string, { x: number; y: number }>,
+): Edge {
+  const sourcePos = positionMap.get(source) ?? { x: 0, y: 0 }
+  const targetPos = positionMap.get(target) ?? { x: 0, y: 0 }
+  const handles = pickHandles(sourcePos, targetPos)
+
   return {
     id: `e-${idx}`,
     source,
     target,
-    label,
-    data: { stepIndex, step },
-    style: {
-      strokeWidth: 4,
-      stroke: '#2a2a3a',
-    },
+    sourceHandle: handles.sourceHandle,
+    targetHandle: handles.targetHandle,
+    data: { active: false },
     labelStyle: {
       fontFamily: '"VT323", monospace',
       fontSize: 14,
@@ -247,6 +284,6 @@ function makeEdge(idx: number, source: string, target: string, step: FlowStep, s
       fillOpacity: 0.85,
     },
     labelBgPadding: [6, 4] as [number, number],
-    type: 'default',
+    type: 'road',
   }
 }
