@@ -1,5 +1,5 @@
 export const NODE_SPRITES: Record<string, string> = {
-  actor: '/sprites/user_node.png',
+  actor: '/sprites/bunny.png',
   endpoint: '/sprites/endpoint_node.png',
   transform: '/sprites/transform_node.png',
   validation: '/sprites/validation_node.png',
@@ -13,7 +13,7 @@ export const NODE_SPRITES: Record<string, string> = {
 }
 
 export const TILE_SPRITES = {
-  grass: '/sprites/grass.png',
+  grass: '/sprites/grass_tile.png',
   road: '/sprites/road.png',
   dirt: '/sprites/dirt.png',
   tJunction: '/sprites/t_junction.png',

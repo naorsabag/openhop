@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
-import { IsoCanvas } from './components/iso/IsoCanvas'
+import { FlowCanvas } from './components/FlowCanvas'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import type { FlowNode, FlowStep, Flow } from './types'
 
@@ -141,11 +141,11 @@ function App() {
   }, [flowStack.length])
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: '#0a0a1a' }}>
+    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: '#0a1f0e' }}>
       {/* Header */}
       <header
         className="flex items-center justify-between px-4 py-2 shrink-0"
-        style={{ background: '#1a1a2e', borderBottom: '2px solid #2a2a4a' }}
+        style={{ background: '#0d2612', borderBottom: '2px solid #1a4a22' }}
       >
         <div className="flex items-center gap-4">
           <h1
@@ -184,7 +184,7 @@ function App() {
         />
 
         {/* Canvas */}
-        <main className="flex-1 min-w-0 relative" style={{ background: '#0a0a1a' }}>
+        <main className="flex-1 min-w-0 relative" style={{ background: '#0a1f0e' }}>
           {!selectedFlowId ? (
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-center">
@@ -230,7 +230,7 @@ function App() {
                     data-testid="back-button"
                     onClick={handleBack}
                     className="font-pixel text-xs px-2 py-1 border border-border text-text hover:text-accent hover:border-accent transition-colors"
-                    style={{ fontSize: 10, background: '#1a1a2e' }}
+                    style={{ fontSize: 10, background: '#0d2612' }}
                   >
                     &larr; {effectiveStack[effectiveStack.length - 1].parentLabel ?? 'Back'}
                   </button>
@@ -260,11 +260,14 @@ function App() {
                 </div>
               )}
               <div className={`w-full h-full ${transitionClass}`}>
-                <IsoCanvas
+                <FlowCanvas
                   flow={displayFlow}
                   playing={playing}
-                  onNodeClick={handleDrillDown}
                   onDrillDown={handleDrillDown}
+                  onDrilldownStep={handleAutoDrilldown}
+                  onCycleComplete={handleCycleComplete}
+                  startFromStep={currentFlowBody?.resumeFromStep}
+                  onStepChange={handleStepChange}
                 />
               </div>
             </>
