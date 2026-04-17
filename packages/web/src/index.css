@@ -4,7 +4,7 @@
   --font-pixel: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
   --font-terminal: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
 
-  --color-bg: #0a1f0e;
+  --color-bg: "black";
   --color-surface: #0d2612;
   --color-border: #1a4a22;
   --color-text: #c8e6c9;

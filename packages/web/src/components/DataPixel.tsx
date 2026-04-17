@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { FlowStep, FlowData } from '../types'
 import { DataTooltip } from './DataTooltip'
+import { CARROT_SPRITE } from '../lib/sprite-map'
 
 /** Node type colors — must match FlowNode.tsx NODE_STYLES */
 const NODE_COLORS: Record<string, string> = {
@@ -29,8 +30,6 @@ interface DataPixelProps {
 }
 
 const PIXEL_SIZE = 28
-const CARROT_FRAME_COUNT = 4
-const CARROT_FRAME_MS = 150
 const getSpeed = () => (window as any).__flowSpeed ?? 1
 const ANIMATION_DURATION_BASE = 1800
 
@@ -55,16 +54,6 @@ export function DataPixel({
   onCompleteRef.current = onAnimationComplete
   const [hovered, setHovered] = useState(false)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
-  const [frameIndex, setFrameIndex] = useState(0)
-
-  // Cycle through carrot animation frames
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFrameIndex(prev => (prev + 1) % CARROT_FRAME_COUNT)
-    }, CARROT_FRAME_MS)
-    return () => clearInterval(interval)
-  }, [])
-
   // Determine pixel color from source node type
   const color =
     sourceNodeType === 'custom' && sourceNodeColor
@@ -184,7 +173,7 @@ export function DataPixel({
         }}
       >
         <img
-          src={`/sprites/carrot_${frameIndex + 1}.png`}
+          src={CARROT_SPRITE}
           alt=""
           style={{
             width: PIXEL_SIZE,

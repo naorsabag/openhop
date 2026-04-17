@@ -349,7 +349,6 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     })
   }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, activeNodes, destroyedNodes, handleNodeClick, handleProgressBarClick, onDrillDown])
 
-  // Highlight active edges, hide edges connected to hidden dynamic nodes
   const edges: Edge[] = useMemo(() => {
     return baseEdges
       .filter((edge) => isNodeAlive(edge.source) && isNodeAlive(edge.target))

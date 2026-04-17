@@ -22,12 +22,7 @@ export const TILE_SPRITES = {
   turnC: '/sprites/turn_oppsite_c.png',
 }
 
-export const CARROT_SPRITES = [
-  '/sprites/carrot_1.png',
-  '/sprites/carrot_2.png',
-  '/sprites/carrot_3.png',
-  '/sprites/carrot_4.png',
-]
+export const CARROT_SPRITE = '/sprites/carrot_pixels.svg'
 
 export const SIGN_SPRITES = {
   start: '/sprites/start_sign.png',
