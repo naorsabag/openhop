@@ -1,11 +1,8 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import { readFile } from 'node:fs/promises'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { flowRoutes } from './routes.js'
 import { FlowStore } from './store.js'
-import { parseFlowYaml } from '@openhop/shared'
+import { syncExampleOrderFlow } from './seed-example.js'
 
 const app = Fastify({ logger: true })
 
@@ -31,28 +28,17 @@ try {
 
 await app.register(flowRoutes)
 
-// Seed example flow if store is empty
+// Keep the built-in example flow synced with examples/order-flow.yaml.
 const store = new FlowStore()
-const existing = await store.list()
-if (existing.length === 0) {
-  try {
-    // Try to find examples directory
-    const possiblePaths = [
-      join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'examples', 'order-flow.yaml'),
-      join(process.cwd(), 'examples', 'order-flow.yaml'),
-    ]
-    for (const p of possiblePaths) {
-      try {
-        const yaml = await readFile(p, 'utf-8')
-        const result = parseFlowYaml(yaml)
-        if (result.success && result.data) {
-          await store.save('example-order-flow', result.data)
-          console.log('Seeded example flow: example-order-flow')
-          break
-        }
-      } catch { /* try next path */ }
-    }
-  } catch { /* no examples found, that's fine */ }
+try {
+  const syncResult = await syncExampleOrderFlow(store)
+  if (syncResult === 'created') {
+    console.log('Seeded example flow: example-order-flow')
+  } else if (syncResult === 'updated') {
+    console.log('Updated example flow: example-order-flow')
+  }
+} catch {
+  // No example flow available, that's fine for local development.
 }
 
 const port = parseInt(process.env.PORT ?? '8787')

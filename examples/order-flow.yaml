@@ -12,6 +12,12 @@ flow:
     - id: api
       label: API Gateway
       type: endpoint
+    - id: authz
+      label: Auth Service
+      type: auth
+    - id: rate-limit
+      label: Rate Limit
+      type: validation
     - id: order-service
       label: Order Service
       type: service
@@ -66,16 +72,83 @@ flow:
             type: string
 
     - from: api
-      to: order-service
+      to: authz
       data:
-        label: create order
+        label: validate session
         fields:
-          - name: items
-            type: "list[OrderItem]"
+          - name: auth_token
+            type: string
           - name: user_id
             type: int
-          - name: coupon_code
+
+    - from: authz
+      to: api
+      data:
+        label: auth context
+        fields:
+          - name: user_id
+            type: int
+          - name: roles
+            type: "list[string]"
+            added: true
+          - name: session_valid
+            type: bool
+            added: true
+
+    - from: api
+      to: rate-limit
+      data:
+        label: rate limit check
+        fields:
+          - name: user_id
+            type: int
+          - name: request_path
             type: string
+
+    - from: rate-limit
+      to: api
+      data:
+        label: quota approved
+        fields:
+          - name: remaining_requests
+            type: int
+            added: true
+
+    - parallel:
+        - from: api
+          to: order-service
+          data:
+            label: create order
+            fields:
+              - name: items
+                type: "list[OrderItem]"
+              - name: user_id
+                type: int
+              - name: coupon_code
+                type: string
+        - from: authz
+          to: order-service
+          data:
+            label: auth claims
+            fields:
+              - name: user_id
+                type: int
+              - name: roles
+                type: "list[string]"
+              - name: session_valid
+                type: bool
+
+    - from: api
+      to: order-service
+      data:
+        label: gateway trace
+        fields:
+          - name: request_id
+            type: string
+            added: true
+          - name: edge_region
+            type: string
+            added: true
 
     - from: order-service
       to: [db, cache]

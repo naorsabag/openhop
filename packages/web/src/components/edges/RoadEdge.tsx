@@ -174,14 +174,15 @@ const BASE_STYLE = { stroke: 'transparent', strokeWidth: 20 } as const
 
 export function RoadEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props
-  const d = data as { active?: boolean; hiddenRoad?: boolean; visible?: boolean } | undefined
+  const d = data as { active?: boolean; hiddenRoad?: boolean; visible?: boolean; elkPath?: string } | undefined
   const active = !!d?.active
   const hiddenRoad = !!d?.hiddenRoad
   const visible = d?.visible ?? true
 
-  const [path] = getSmoothStepPath({
+  const [fallbackPath] = getSmoothStepPath({
     sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 0,
   })
+  const path = d?.elkPath ?? fallbackPath
 
   const elements = useMemo(() => (hiddenRoad || !visible ? [] : parsePath(path)), [path, hiddenRoad, visible])
   const activeCls = active ? ' conduit-road--active' : ''

@@ -11,8 +11,8 @@ import '@xyflow/react/dist/style.css'
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { RoadEdge } from './edges/RoadEdge'
-import { flowToGraph } from '../lib/flow-to-graph'
 import { useFlowAnimation, type EdgeFlowRef, type StepEdgeMapping } from '../hooks/useFlowAnimation'
+import { useFlowGraphLayout } from '../hooks/useFlowGraphLayout'
 import { DataPixel } from './DataPixel'
 import { DataPopup } from './DataPopup'
 import type { Flow, FlowStep } from '../types'
@@ -26,6 +26,7 @@ const edgeTypes: EdgeTypes = {
 }
 
 const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`)
+const getTargets = (to: string | string[] | undefined) => (Array.isArray(to) ? to : to ? [to] : [])
 
 interface FlowCanvasProps {
   flow: Flow
@@ -40,16 +41,14 @@ interface FlowCanvasProps {
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
 function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete, startFromStep, onStepChange }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const flowSteps = useMemo(() => flow.flow.steps ?? [], [flow.flow.steps])
   const [pinnedEdge, setPinnedEdge] = useState<{
     edgeId: string
     steps: FlowStep[]
     position: { x: number; y: number }
   } | null>(null)
 
-  const { nodes: baseNodes, edges: baseEdges } = useMemo(
-    () => flowToGraph(flow),
-    [flow],
-  )
+  const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
 
   const pairEdgeMap = useMemo(() => {
     const map = new Map<string, Edge>()
@@ -73,16 +72,17 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   }, [pairEdgeMap])
 
   const stepMappings = useMemo<StepEdgeMapping[]>(() => {
-    return flow.flow.steps.map((step, stepIndex) => {
+    return flowSteps.map((step, stepIndex) => {
       const edgeFlows: EdgeFlowRef[] = []
       const fromIds: string[] = []
       const toIds: string[] = []
+      const parallel = 'parallel' in step ? step.parallel : undefined
 
-      if (step.parallel) {
-        for (const ps of step.parallel) {
+      if (parallel) {
+        for (const ps of parallel) {
           if (ps.from) fromIds.push(ps.from)
           if (ps.to) {
-            const targets = Array.isArray(ps.to) ? ps.to : [ps.to]
+            const targets = getTargets(ps.to)
             toIds.push(...targets)
             for (const target of targets) {
               if (!ps.from) continue
@@ -92,13 +92,14 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
           }
         }
       } else {
-        if (step.from) fromIds.push(step.from)
-        if (step.to) {
-          const targets = Array.isArray(step.to) ? step.to : [step.to]
+        const from = 'from' in step ? step.from : undefined
+        if (from) fromIds.push(from)
+        if ('to' in step) {
+          const targets = getTargets(step.to)
           toIds.push(...targets)
           for (const target of targets) {
-            if (!step.from) continue
-            const edgeFlow = resolveEdgeFlow(step.from, target, step)
+            if (!from) continue
+            const edgeFlow = resolveEdgeFlow(from, target, step)
             if (edgeFlow) edgeFlows.push(edgeFlow)
           }
         }
@@ -106,7 +107,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 
       return { stepIndex, edgeFlows, fromIds, toIds, step }
     })
-  }, [flow.flow.steps, resolveEdgeFlow])
+  }, [flowSteps, resolveEdgeFlow])
 
   const edgeStepsById = useMemo(() => {
     const map = new Map<string, FlowStep[]>()
@@ -169,7 +170,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     manualPixels, nodeProgress,
     activeNodes, destroyedNodes,
     ...animState
-  } = useFlowAnimation(flow.flow.steps, stepMappings, playing, onCycleComplete, startFromStep)
+  } = useFlowAnimation(flowSteps, stepMappings, playing, onCycleComplete, startFromStep)
 
   // Helper: check if a node is currently alive (static nodes always are, dynamic nodes need to be in activeNodes and not destroyed)
   const isNodeAlive = useCallback((nodeId: string) => {
@@ -192,14 +193,19 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   // A broadcast (to: [db, cache]) is ONE logical step with multiple edge flows.
   const nodeOutgoingSteps = useMemo(() => {
     const map = new Map<string, Array<{ stepIndex: number; step: FlowStep; edgeFlows: EdgeFlowRef[] }>>()
-    const { steps } = flow.flow
+    const steps = flowSteps
     for (let si = 0; si < steps.length; si++) {
       const step = steps[si]
-      if (step.parallel) {
-        for (const ps of step.parallel) {
+      const parallel = 'parallel' in step ? step.parallel : undefined
+      const destroy = 'destroy' in step ? step.destroy : undefined
+      const create = 'create' in step ? step.create : undefined
+      const from = 'from' in step ? step.from : undefined
+
+      if (parallel) {
+        for (const ps of parallel) {
           if (ps.from) {
             const entries = map.get(ps.from) ?? []
-            const targets = Array.isArray(ps.to) ? ps.to : ps.to ? [ps.to] : []
+            const targets = getTargets(ps.to)
             const edgeFlows: EdgeFlowRef[] = []
             for (const t of targets) {
               const edgeFlow = resolveEdgeFlow(ps.from, t, ps)
@@ -209,31 +215,31 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
             map.set(ps.from, entries)
           }
         }
-      } else if (step.destroy) {
+      } else if (destroy) {
         // Destroy step: outgoing action for the destroyed node (no edge, just triggers deactivation)
-        const entries = map.get(step.destroy) ?? []
+        const entries = map.get(destroy) ?? []
         entries.push({ stepIndex: si, step, edgeFlows: [] })
-        map.set(step.destroy, entries)
-      } else if (step.create && step.from) {
+        map.set(destroy, entries)
+      } else if (create && from) {
         // Create step: from → newly created node
-        const entries = map.get(step.from) ?? []
-        const edgeFlow = resolveEdgeFlow(step.from, step.create, step)
+        const entries = map.get(from) ?? []
+        const edgeFlow = resolveEdgeFlow(from, create, step)
         if (edgeFlow) entries.push({ stepIndex: si, step, edgeFlows: [edgeFlow] })
-        map.set(step.from, entries)
-      } else if (step.from) {
-        const entries = map.get(step.from) ?? []
-        const targets = Array.isArray(step.to) ? step.to : step.to ? [step.to] : []
+        map.set(from, entries)
+      } else if (from) {
+        const entries = map.get(from) ?? []
+        const targets = 'to' in step ? getTargets(step.to) : []
         const edgeFlows: EdgeFlowRef[] = []
         for (const t of targets) {
-          const edgeFlow = resolveEdgeFlow(step.from, t, step)
+          const edgeFlow = resolveEdgeFlow(from, t, step)
           if (edgeFlow) edgeFlows.push(edgeFlow)
         }
         if (edgeFlows.length > 0) entries.push({ stepIndex: si, step, edgeFlows })
-        map.set(step.from, entries)
+        map.set(from, entries)
       }
     }
     return map
-  }, [flow.flow, resolveEdgeFlow])
+  }, [flowSteps, resolveEdgeFlow])
 
   // Track which specific (nodeId, stepIndex) combos have a pixel in flight
   const activePixelSteps = useMemo(() => {
