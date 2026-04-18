@@ -4,7 +4,7 @@
   --font-pixel: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
   --font-terminal: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
 
-  --color-bg: "black";
+  --color-bg: #0a1f0e;
   --color-surface: #0d2612;
   --color-border: #1a4a22;
   --color-text: #c8e6c9;
@@ -50,6 +50,18 @@ body {
 }
 .building-active-ring {
   animation: building-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes data-pixel-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.data-pixel-sprite {
+  position: absolute;
+  inset: 0;
+  animation: data-pixel-float 0.9s ease-in-out infinite;
+  will-change: transform;
 }
 
 /* ─── Data Conduit Roads ──────────────────────────────────────────────── */

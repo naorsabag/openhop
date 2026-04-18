@@ -116,15 +116,20 @@ export function DataPixel({
 
       const screenX = point.x * scale + tx
       const screenY = point.y * scale + ty
+      const scaledPixelSize = PIXEL_SIZE * scale
+      const scaledLabelFontSize = 11 * scale
 
       setPosition({ x: screenX, y: screenY })
 
       if (pixelRef.current) {
-        pixelRef.current.style.transform = `translate(${screenX - PIXEL_SIZE / 2}px, ${screenY - PIXEL_SIZE / 2}px)`
+        pixelRef.current.style.width = `${scaledPixelSize}px`
+        pixelRef.current.style.height = `${scaledPixelSize}px`
+        pixelRef.current.style.transform = `translate(${screenX - scaledPixelSize / 2}px, ${screenY - scaledPixelSize / 2}px)`
         pixelRef.current.style.opacity = '1'
       }
       if (labelRef.current) {
-        labelRef.current.style.transform = `translate(${screenX + PIXEL_SIZE / 2 + 4}px, ${screenY - 6}px)`
+        labelRef.current.style.fontSize = `${scaledLabelFontSize}px`
+        labelRef.current.style.transform = `translate(${screenX + scaledPixelSize / 2 + 4 * scale}px, ${screenY - 6 * scale}px)`
         labelRef.current.style.opacity = '1'
       }
 
@@ -169,19 +174,25 @@ export function DataPixel({
           pointerEvents: 'auto',
           zIndex: 1000,
           cursor: 'pointer',
-          filter: `drop-shadow(0 0 6px ${color})`,
         }}
       >
-        <img
-          src={CARROT_SPRITE}
-          alt=""
+        <div
+          className="data-pixel-sprite"
           style={{
-            width: PIXEL_SIZE,
-            height: PIXEL_SIZE,
-            imageRendering: 'pixelated',
-            display: 'block',
+            filter: `drop-shadow(0 0 6px ${color})`,
           }}
-        />
+        >
+          <img
+            src={CARROT_SPRITE}
+            alt=""
+            style={{
+              width: '100%',
+              height: '100%',
+              imageRendering: 'pixelated',
+              display: 'block',
+            }}
+          />
+        </div>
       </div>
       <div
         ref={labelRef}
