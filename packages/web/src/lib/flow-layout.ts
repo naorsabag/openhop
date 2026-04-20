@@ -6,7 +6,7 @@ import type { FlowNodeData } from '../components/nodes/FlowNode'
 const elk = new ELK()
 
 export const NODE_WIDTH = 72
-export const NODE_HEIGHT = 92
+export const NODE_HEIGHT = 120
 const FALLBACK_COLUMN_GAP = 220
 const FALLBACK_ROW_GAP = 160
 const HANDLE_SPREAD_THRESHOLD = 48
