@@ -179,6 +179,24 @@ flow:
 - `color`: hex color
 - `flow`: nested sub-flow { nodes, steps } — makes node expandable with 🔍
 
+### Node Type Variants (pick the right type, then a concrete instance)
+
+Each node type has common real-world variants. Use them to choose an accurate `label` and, where applicable, a matching Iconify icon. First entry is the canonical/most common variant for that type.
+
+| Type        | Common variants |
+|-------------|-----------------|
+| actor       | user, admin, customer, operator, agent, bot, service-account, system |
+| endpoint    | rest-api, graphql, grpc, webhook, websocket, sse, rpc |
+| transform   | parser, serializer, formatter, mapper, aggregator, filter, enricher |
+| validation  | schema-validator, input-validator, permission-check, rate-limiter, csrf, feature-flag |
+| auth        | oauth, jwt, session, api-key, saml, ldap, mfa |
+| database    | postgres, mysql, mongodb, sqlite, cassandra, dynamodb, cockroachdb, bigquery, snowflake, elasticsearch, disk |
+| external    | stripe, twilio, sendgrid, github, slack, openai, anthropic, firebase, s3, maps-api |
+| cache       | redis, memcached, ram, cdn, http-cache, local-cache |
+| queue       | kafka, rabbitmq, sqs, pubsub, nats, kinesis, celery |
+| service     | microservice, worker, scheduler, processor, orchestrator, gateway, proxy, loadbalancer |
+| custom      | (anything — also set `icon` and `color`) |
+
 ### Step
 Either a move step, parallel, create, or destroy:
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`

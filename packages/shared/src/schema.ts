@@ -119,7 +119,7 @@ export const FlowSchema: z.ZodType<{
 );
 
 // We need a shape type for the recursive reference
-interface NodeShape {
+export interface NodeShape {
   id: string;
   label: string;
   type?: NodeType;
