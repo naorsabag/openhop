@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { FlowCanvas } from './components/FlowCanvas'
+import { DataInspectionPanel, InspectorToggle, type DockSide } from './components/DataInspectionPanel'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import type { FlowNode, FlowStep, Flow } from './types'
 
@@ -67,11 +68,24 @@ function App() {
     }
   }, [apiFlow, currentFlowBody])
 
-  // Track current step index for resume
+  // Track current step index for resume + inspector sync
   const currentStepRef = useRef(0)
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const handleStepChange = useCallback((stepIndex: number) => {
     currentStepRef.current = stepIndex
+    setCurrentStepIndex(stepIndex)
   }, [])
+
+  // Inspector panel state
+  const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
+  const [inspectorSize, setInspectorSize] = useState(320)
+
+  const currentStep: FlowStep | null = useMemo(() => {
+    if (!currentFlowBody) return null
+    const steps = currentFlowBody.flow.steps ?? []
+    return steps[currentStepIndex] ?? steps[0] ?? null
+  }, [currentFlowBody, currentStepIndex])
 
   const navigateToDrillDown = useCallback((nodeId: string, atStepIndex?: number) => {
     if (!currentFlowBody || !apiFlow) return
@@ -162,14 +176,17 @@ function App() {
           )}
         </div>
         {selectedFlowId && (
-          <button
-            aria-label={playing ? 'Pause flow' : 'Play flow'}
-            onClick={() => setPlaying(p => !p)}
-            className="font-pixel text-xs px-3 py-1 border border-border text-text hover:text-accent hover:border-accent transition-colors"
-            style={{ fontSize: 10 }}
-          >
-            {playing ? '\u23F8 Pause' : '\u25B6 Play'}
-          </button>
+          <div className="flex items-center">
+            <button
+              aria-label={playing ? 'Pause flow' : 'Play flow'}
+              onClick={() => setPlaying(p => !p)}
+              className="font-pixel text-xs px-3 py-1 border border-border text-text hover:text-accent hover:border-accent transition-colors"
+              style={{ fontSize: 10 }}
+            >
+              {playing ? '\u23F8 Pause' : '\u25B6 Play'}
+            </button>
+            <InspectorToggle open={inspectorOpen} onToggle={() => setInspectorOpen(o => !o)} />
+          </div>
         )}
       </header>
 
@@ -183,8 +200,9 @@ function App() {
           onSelectFlow={selectFlow}
         />
 
-        {/* Canvas */}
-        <main className="flex-1 min-w-0 relative" style={{ background: '#0a1f0e' }}>
+        {/* Canvas + Inspector */}
+        <div className={`flex-1 min-w-0 min-h-0 flex ${inspectorSide === 'right' ? 'flex-row' : 'flex-col'}`}>
+        <main className="flex-1 min-w-0 min-h-0 relative" style={{ background: '#0a1f0e' }}>
           {!selectedFlowId ? (
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-center">
@@ -273,6 +291,17 @@ function App() {
             </>
           ) : null}
         </main>
+        {inspectorOpen && selectedFlowId && (
+          <DataInspectionPanel
+            step={currentStep}
+            side={inspectorSide}
+            size={inspectorSize}
+            onSideChange={setInspectorSide}
+            onSizeChange={setInspectorSize}
+            onClose={() => setInspectorOpen(false)}
+          />
+        )}
+        </div>
       </div>
     </div>
   )
