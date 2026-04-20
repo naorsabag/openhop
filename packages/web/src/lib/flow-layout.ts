@@ -375,6 +375,8 @@ export function inferPortAssignmentsFromRoutes(
   return assignments
 }
 
+const MIN_SHARED_STUB_LENGTH = 120
+
 export function bundleSharedSourcePrefixes(
   routes: Map<string, RoutePoint[]>,
   assignments: Map<string, EdgePortAssignment>,
@@ -399,39 +401,114 @@ export function bundleSharedSourcePrefixes(
     if (group.length < 2) continue
 
     const side = group[0].side
+    const start = group[0].route[0]
     if (side === 'right' || side === 'left') {
-      const trunkX = side === 'right'
+      const naturalTrunkX = side === 'right'
         ? Math.min(...group.map(({ route }) => route[1].x))
         : Math.max(...group.map(({ route }) => route[1].x))
+      const nearestTargetX = side === 'right'
+        ? Math.min(...group.map(({ route }) => route[route.length - 1].x))
+        : Math.max(...group.map(({ route }) => route[route.length - 1].x))
+      const lo = side === 'right' ? start.x + MIN_SHARED_STUB_LENGTH : nearestTargetX + MIN_SHARED_STUB_LENGTH
+      const hi = side === 'right' ? nearestTargetX - MIN_SHARED_STUB_LENGTH : start.x - MIN_SHARED_STUB_LENGTH
+      const trunkX = lo > hi
+        ? (start.x + nearestTargetX) / 2
+        : Math.min(hi, Math.max(lo, naturalTrunkX))
 
       for (const item of group) {
-        const [start, second, ...rest] = item.route
-        const shared = { x: trunkX, y: start.y }
-        const nextRoute = [start]
-        if (second.x !== shared.x || second.y !== shared.y) nextRoute.push(shared)
-        nextRoute.push(second, ...rest)
-        bundled.set(item.edgeId, dedupeRoutePoints(nextRoute))
+        const [edgeStart, ...rest] = item.route
+        const shifted = rest.map((p) => (p.x === naturalTrunkX ? { x: trunkX, y: p.y } : p))
+        shifted[0] = { x: trunkX, y: edgeStart.y }
+        bundled.set(item.edgeId, dedupeRoutePoints([edgeStart, ...shifted]))
       }
       continue
     }
 
     if (side === 'bottom' || side === 'top') {
-      const trunkY = side === 'bottom'
+      const naturalTrunkY = side === 'bottom'
         ? Math.min(...group.map(({ route }) => route[1].y))
         : Math.max(...group.map(({ route }) => route[1].y))
+      const nearestTargetY = side === 'bottom'
+        ? Math.min(...group.map(({ route }) => route[route.length - 1].y))
+        : Math.max(...group.map(({ route }) => route[route.length - 1].y))
+      const lo = side === 'bottom' ? start.y + MIN_SHARED_STUB_LENGTH : nearestTargetY + MIN_SHARED_STUB_LENGTH
+      const hi = side === 'bottom' ? nearestTargetY - MIN_SHARED_STUB_LENGTH : start.y - MIN_SHARED_STUB_LENGTH
+      const trunkY = lo > hi
+        ? (start.y + nearestTargetY) / 2
+        : Math.min(hi, Math.max(lo, naturalTrunkY))
 
       for (const item of group) {
-        const [start, second, ...rest] = item.route
-        const shared = { x: start.x, y: trunkY }
-        const nextRoute = [start]
-        if (second.x !== shared.x || second.y !== shared.y) nextRoute.push(shared)
-        nextRoute.push(second, ...rest)
-        bundled.set(item.edgeId, dedupeRoutePoints(nextRoute))
+        const [edgeStart, ...rest] = item.route
+        const shifted = rest.map((p) => (p.y === naturalTrunkY ? { x: p.x, y: trunkY } : p))
+        shifted[0] = { x: edgeStart.x, y: trunkY }
+        bundled.set(item.edgeId, dedupeRoutePoints([edgeStart, ...shifted]))
       }
     }
   }
 
-  return bundled
+  return bundleSharedTargetSuffixes(bundled, assignments)
+}
+
+function bundleSharedTargetSuffixes(
+  routes: Map<string, RoutePoint[]>,
+  assignments: Map<string, EdgePortAssignment>,
+): Map<string, RoutePoint[]> {
+  const groups = new Map<string, Array<{ edgeId: string; route: RoutePoint[]; side: HandleId }>>()
+  for (const [edgeId, route] of routes) {
+    const assignment = assignments.get(edgeId)
+    if (!assignment || route.length < 2) continue
+    const end = route[route.length - 1]
+    const key = `${end.x},${end.y}:${assignment.target}`
+    const group = groups.get(key) ?? []
+    group.push({ edgeId, route, side: assignment.target })
+    groups.set(key, group)
+  }
+
+  for (const group of groups.values()) {
+    if (group.length < 2) continue
+    const bent = group.filter((g) => g.route.length >= 3)
+    if (bent.length === 0) continue
+    const side = group[0].side
+    const end = group[0].route[group[0].route.length - 1]
+    if (side === 'left' || side === 'right') {
+      const naturalApproachX = side === 'left'
+        ? Math.max(...bent.map(({ route }) => route[route.length - 2].x))
+        : Math.min(...bent.map(({ route }) => route[route.length - 2].x))
+      const desiredApproachX = side === 'left'
+        ? end.x - MIN_SHARED_STUB_LENGTH
+        : end.x + MIN_SHARED_STUB_LENGTH
+      const approachX = side === 'left'
+        ? Math.max(naturalApproachX, desiredApproachX)
+        : Math.min(naturalApproachX, desiredApproachX)
+      for (const item of bent) {
+        const route = item.route
+        const tail = route[route.length - 1]
+        const shifted = route.slice(0, -1).map((p) => (p.x === naturalApproachX ? { x: approachX, y: p.y } : p))
+        shifted[shifted.length - 1] = { x: approachX, y: tail.y }
+        routes.set(item.edgeId, dedupeRoutePoints([...shifted, tail]))
+      }
+      continue
+    }
+    if (side === 'top' || side === 'bottom') {
+      const naturalApproachY = side === 'top'
+        ? Math.max(...bent.map(({ route }) => route[route.length - 2].y))
+        : Math.min(...bent.map(({ route }) => route[route.length - 2].y))
+      const desiredApproachY = side === 'top'
+        ? end.y - MIN_SHARED_STUB_LENGTH
+        : end.y + MIN_SHARED_STUB_LENGTH
+      const approachY = side === 'top'
+        ? Math.max(naturalApproachY, desiredApproachY)
+        : Math.min(naturalApproachY, desiredApproachY)
+      for (const item of bent) {
+        const route = item.route
+        const tail = route[route.length - 1]
+        const shifted = route.slice(0, -1).map((p) => (p.y === naturalApproachY ? { x: p.x, y: approachY } : p))
+        shifted[shifted.length - 1] = { x: tail.x, y: approachY }
+        routes.set(item.edgeId, dedupeRoutePoints([...shifted, tail]))
+      }
+    }
+  }
+  return routes
 }
 
 export function buildReactFlowGraph(
@@ -574,7 +651,7 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
       'elk.edgeRouting': 'ORTHOGONAL',
       'portAlignment.default': 'CENTER',
       'elk.spacing.nodeNode': '80',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '140',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '200',
       'elk.padding': '[top=40,left=40,bottom=40,right=40]',
       'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
       'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
