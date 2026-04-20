@@ -4,7 +4,7 @@
  * Used by: Swagger/OpenAPI docs, AI skill file.
  */
 
-import { zodToJsonSchema } from 'zod-to-json-schema'
+import { toJSONSchema } from 'zod'
 import {
   RootSchema,
   MetaSchema,
@@ -18,15 +18,15 @@ import {
 } from './schema.js'
 import { patchSchema } from './patch.js'
 
-export const rootJsonSchema = zodToJsonSchema(RootSchema, { target: 'openApi3' })
-export const metaJsonSchema = zodToJsonSchema(MetaSchema, { target: 'openApi3' })
-export const flowJsonSchema = zodToJsonSchema(FlowSchema, { target: 'openApi3' })
-export const nodeJsonSchema = zodToJsonSchema(NodeSchema, { target: 'openApi3' })
-export const stepJsonSchema = zodToJsonSchema(StepSchema, { target: 'openApi3' })
-export const moveStepJsonSchema = zodToJsonSchema(MoveStepSchema, { target: 'openApi3' })
-export const fieldJsonSchema = zodToJsonSchema(FieldSchema, { target: 'openApi3' })
-export const dataObjectJsonSchema = zodToJsonSchema(DataObjectSchema, { target: 'openApi3' })
-export const dataJsonSchema = zodToJsonSchema(DataSchema, { target: 'openApi3' })
+export const rootJsonSchema = toJSONSchema(RootSchema)
+export const metaJsonSchema = toJSONSchema(MetaSchema)
+export const flowJsonSchema = toJSONSchema(FlowSchema)
+export const nodeJsonSchema = toJSONSchema(NodeSchema)
+export const stepJsonSchema = toJSONSchema(StepSchema)
+export const moveStepJsonSchema = toJSONSchema(MoveStepSchema)
+export const fieldJsonSchema = toJSONSchema(FieldSchema)
+export const dataObjectJsonSchema = toJSONSchema(DataObjectSchema)
+export const dataJsonSchema = toJSONSchema(DataSchema)
 
 /**
  * Full stored flow as returned by GET /api/flows/:id
@@ -63,7 +63,7 @@ export const flowSummaryJsonSchema = {
 /**
  * Patch operations schema
  */
-export const patchOperationsJsonSchema = zodToJsonSchema(patchSchema, { target: 'openApi3' })
+export const patchOperationsJsonSchema = toJSONSchema(patchSchema)
 
 /** Example for documentation */
 export const patchOperationsExample = {
