@@ -86,7 +86,7 @@ operations:
   - op: update-nodes
     nodes:
       - id: db
-        type: custom
+        type: database
         icon: "logos:postgresql"
         color: "#336791"
   - op: rename-nodes
@@ -168,14 +168,14 @@ flow:
 ## Schema Reference
 
 ### Root
-- `meta` (required): { title (required), description, tags, path }
+- `meta` (required): { title (required), description, path }
 - `flow` (required): { nodes (required, min 1), steps }
 
 ### Node
 - `id` (required): alphanumeric + hyphens + underscores
 - `label` (required): display name
 - `type`: actor | endpoint | transform | validation | auth | database | external | cache | queue | service | custom
-- `icon`: Iconify icon ID (e.g. "logos:postgresql"). Browse: https://icon-sets.iconify.design/logos/
+- `icon`: Iconify icon ID (e.g. "logos:postgresql") — overlays on top of the node's pixel art. Works on any `type`, not just `custom`. Browse: https://icon-sets.iconify.design/logos/
 - `color`: hex color
 - `flow`: nested sub-flow { nodes, steps } — makes node expandable with 🔍
 

@@ -2,7 +2,6 @@ meta:
   title: Authentication Flow
   path: examples/auth
   description: OAuth2 login with JWT tokens
-  tags: [auth, oauth, jwt]
 
 flow:
   nodes:

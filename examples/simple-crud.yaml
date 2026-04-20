@@ -2,7 +2,6 @@ meta:
   title: Simple CRUD
   path: examples/crud
   description: Basic REST API CRUD operations
-  tags: [crud, rest, api]
 
 flow:
   nodes:

@@ -5,14 +5,15 @@ import { z } from "zod";
 export const NodeTypeEnum = z.enum([
   "actor",
   "endpoint",
-  "transform",
-  "validation",
   "auth",
   "database",
   "external",
   "cache",
   "queue",
   "service",
+  "docker",
+  "k8s",
+  "scheduler",
   "custom",
 ]);
 
@@ -135,7 +136,7 @@ export const NodeSchema: z.ZodType<NodeShape> = z.lazy(() =>
       .min(1, "Node id is required")
       .regex(/^[a-zA-Z0-9_-]+$/, "Node id must be alphanumeric with hyphens and underscores"),
     label: z.string().min(1, "Node label is required"),
-    type: NodeTypeEnum.default("transform").optional(),
+    type: NodeTypeEnum.default("service").optional(),
     icon: z.string().optional(),
     color: hexColor.optional(),
     flow: FlowSchema.optional(),
@@ -150,7 +151,6 @@ export type FlowBody = z.infer<typeof FlowSchema>;
 export const MetaSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  tags: z.array(z.string()).optional(),
   path: z.string().optional(),
 });
 

@@ -1,7 +1,7 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
-import { NODE_BUILDINGS, CustomBuilding } from './NodeBuilding'
+import { NODE_BUILDINGS, NODE_TYPE_SPRITE, SpriteBuilding, CustomBuilding } from './NodeBuilding'
 
 /** Node type color config */
 const NODE_STYLES: Record<string, { bg: string; border: string }> = {
@@ -53,17 +53,18 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   const progressTotal = outgoingStepCount ?? totalSteps
   const progressCurrent = Math.min(currentStep, progressTotal)
 
-  const isCustom = nodeType === 'custom'
   const style = NODE_STYLES[nodeType] ?? { bg: '#111111', border: color ?? '#666' }
 
-  const borderColor = isCustom ? (color ?? '#666') : style.border
+  // color override (when provided) always wins, regardless of node type
+  const borderColor = color ?? style.border
 
   // Pick the building component for this node type
   const BuildingComponent = NODE_BUILDINGS[nodeType] ?? CustomBuilding
 
-  // For custom nodes with an explicit icon override, show emoji/iconify inside the custom building
+  // Icon overlay — allowed on any node type so authors can brand a typed node
+  // (e.g. type=database + icon=logos:postgresql renders the DB sprite plus the postgres logo).
   let customIconOverlay: React.ReactNode = null
-  if (isCustom && icon) {
+  if (icon) {
     if (icon.includes(':')) {
       const [prefix, name] = icon.split(':')
       const url = `https://api.iconify.design/${prefix}/${name}.svg`
@@ -71,13 +72,13 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         <img
           src={url}
           alt={label}
-          style={{ width: 24, height: 24, position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', imageRendering: 'auto' }}
+          style={{ width: 36, height: 36, position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', imageRendering: 'auto' }}
           onError={(e) => { (e.target as HTMLElement).style.display = 'none' }}
         />
       )
     } else {
       customIconOverlay = (
-        <span style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)', fontSize: 22, lineHeight: 1 }}>
+        <span style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', fontSize: 32, lineHeight: 1 }}>
           {icon}
         </span>
       )
@@ -163,7 +164,12 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           transition: 'filter 0.2s ease',
         }}
       >
-        <BuildingComponent color={borderColor} active={isActive} />
+        {(() => {
+          const sprite = NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service
+          return sprite
+            ? <SpriteBuilding src={sprite} color={borderColor} active={isActive} />
+            : <BuildingComponent color={borderColor} active={isActive} />
+        })()}
         {customIconOverlay}
         {hasSubFlow && (
           <button
@@ -196,7 +202,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
       <span
         style={{
           color: borderColor,
-          fontSize: 10,
+          fontSize: 14,
           fontFamily: 'monospace',
           textAlign: 'center',
           whiteSpace: 'nowrap',
@@ -218,9 +224,9 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           aria-label={`Progress: ${progressCurrent} of ${progressTotal} steps`}
           onClick={handleProgressBarClick}
           style={{
-            width: 56,
-            height: 3,
-            marginTop: 3,
+            width: 84,
+            height: 5,
+            marginTop: 4,
             background: `${borderColor}33`,
             borderRadius: 1,
             cursor: 'pointer',

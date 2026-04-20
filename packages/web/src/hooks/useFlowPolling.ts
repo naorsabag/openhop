@@ -7,7 +7,6 @@ export interface FlowListItem {
   id: string
   title: string
   description?: string
-  tags: string[]
   path?: string
   version: number
   updatedAt: string

@@ -468,16 +468,62 @@ export function CustomBuilding({ color, active }: BuildingProps) {
   )
 }
 
+// Sprite mapping for node types whose pixel-art has been replaced with the
+// new 2D SVGs in packages/web/public/sprites. Types missing from this map
+// continue to use the inline building components below.
+export const NODE_TYPE_SPRITE: Record<string, string> = {
+  actor:     '/sprites/user_node.svg',
+  endpoint:  '/sprites/endpoint_node.svg',
+  auth:      '/sprites/auth_node.svg',
+  database:  '/sprites/database_node.svg',
+  external:  '/sprites/external_node.svg',
+  cache:     '/sprites/cache_node.svg',
+  queue:     '/sprites/queue_node.svg',
+  service:   '/sprites/service_node.svg',
+  docker:    '/sprites/docker_node.svg',
+  k8s:       '/sprites/k8s_node.svg',
+  scheduler: '/sprites/scheduler_node.svg',
+  // custom: no sprite — uses the service sprite as fallback (see FlowNode)
+}
+
+const SPRITE_SIZE = 108
+
+export function SpriteBuilding({ src, color, active }: { src: string } & BuildingProps) {
+  return (
+    <div style={{ position: 'relative', width: SPRITE_SIZE, height: SPRITE_SIZE }}>
+      <img
+        src={src}
+        alt=""
+        width={SPRITE_SIZE}
+        height={SPRITE_SIZE}
+        style={{
+          imageRendering: 'pixelated',
+          display: 'block',
+          width: SPRITE_SIZE,
+          height: SPRITE_SIZE,
+          // Wide SVGs scale down vertically and end up floating in the middle
+          // of the box. Anchor to the bottom so buildings "sit" on the ground,
+          // matching how auth (near-square) already looks.
+          objectFit: 'contain',
+          objectPosition: 'center bottom',
+          filter: active ? `drop-shadow(0 0 6px ${color})` : undefined,
+        }}
+      />
+    </div>
+  )
+}
+
 export const NODE_BUILDINGS: Record<string, React.ComponentType<BuildingProps>> = {
   actor:      ActorBuilding,
   endpoint:   EndpointBuilding,
-  transform:  TransformBuilding,
-  validation: ValidationBuilding,
   auth:       AuthBuilding,
   database:   DatabaseBuilding,
   external:   ExternalBuilding,
   cache:      CacheBuilding,
   queue:      QueueBuilding,
   service:    ServiceBuilding,
+  docker:     ServiceBuilding,     // placeholder until sprite wired
+  k8s:        ServiceBuilding,     // placeholder until sprite wired
+  scheduler:  ServiceBuilding,     // placeholder until sprite wired
   custom:     CustomBuilding,
 }
