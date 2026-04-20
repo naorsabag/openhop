@@ -79,6 +79,7 @@ export function DataInspectionPanel({ step, side, size, onSideChange, onSizeChan
 }
 
 function Header({ side, onSideChange, onClose }: { side: DockSide; onSideChange: (s: DockSide) => void; onClose: () => void }) {
+  const nextSide: DockSide = side === 'right' ? 'bottom' : 'right'
   return (
     <div
       style={{
@@ -87,52 +88,71 @@ function Header({ side, onSideChange, onClose }: { side: DockSide; onSideChange:
         justifyContent: 'space-between',
         padding: '6px 10px',
         borderBottom: '1px solid #2a2a4a',
-        fontFamily: '"VT323", monospace',
+        fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
         fontSize: 13,
         color: '#e0e0e0',
         flexShrink: 0,
       }}
     >
       <span style={{ color: '#4a9eff', letterSpacing: 0.5 }}>INSPECT</span>
-      <div style={{ display: 'flex', gap: 4 }}>
-        <DockButton active={side === 'right'} label="Right" onClick={() => onSideChange('right')} />
-        <DockButton active={side === 'bottom'} label="Bottom" onClick={() => onSideChange('bottom')} />
-        <button
-          onClick={onClose}
-          aria-label="Close inspector"
-          style={{ ...dockBtnBase, color: '#888', marginLeft: 4 }}
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <IconButton
+          label={`Dock to ${nextSide}`}
+          onClick={() => onSideChange(nextSide)}
         >
-          ✕
-        </button>
+          <DockIcon side={side} />
+        </IconButton>
+        <IconButton label="Close inspector" onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
       </div>
     </div>
   )
 }
 
-function DockButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
-      aria-pressed={active}
+      aria-label={label}
+      title={label}
       style={{
-        ...dockBtnBase,
-        color: active ? '#4a9eff' : '#888',
-        borderColor: active ? '#4a9eff' : '#2a2a4a',
+        background: 'none',
+        border: 'none',
+        padding: 2,
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#9aa',
       }}
     >
-      {label}
+      {children}
     </button>
   )
 }
 
-const dockBtnBase: React.CSSProperties = {
-  background: 'none',
-  border: '1px solid',
-  padding: '1px 6px',
-  fontFamily: '"VT323", monospace',
-  fontSize: 12,
-  cursor: 'pointer',
-  lineHeight: 1.3,
+function DockIcon({ side }: { side: DockSide }) {
+  const frame = { stroke: 'currentColor', strokeWidth: 1.2, fill: 'none' }
+  const fill = { fill: 'currentColor' }
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
+      <rect x={1.5} y={2.5} width={13} height={11} rx={1} {...frame} />
+      {side === 'right' ? (
+        <rect x={9.5} y={2.5} width={5} height={11} rx={1} {...fill} />
+      ) : (
+        <rect x={1.5} y={9.5} width={13} height={4} rx={1} {...fill} />
+      )}
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden="true">
+      <path d="M3 3 L11 11 M11 3 L3 11" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
+    </svg>
+  )
 }
 
 type StepFlow = { from: string; to: string; data: FlowData[] }
@@ -164,7 +184,7 @@ function normalizeData(raw: FlowStep['data']): FlowData[] {
 function StepBody({ step }: { step: FlowStep | null }) {
   if (!step) {
     return (
-      <div style={{ padding: 12, color: '#888', fontFamily: '"VT323", monospace', fontSize: 14 }}>
+      <div style={{ padding: 12, color: '#888', fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 14 }}>
         No step selected. Play the flow or click a step to inspect its data.
       </div>
     )
@@ -173,7 +193,7 @@ function StepBody({ step }: { step: FlowStep | null }) {
   const flows = expandStep(step)
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '10px 12px', fontFamily: '"VT323", monospace', fontSize: 14, color: '#e0e0e0' }}>
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '10px 12px', fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 14, color: '#e0e0e0' }}>
       {flows.map((f, i) => (
         <section
           key={`${f.from}-${f.to}-${i}`}

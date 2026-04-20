@@ -68,24 +68,37 @@ function App() {
     }
   }, [apiFlow, currentFlowBody])
 
-  // Track current step index for resume + inspector sync
+  // Track current step index for resume
   const currentStepRef = useRef(0)
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [inspectedStep, setInspectedStep] = useState<FlowStep | null>(null)
+  const displayFlowRef = useRef(displayFlow)
+  displayFlowRef.current = displayFlow
   const handleStepChange = useCallback((stepIndex: number) => {
     currentStepRef.current = stepIndex
-    setCurrentStepIndex(stepIndex)
+    const steps = displayFlowRef.current?.flow.steps ?? []
+    if (steps[stepIndex]) setInspectedStep(steps[stepIndex])
   }, [])
 
   // Inspector panel state
-  const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [inspectorOpen, setInspectorOpen] = useState(true)
   const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
   const [inspectorSize, setInspectorSize] = useState(320)
 
+  // Reset inspected step when flow changes
+  useEffect(() => {
+    setInspectedStep(null)
+  }, [selectedFlowId, flowStack.length])
+
+  const handleInspectStep = useCallback((step: FlowStep) => {
+    setInspectedStep(step)
+  }, [])
+
+  // Fallback: first step when nothing has been inspected
   const currentStep: FlowStep | null = useMemo(() => {
-    if (!currentFlowBody) return null
-    const steps = currentFlowBody.flow.steps ?? []
-    return steps[currentStepIndex] ?? steps[0] ?? null
-  }, [currentFlowBody, currentStepIndex])
+    if (inspectedStep) return inspectedStep
+    const steps = currentFlowBody?.flow.steps ?? []
+    return steps[0] ?? null
+  }, [inspectedStep, currentFlowBody])
 
   const navigateToDrillDown = useCallback((nodeId: string, atStepIndex?: number) => {
     if (!currentFlowBody || !apiFlow) return
@@ -286,6 +299,7 @@ function App() {
                   onCycleComplete={handleCycleComplete}
                   startFromStep={currentFlowBody?.resumeFromStep}
                   onStepChange={handleStepChange}
+                  onInspectStep={handleInspectStep}
                 />
               </div>
             </>

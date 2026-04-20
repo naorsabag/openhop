@@ -36,10 +36,11 @@ interface FlowCanvasProps {
   onCycleComplete?: () => void
   startFromStep?: number
   onStepChange?: (stepIndex: number) => void
+  onInspectStep?: (step: FlowStep) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
-function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete, startFromStep, onStepChange }: FlowCanvasProps) {
+function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete, startFromStep, onStepChange, onInspectStep }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const flowSteps = useMemo(() => flow.flow.steps ?? [], [flow.flow.steps])
   const [pinnedEdge, setPinnedEdge] = useState<{
@@ -295,6 +296,8 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     const entry = outgoing[currentProg]
     const sourceInfo = nodeTypeMap.get(nodeId) ?? { type: 'service' }
 
+    onInspectStep?.(entry.step)
+
     // Increment progress once for this logical step
     setNodeStep(nodeId, currentProg + 1)
 
@@ -321,7 +324,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         sourceNodeColor: sourceInfo.color,
       })
     }
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps, activateNode, deactivateNode])
+  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps, activateNode, deactivateNode, onInspectStep])
 
   const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
     setNodeStep(nodeId, targetStep)
