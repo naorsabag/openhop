@@ -85,7 +85,7 @@ body {
 }
 .conduit-road--active { filter: brightness(1.25) saturate(1.2); }
 
-/* Single glow on the shared portal container so junctions don't double. */
-.react-flow__edgelabel-renderer {
+/* Single glow behind all road edges so junctions don't double. */
+.react-flow__edges {
   filter: drop-shadow(0 0 8px var(--road-glow));
 }
