@@ -488,9 +488,17 @@ export const NODE_TYPE_SPRITE: Record<string, string> = {
 
 const SPRITE_SIZE = 108
 
-export function SpriteBuilding({ src, color, active }: { src: string } & BuildingProps) {
+// Per-type visual scale for sprites that look too small inside the fixed
+// 108x108 box due to extreme aspect ratios (e.g. the wide-short endpoint).
+// The scale is applied via transform so it doesn't affect ELK layout.
+const SPRITE_SCALE: Record<string, number> = {
+  endpoint: 1.5,
+}
+
+export function SpriteBuilding({ src, color, active, nodeType }: { src: string; nodeType?: string } & BuildingProps) {
+  const scale = (nodeType && SPRITE_SCALE[nodeType]) ?? 1
   return (
-    <div style={{ position: 'relative', width: SPRITE_SIZE, height: SPRITE_SIZE }}>
+    <div style={{ position: 'relative', width: SPRITE_SIZE, height: SPRITE_SIZE, overflow: 'visible' }}>
       <img
         src={src}
         alt=""
@@ -501,11 +509,10 @@ export function SpriteBuilding({ src, color, active }: { src: string } & Buildin
           display: 'block',
           width: SPRITE_SIZE,
           height: SPRITE_SIZE,
-          // Wide SVGs scale down vertically and end up floating in the middle
-          // of the box. Anchor to the bottom so buildings "sit" on the ground,
-          // matching how auth (near-square) already looks.
+          transform: scale === 1 ? undefined : `scale(${scale})`,
+          transformOrigin: 'center center',
           objectFit: 'contain',
-          objectPosition: 'center bottom',
+          objectPosition: 'center center',
           filter: active ? `drop-shadow(0 0 6px ${color})` : undefined,
         }}
       />

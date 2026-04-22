@@ -56,6 +56,12 @@ flow:
       type: external
       icon: "logos:stripe"
       color: "#635BFF"
+    - id: events
+      label: Order Events
+      type: queue
+    - id: cron
+      label: Retry Scheduler
+      type: scheduler
 
   steps:
     - from: user
@@ -241,6 +247,30 @@ flow:
 
     # Destroy after logging
     - destroy: audit
+
+    # Fan out an async event so downstream consumers can react to the new order.
+    - from: order-service
+      to: events
+      data:
+        label: publish order.created
+        fields:
+          - name: order_id
+            type: int
+          - name: user_id
+            type: int
+          - name: total
+            type: float
+
+    # Periodic retry scheduler checks for stuck orders and nudges the service.
+    - from: cron
+      to: order-service
+      data:
+        label: retry stuck orders
+        fields:
+          - name: since
+            type: datetime
+          - name: batch_size
+            type: int
 
     - from: order-service
       to: api

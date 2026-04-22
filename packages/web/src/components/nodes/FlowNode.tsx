@@ -167,7 +167,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         {(() => {
           const sprite = NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service
           return sprite
-            ? <SpriteBuilding src={sprite} color={borderColor} active={isActive} />
+            ? <SpriteBuilding src={sprite} color={borderColor} active={isActive} nodeType={nodeType} />
             : <BuildingComponent color={borderColor} active={isActive} />
         })()}
         {customIconOverlay}

@@ -298,6 +298,31 @@ export function buildOrthogonalPath(points: RoutePoint[]): string | null {
     .join(' ')
 }
 
+/**
+ * Extend the route's start/end inward so roads visually enter the center of
+ * each node (instead of stopping at the bounding-box edge where the port sits).
+ */
+function extendRouteToNodeCenters(
+  route: RoutePoint[],
+  assignment: EdgePortAssignment | undefined,
+): RoutePoint[] {
+  if (route.length < 2 || !assignment) return route
+  const start = route[0]
+  const end = route[route.length - 1]
+  const innerStart = shiftInward(start, assignment.source)
+  const innerEnd = shiftInward(end, assignment.target)
+  return [innerStart, ...route, innerEnd]
+}
+
+function shiftInward(port: RoutePoint, side: HandleId): RoutePoint {
+  switch (side) {
+    case 'right':  return { x: port.x - NODE_WIDTH / 2, y: port.y }
+    case 'left':   return { x: port.x + NODE_WIDTH / 2, y: port.y }
+    case 'bottom': return { x: port.x, y: port.y - NODE_HEIGHT / 2 }
+    case 'top':    return { x: port.x, y: port.y + NODE_HEIGHT / 2 }
+  }
+}
+
 function anchorForHandle(position: Position, handle: HandleId): RoutePoint {
   switch (handle) {
     case 'top':
@@ -561,7 +586,10 @@ export function buildReactFlowGraph(
   const edges: Edge[] = topology.displayEdges.map((edge) => {
     const sourcePos = positionMap.get(edge.source) ?? defaultPosition()
     const targetPos = positionMap.get(edge.target) ?? defaultPosition()
-    const elkPath = buildOrthogonalPath(routes?.get(edge.id) ?? [])
+    const assignment = portAssignments?.get(edge.id)
+    const rawRoute = routes?.get(edge.id) ?? []
+    const extendedRoute = extendRouteToNodeCenters(rawRoute, assignment)
+    const elkPath = buildOrthogonalPath(extendedRoute)
 
     return {
       id: edge.id,
