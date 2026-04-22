@@ -560,9 +560,39 @@ export function buildReactFlowGraph(
     incomingByTarget.set(edge.target, incoming)
   }
 
+  // Color-variant cycle: when several nodes share the same sprite and have no
+  // custom icon, each successive one gets a different CSS filter so viewers
+  // can tell them apart at a glance.
+  const VARIANT_CYCLE: string[] = [
+    '',                                                    // original (orange)
+    'hue-rotate(210deg)',                                  // purple
+    'hue-rotate(90deg)',                                   // green
+    'hue-rotate(140deg)',                                  // blue
+    'hue-rotate(320deg)',                                  // red
+    'saturate(0)',                                         // grey
+  ]
+  const spriteVariantCounters = new Map<string, number>()
+
+  // Nodes that fall back to the service sprite (e.g. `custom`) share the same
+  // variant counter, so five `custom` + five `service` nodes cycle through
+  // the six colors as a single pool instead of restarting per type.
+  const FALLBACK_SPRITE_KEY = 'service'
+  const TYPES_SHARING_SERVICE_SPRITE = new Set(['service', 'custom'])
+
   const nodes: Node<FlowNodeData>[] = topology.orderedIds.map((id) => {
     const snapshot = topology.nodeSnapshots.get(id)
     const position = positionMap.get(id) ?? defaultPosition()
+    const nodeType = snapshot?.nodeType ?? 'service'
+    const hasIcon = !!snapshot?.icon
+    let variantFilter: string | undefined
+    if (!hasIcon) {
+      const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(nodeType)
+        ? FALLBACK_SPRITE_KEY
+        : nodeType
+      const n = spriteVariantCounters.get(counterKey) ?? 0
+      variantFilter = VARIANT_CYCLE[n % VARIANT_CYCLE.length] || undefined
+      spriteVariantCounters.set(counterKey, n + 1)
+    }
 
     return {
       id,
@@ -570,13 +600,14 @@ export function buildReactFlowGraph(
       position,
       data: {
         label: snapshot?.label ?? id,
-        nodeType: snapshot?.nodeType ?? 'service',
+        nodeType,
         color: snapshot?.color,
         icon: snapshot?.icon,
         hasSubFlow: snapshot?.hasSubFlow ?? false,
         totalSteps: snapshot?.totalSteps ?? 0,
         currentStep: 0,
         isDynamic: snapshot?.isDynamic ?? false,
+        variantFilter,
       },
       width: NODE_WIDTH,
       height: NODE_HEIGHT,

@@ -37,6 +37,7 @@ export type FlowNodeData = {
   onProgressBarClick?: (nodeId: string, targetStep: number) => void
   onDrillDown?: (nodeId: string) => void
   isDynamic?: boolean
+  variantFilter?: string
 }
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
@@ -46,7 +47,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     label, nodeType, color, icon, hasSubFlow,
     isActiveSender, isActiveReceiver,
     totalSteps, currentStep, outgoingStepCount, onNodeClick, onProgressBarClick,
-    onDrillDown,
+    onDrillDown, variantFilter,
   } = data
 
   // Use outgoing step count for progress bar (how many steps this node sends)
@@ -167,7 +168,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         {(() => {
           const sprite = NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service
           return sprite
-            ? <SpriteBuilding src={sprite} color={borderColor} active={isActive} nodeType={nodeType} />
+            ? <SpriteBuilding src={sprite} color={borderColor} active={isActive} nodeType={nodeType} variantFilter={variantFilter} />
             : <BuildingComponent color={borderColor} active={isActive} />
         })()}
         {customIconOverlay}
