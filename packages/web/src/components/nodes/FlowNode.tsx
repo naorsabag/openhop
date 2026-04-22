@@ -183,19 +183,23 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
             }}
             style={{
               position: 'absolute',
-              top: 0,
-              right: 0,
+              top: -4,
+              // When a custom icon is present on the right, put the drill-down
+              // affordance on the left side of the node so they don't collide.
+              ...(icon
+                ? { right: 'calc(100% - 14px)' }
+                : { left: 'calc(100% - 14px)' }),
               background: 'none',
               border: 'none',
               cursor: 'pointer',
               padding: 0,
-              fontSize: 12,
+              fontSize: 36,
               lineHeight: 1,
-              opacity: 0.85,
+              opacity: 0.9,
             }}
             title="Has sub-flow"
           >
-            🔍
+            +
           </button>
         )}
       </div>
