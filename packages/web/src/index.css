@@ -70,6 +70,7 @@ body {
   --road-mid: #76ABA5;
   --road-dark: #61827B;
   --road-glow: rgba(90, 254, 230, 0.38);
+  --road-border: #0a3833;
 }
 
 /* Straight segments: orientation via --rd (default: to bottom for horizontal). */
@@ -85,7 +86,45 @@ body {
 }
 .conduit-road--active { filter: brightness(1.25) saturate(1.2); }
 
-/* Single glow behind all road edges so junctions don't double. */
+/* Header-strip buttons (Play/Pause, Inspect) — match map controls. */
+.openhop-header-btn {
+  background: #0d2612;
+  border-color: #1a4a22;
+  color: #7df9ff;
+  cursor: pointer;
+}
+.openhop-header-btn:hover {
+  background: #1a4a22;
+  border-color: #5AFEE6;
+  color: #5AFEE6;
+}
+
+/* React Flow zoom/fit controls — paint to match the header/sidebar palette. */
+.react-flow .react-flow__controls {
+  background: #0d2612 !important;
+  border: 2px solid #1a4a22;
+  box-shadow: none;
+}
+.react-flow .react-flow__controls-button {
+  background: #0d2612 !important;
+  border-bottom: 1px solid #1a4a22 !important;
+  color: #7df9ff !important;
+  fill: #7df9ff !important;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.react-flow .react-flow__controls-button:last-child { border-bottom: none !important; }
+.react-flow .react-flow__controls-button:hover {
+  background: #1a4a22 !important;
+  color: #5AFEE6 !important;
+  fill: #5AFEE6 !important;
+}
+.react-flow .react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+
+/* Single unified outline + glow around the entire road network.
+ * The outline is drawn by the #road-outline SVG filter (feMorphology dilate)
+ * which is much cheaper than stacking multiple drop-shadows. */
 .react-flow__edges {
-  filter: drop-shadow(0 0 8px var(--road-glow));
+  filter: url(#road-outline) drop-shadow(0 0 8px var(--road-glow));
 }

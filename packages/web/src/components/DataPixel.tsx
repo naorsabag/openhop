@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { FlowStep, FlowData } from '../types'
 import { DataTooltip } from './DataTooltip'
-import { CARROT_SPRITE } from '../lib/sprite-map'
+const CARROT_SPRITE = '/sprites/carrot_pixels.svg'
 
 /** Node type colors — must match FlowNode.tsx NODE_STYLES */
 const NODE_COLORS: Record<string, string> = {
@@ -146,7 +146,13 @@ export function DataPixel({
 
   useEffect(() => {
     animate()
+    // Edge DOM may not be present yet when a node (e.g. a `create:` target)
+    // is activated in the same render as the pixel spawn. Retry briefly.
+    const retry = setTimeout(animate, 50)
+    const retry2 = setTimeout(animate, 150)
     return () => {
+      clearTimeout(retry)
+      clearTimeout(retry2)
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [animate])

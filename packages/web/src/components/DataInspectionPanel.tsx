@@ -252,7 +252,7 @@ export function InspectorToggle({ open, onToggle }: InspectorToggleProps) {
       onClick={onToggle}
       aria-label={open ? 'Close inspector' : 'Open inspector'}
       aria-pressed={open}
-      className="font-pixel text-xs px-3 py-1 border border-border text-text hover:text-accent hover:border-accent transition-colors"
+      className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
       style={{ fontSize: 10, marginLeft: 8 }}
     >
       {open ? '▤ Inspect' : '▣ Inspect'}

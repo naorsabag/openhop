@@ -80,7 +80,7 @@ function TreeItem({ node, depth, selectedFlowId, expandedFolders, toggleFolder, 
         <button
           onClick={() => toggleFolder(node.path)}
           className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm text-text/70 hover:text-text transition-colors"
-          style={{ paddingLeft: depth * 16 + 8 }}
+          style={{ paddingLeft: depth * 16 + 8, cursor: 'pointer' }}
         >
           <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center' }}>
             {expanded ? '\u25BE' : '\u25B8'}
@@ -120,6 +120,7 @@ function TreeItem({ node, depth, selectedFlowId, expandedFolders, toggleFolder, 
           paddingLeft: depth * 16 + 8,
           color: isActive ? '#7df9ff' : 'rgba(224, 224, 255, 0.6)',
           background: isActive ? 'rgba(125, 249, 255, 0.08)' : 'transparent',
+          cursor: 'pointer',
         }}
       >
         <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center', opacity: 0.5 }}>

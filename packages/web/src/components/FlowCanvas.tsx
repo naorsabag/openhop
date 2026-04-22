@@ -1,7 +1,9 @@
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
+  useReactFlow,
   type NodeTypes,
   type EdgeTypes,
   type Node,
@@ -50,6 +52,46 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   } | null>(null)
 
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
+  const reactFlow = useReactFlow()
+
+  // Re-fit the view whenever node positions change. ELK arrives asynchronously
+  // after the initial fallback layout, so the built-in `fitView` prop's single
+  // on-mount run lands on the fallback; this effect catches subsequent updates
+  // (and drill-down flow swaps).
+  const layoutKey = useMemo(
+    () => baseNodes.map(n => `${n.id}@${n.position.x},${n.position.y}`).join('|'),
+    [baseNodes],
+  )
+  useEffect(() => {
+    if (baseNodes.length === 0) return
+    const fit = () => {
+      const pane = document.querySelector('.react-flow') as HTMLElement | null
+      if (!pane) return
+      const paneW = pane.offsetWidth
+      const paneH = pane.offsetHeight
+      if (paneW === 0 || paneH === 0) return
+      const xs = baseNodes.map(n => n.position.x)
+      const ys = baseNodes.map(n => n.position.y)
+      const w = baseNodes[0].width ?? 108
+      const h = baseNodes[0].height ?? 160
+      const minX = Math.min(...xs)
+      const minY = Math.min(...ys)
+      const maxX = Math.max(...xs) + w
+      const maxY = Math.max(...ys) + h
+      const contentW = maxX - minX
+      const contentH = maxY - minY
+      const pad = 0.3
+      const zoom = Math.min(paneW / (contentW * (1 + pad)), paneH / (contentH * (1 + pad)), 1.5)
+      const centerX = (minX + maxX) / 2
+      const centerY = (minY + maxY) / 2
+      const x = paneW / 2 - centerX * zoom
+      const y = paneH / 2 - centerY * zoom
+      reactFlow.setViewport({ x, y, zoom })
+    }
+    const t1 = setTimeout(fit, 50)
+    const t2 = setTimeout(fit, 400)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [layoutKey, reactFlow]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pairEdgeMap = useMemo(() => {
     const map = new Map<string, Edge>()
@@ -95,8 +137,14 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       } else {
         const from = 'from' in step ? step.from : undefined
         if (from) fromIds.push(from)
-        if ('to' in step) {
-          const targets = getTargets(step.to)
+        // `create` steps travel from the creator to the newly-created node.
+        // Treat `create: <id>` as a single target so a pixel fires.
+        const createTarget = 'create' in step && typeof step.create === 'string' ? step.create : undefined
+        const targets: string[] = [
+          ...('to' in step ? getTargets(step.to) : []),
+          ...(createTarget ? [createTarget] : []),
+        ]
+        if (targets.length) {
           toIds.push(...targets)
           for (const target of targets) {
             if (!from) continue
@@ -393,6 +441,36 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 
   return (
     <div className="w-full h-full relative" ref={containerRef} aria-label="Flow canvas">
+      {/* SVG filter defs — drawn once per canvas, referenced from index.css */}
+      <svg
+        aria-hidden="true"
+        width="0"
+        height="0"
+        style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+      >
+        <defs>
+          <filter id="road-outline" x="-15%" y="-15%" width="130%" height="130%">
+            {/* outermost ring — widest dilation drawn first */}
+            <feMorphology in="SourceAlpha" operator="dilate" radius="6" result="outermostMask" />
+            <feFlood floodColor="#5AFEE6" result="outermostColor" />
+            <feComposite in="outermostColor" in2="outermostMask" operator="in" result="outermostRing" />
+            {/* middle ring */}
+            <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="middleMask" />
+            <feFlood floodColor="#62827D" result="middleColor" />
+            <feComposite in="middleColor" in2="middleMask" operator="in" result="middleRing" />
+            {/* inner ring */}
+            <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="innerMask" />
+            <feFlood floodColor="#75AAA2" result="innerColor" />
+            <feComposite in="innerColor" in2="innerMask" operator="in" result="innerRing" />
+            <feMerge>
+              <feMergeNode in="outermostRing" />
+              <feMergeNode in="middleRing" />
+              <feMergeNode in="innerRing" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -485,5 +563,9 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 }
 
 export function FlowCanvas(props: FlowCanvasProps) {
-  return <FlowCanvasInner key={JSON.stringify(props.flow.flow.nodes.map(n => n.id))} {...props} />
+  return (
+    <ReactFlowProvider>
+      <FlowCanvasInner key={JSON.stringify(props.flow.flow.nodes.map(n => n.id))} {...props} />
+    </ReactFlowProvider>
+  )
 }

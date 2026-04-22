@@ -5,8 +5,8 @@ import type { FlowNodeData } from '../components/nodes/FlowNode'
 
 const elk = new ELK()
 
-export const NODE_WIDTH = 72
-export const NODE_HEIGHT = 120
+export const NODE_WIDTH = 108
+export const NODE_HEIGHT = 160
 const FALLBACK_COLUMN_GAP = 220
 const FALLBACK_ROW_GAP = 160
 const HANDLE_SPREAD_THRESHOLD = 48
@@ -298,6 +298,37 @@ export function buildOrthogonalPath(points: RoutePoint[]): string | null {
     .join(' ')
 }
 
+/**
+ * Extend the route's start/end inward so roads visually enter the center of
+ * each node (instead of stopping at the bounding-box edge where the port sits).
+ */
+function extendRouteToNodeCenters(
+  route: RoutePoint[],
+  assignment: EdgePortAssignment | undefined,
+): RoutePoint[] {
+  if (route.length < 2 || !assignment) return route
+  const start = route[0]
+  const end = route[route.length - 1]
+  const innerStart = shiftInward(start, assignment.source)
+  const innerEnd = shiftInward(end, assignment.target)
+  return [innerStart, ...route, innerEnd]
+}
+
+// Roads stop 43% of the way into the node (instead of at the center) so the
+// sprite's silhouette reads clearly but the road still clearly "connects".
+const INWARD_SHIFT_RATIO = 0.42
+
+function shiftInward(port: RoutePoint, side: HandleId): RoutePoint {
+  const dx = NODE_WIDTH * INWARD_SHIFT_RATIO
+  const dy = NODE_HEIGHT * INWARD_SHIFT_RATIO
+  switch (side) {
+    case 'right':  return { x: port.x - dx, y: port.y }
+    case 'left':   return { x: port.x + dx, y: port.y }
+    case 'bottom': return { x: port.x, y: port.y - dy }
+    case 'top':    return { x: port.x, y: port.y + dy }
+  }
+}
+
 function anchorForHandle(position: Position, handle: HandleId): RoutePoint {
   switch (handle) {
     case 'top':
@@ -535,9 +566,46 @@ export function buildReactFlowGraph(
     incomingByTarget.set(edge.target, incoming)
   }
 
+  // Color-variant cycle: when several nodes share the same sprite and have no
+  // custom icon, each successive one gets a different CSS filter so viewers
+  // can tell them apart at a glance. The accent palette parallels the sprite
+  // filter so the label, drop-shadow, and progress bar match the sprite's
+  // visible hue.
+  const VARIANT_CYCLE: string[] = [
+    '',                                                    // original (orange)
+    'hue-rotate(210deg)',                                  // purple
+    'hue-rotate(90deg)',                                   // green
+    'hue-rotate(140deg)',                                  // blue
+    'hue-rotate(320deg)',                                  // red
+    'hue-rotate(60deg) saturate(1.2)',                     // yellow (was grey)
+  ]
+  const VARIANT_ACCENT: string[] = [
+    '#ff8a4a', // orange
+    '#b47aff', // purple
+    '#4aff7a', // green
+    '#4a9eff', // blue
+    '#ff6b6b', // red
+    '#ffd84a', // yellow
+  ]
+  const spriteVariantCounters = new Map<string, number>()
+
+  // Nodes that fall back to the service sprite (e.g. `custom`) share the same
+  // variant counter, so five `custom` + five `service` nodes cycle through
+  // the six colors as a single pool instead of restarting per type.
+  const FALLBACK_SPRITE_KEY = 'service'
+  const TYPES_SHARING_SERVICE_SPRITE = new Set(['service', 'custom'])
+
   const nodes: Node<FlowNodeData>[] = topology.orderedIds.map((id) => {
     const snapshot = topology.nodeSnapshots.get(id)
     const position = positionMap.get(id) ?? defaultPosition()
+    const nodeType = snapshot?.nodeType ?? 'service'
+    const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(nodeType)
+      ? FALLBACK_SPRITE_KEY
+      : nodeType
+    const n = spriteVariantCounters.get(counterKey) ?? 0
+    const variantFilter = VARIANT_CYCLE[n % VARIANT_CYCLE.length] || undefined
+    const variantColor = VARIANT_ACCENT[n % VARIANT_ACCENT.length]
+    spriteVariantCounters.set(counterKey, n + 1)
 
     return {
       id,
@@ -545,13 +613,15 @@ export function buildReactFlowGraph(
       position,
       data: {
         label: snapshot?.label ?? id,
-        nodeType: snapshot?.nodeType ?? 'service',
+        nodeType,
         color: snapshot?.color,
         icon: snapshot?.icon,
         hasSubFlow: snapshot?.hasSubFlow ?? false,
         totalSteps: snapshot?.totalSteps ?? 0,
         currentStep: 0,
         isDynamic: snapshot?.isDynamic ?? false,
+        variantFilter,
+        variantColor,
       },
       width: NODE_WIDTH,
       height: NODE_HEIGHT,
@@ -561,7 +631,10 @@ export function buildReactFlowGraph(
   const edges: Edge[] = topology.displayEdges.map((edge) => {
     const sourcePos = positionMap.get(edge.source) ?? defaultPosition()
     const targetPos = positionMap.get(edge.target) ?? defaultPosition()
-    const elkPath = buildOrthogonalPath(routes?.get(edge.id) ?? [])
+    const assignment = portAssignments?.get(edge.id)
+    const rawRoute = routes?.get(edge.id) ?? []
+    const extendedRoute = extendRouteToNodeCenters(rawRoute, assignment)
+    const elkPath = buildOrthogonalPath(extendedRoute)
 
     return {
       id: edge.id,

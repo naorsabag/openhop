@@ -1,0 +1,105 @@
+meta:
+  title: Type Variants Showcase
+  description: 5 nodes of each node type to show the hue-cycle per-sprite coloring
+  path: demos
+
+flow:
+  nodes:
+    # actor
+    - { id: actor-1, label: Actor 1, type: actor }
+    - { id: actor-2, label: Actor 2, type: actor }
+    - { id: actor-3, label: Actor 3, type: actor }
+    - { id: actor-4, label: Actor 4, type: actor }
+    - { id: actor-5, label: Actor 5, type: actor }
+
+    # endpoint
+    - { id: endpoint-1, label: Endpoint 1, type: endpoint }
+    - { id: endpoint-2, label: Endpoint 2, type: endpoint }
+    - { id: endpoint-3, label: Endpoint 3, type: endpoint }
+    - { id: endpoint-4, label: Endpoint 4, type: endpoint }
+    - { id: endpoint-5, label: Endpoint 5, type: endpoint }
+
+    # auth
+    - { id: auth-1, label: Auth 1, type: auth }
+    - { id: auth-2, label: Auth 2, type: auth }
+    - { id: auth-3, label: Auth 3, type: auth }
+    - { id: auth-4, label: Auth 4, type: auth }
+    - { id: auth-5, label: Auth 5, type: auth }
+
+    # database
+    - { id: db-1, label: DB 1, type: database }
+    - { id: db-2, label: DB 2, type: database }
+    - { id: db-3, label: DB 3, type: database }
+    - { id: db-4, label: DB 4, type: database }
+    - { id: db-5, label: DB 5, type: database }
+
+    # external
+    - { id: ext-1, label: Ext 1, type: external }
+    - { id: ext-2, label: Ext 2, type: external }
+    - { id: ext-3, label: Ext 3, type: external }
+    - { id: ext-4, label: Ext 4, type: external }
+    - { id: ext-5, label: Ext 5, type: external }
+
+    # cache
+    - { id: cache-1, label: Cache 1, type: cache }
+    - { id: cache-2, label: Cache 2, type: cache }
+    - { id: cache-3, label: Cache 3, type: cache }
+    - { id: cache-4, label: Cache 4, type: cache }
+    - { id: cache-5, label: Cache 5, type: cache }
+
+    # queue
+    - { id: queue-1, label: Queue 1, type: queue }
+    - { id: queue-2, label: Queue 2, type: queue }
+    - { id: queue-3, label: Queue 3, type: queue }
+    - { id: queue-4, label: Queue 4, type: queue }
+    - { id: queue-5, label: Queue 5, type: queue }
+
+    # service
+    - { id: svc-1, label: Service 1, type: service }
+    - { id: svc-2, label: Service 2, type: service }
+    - { id: svc-3, label: Service 3, type: service }
+    - { id: svc-4, label: Service 4, type: service }
+    - { id: svc-5, label: Service 5, type: service }
+
+    # docker
+    - { id: docker-1, label: Docker 1, type: docker }
+    - { id: docker-2, label: Docker 2, type: docker }
+    - { id: docker-3, label: Docker 3, type: docker }
+    - { id: docker-4, label: Docker 4, type: docker }
+    - { id: docker-5, label: Docker 5, type: docker }
+
+    # k8s
+    - { id: k8s-1, label: K8s 1, type: k8s }
+    - { id: k8s-2, label: K8s 2, type: k8s }
+    - { id: k8s-3, label: K8s 3, type: k8s }
+    - { id: k8s-4, label: K8s 4, type: k8s }
+    - { id: k8s-5, label: K8s 5, type: k8s }
+
+    # scheduler
+    - { id: sched-1, label: Sched 1, type: scheduler }
+    - { id: sched-2, label: Sched 2, type: scheduler }
+    - { id: sched-3, label: Sched 3, type: scheduler }
+    - { id: sched-4, label: Sched 4, type: scheduler }
+    - { id: sched-5, label: Sched 5, type: scheduler }
+
+    # custom (falls back to service sprite)
+    - { id: custom-1, label: Custom 1, type: custom }
+    - { id: custom-2, label: Custom 2, type: custom }
+    - { id: custom-3, label: Custom 3, type: custom }
+    - { id: custom-4, label: Custom 4, type: custom }
+    - { id: custom-5, label: Custom 5, type: custom }
+
+  steps:
+    # Minimal connective tissue so nodes aren't orphans and ELK has something
+    # to lay out. Chain the first of each type to the next type's first.
+    - { from: actor-1,    to: endpoint-1, data: "→" }
+    - { from: endpoint-1, to: auth-1,     data: "→" }
+    - { from: auth-1,     to: db-1,       data: "→" }
+    - { from: db-1,       to: ext-1,      data: "→" }
+    - { from: ext-1,      to: cache-1,    data: "→" }
+    - { from: cache-1,    to: queue-1,    data: "→" }
+    - { from: queue-1,    to: svc-1,      data: "→" }
+    - { from: svc-1,      to: docker-1,   data: "→" }
+    - { from: docker-1,   to: k8s-1,      data: "→" }
+    - { from: k8s-1,      to: sched-1,    data: "→" }
+    - { from: sched-1,    to: custom-1,   data: "→" }

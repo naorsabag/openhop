@@ -2,7 +2,6 @@ meta:
   title: Create Order
   description: End-to-end order creation flow with payment processing
   path: e-commerce/orders
-  tags: [orders, payments, e-commerce]
 
 flow:
   nodes:
@@ -17,7 +16,7 @@ flow:
       type: auth
     - id: rate-limit
       label: Rate Limit
-      type: validation
+      type: service
     - id: order-service
       label: Order Service
       type: service
@@ -25,10 +24,10 @@ flow:
         nodes:
           - id: validate
             label: Validate
-            type: transform
+            type: service
           - id: enrich
             label: Enrich
-            type: transform
+            type: service
         steps:
           - from: validate
             to: enrich
@@ -44,19 +43,25 @@ flow:
                   added: true
     - id: db
       label: PostgreSQL
-      type: custom
+      type: database
       icon: "logos:postgresql"
       color: "#336791"
     - id: cache
       label: Redis
-      type: custom
+      type: cache
       icon: "logos:redis"
       color: "#DC382D"
     - id: payment
       label: Stripe
-      type: custom
+      type: external
       icon: "logos:stripe"
       color: "#635BFF"
+    - id: events
+      label: Order Events
+      type: queue
+    - id: cron
+      label: Retry Scheduler
+      type: scheduler
 
   steps:
     - from: user
@@ -228,7 +233,7 @@ flow:
       node:
         id: audit
         label: Audit Log
-        type: transform
+        type: service
       data:
         label: log order event
         fields:
@@ -242,6 +247,30 @@ flow:
 
     # Destroy after logging
     - destroy: audit
+
+    # Fan out an async event so downstream consumers can react to the new order.
+    - from: order-service
+      to: events
+      data:
+        label: publish order.created
+        fields:
+          - name: order_id
+            type: int
+          - name: user_id
+            type: int
+          - name: total
+            type: float
+
+    # Periodic retry scheduler checks for stuck orders and nudges the service.
+    - from: cron
+      to: order-service
+      data:
+        label: retry stuck orders
+        fields:
+          - name: since
+            type: datetime
+          - name: batch_size
+            type: int
 
     - from: order-service
       to: api

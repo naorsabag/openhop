@@ -40,8 +40,8 @@ const NOT_FOUND_EXAMPLE = {
 }
 
 export async function flowRoutes(app: FastifyInstance): Promise<void> {
-  // Register shared schemas for Swagger docs
-  app.addSchema({ $id: 'PatchOperations', ...patchOperationsJsonSchema })
+  // Register patch-operations schema so routes can $ref it by its generated id.
+  app.addSchema(patchOperationsJsonSchema)
 
   // ── GET /health — Health check ──────────────────────────────────────
   app.get('/health', {
@@ -195,7 +195,6 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
       id: f.id,
       title: f.meta.title,
       description: f.meta.description ?? null,
-      tags: f.meta.tags ?? [],
       path: f.meta.path ?? null,
       version: f.version,
       updatedAt: f.updatedAt,
@@ -308,7 +307,7 @@ Supported operations:
         },
         required: ['id'],
       },
-      body: { $ref: 'PatchOperations#' },
+      body: { $ref: 'https://openhop.dev/schemas/patch-operations#' },
       response: {
         200: {
           type: 'object',

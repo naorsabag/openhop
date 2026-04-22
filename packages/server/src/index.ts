@@ -1,10 +1,18 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import { sharedJsonSchemas } from '@openhop/shared'
 import { flowRoutes } from './routes.js'
 import { FlowStore } from './store.js'
 import { syncExampleOrderFlow } from './seed-example.js'
 
 const app = Fastify({ logger: true })
+
+// Register shared schemas once so routes can reference them by $id.
+// (Required because `flowJsonSchema` is recursive — inlining it re-binds
+// its internal `$ref: "#"` to whatever parent schema is compiling.)
+for (const schema of sharedJsonSchemas) {
+  app.addSchema(schema)
+}
 
 await app.register(cors, { origin: true })
 

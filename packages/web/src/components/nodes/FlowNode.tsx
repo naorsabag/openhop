@@ -1,7 +1,7 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
-import { NODE_BUILDINGS, CustomBuilding } from './NodeBuilding'
+import { NODE_TYPE_SPRITE, SpriteBuilding } from './NodeBuilding'
 
 /** Node type color config */
 const NODE_STYLES: Record<string, { bg: string; border: string }> = {
@@ -37,6 +37,8 @@ export type FlowNodeData = {
   onProgressBarClick?: (nodeId: string, targetStep: number) => void
   onDrillDown?: (nodeId: string) => void
   isDynamic?: boolean
+  variantFilter?: string
+  variantColor?: string
 }
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
@@ -46,24 +48,24 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     label, nodeType, color, icon, hasSubFlow,
     isActiveSender, isActiveReceiver,
     totalSteps, currentStep, outgoingStepCount, onNodeClick, onProgressBarClick,
-    onDrillDown,
+    onDrillDown, variantFilter, variantColor,
   } = data
 
   // Use outgoing step count for progress bar (how many steps this node sends)
   const progressTotal = outgoingStepCount ?? totalSteps
   const progressCurrent = Math.min(currentStep, progressTotal)
 
-  const isCustom = nodeType === 'custom'
   const style = NODE_STYLES[nodeType] ?? { bg: '#111111', border: color ?? '#666' }
 
-  const borderColor = isCustom ? (color ?? '#666') : style.border
+  // color override (when provided) always wins, regardless of node type
+  // When a node is part of a multi-sibling cycle, its variantColor wins;
+  // otherwise fall back to an explicit `color` override, else the type style.
+  const borderColor = variantColor ?? color ?? style.border
 
-  // Pick the building component for this node type
-  const BuildingComponent = NODE_BUILDINGS[nodeType] ?? CustomBuilding
-
-  // For custom nodes with an explicit icon override, show emoji/iconify inside the custom building
+  // Icon overlay — allowed on any node type so authors can brand a typed node
+  // (e.g. type=database + icon=logos:postgresql renders the DB sprite plus the postgres logo).
   let customIconOverlay: React.ReactNode = null
-  if (isCustom && icon) {
+  if (icon) {
     if (icon.includes(':')) {
       const [prefix, name] = icon.split(':')
       const url = `https://api.iconify.design/${prefix}/${name}.svg`
@@ -71,13 +73,13 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         <img
           src={url}
           alt={label}
-          style={{ width: 24, height: 24, position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', imageRendering: 'auto' }}
+          style={{ width: 40, height: 40, position: 'absolute', top: -4, left: 'calc(100% - 14px)', imageRendering: 'auto' }}
           onError={(e) => { (e.target as HTMLElement).style.display = 'none' }}
         />
       )
     } else {
       customIconOverlay = (
-        <span style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)', fontSize: 22, lineHeight: 1 }}>
+        <span style={{ position: 'absolute', top: -2, left: 'calc(100% - 14px)', fontSize: 36, lineHeight: 1 }}>
           {icon}
         </span>
       )
@@ -163,7 +165,13 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           transition: 'filter 0.2s ease',
         }}
       >
-        <BuildingComponent color={borderColor} active={isActive} />
+        <SpriteBuilding
+          src={NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service}
+          color={borderColor}
+          active={isActive}
+          nodeType={nodeType}
+          variantFilter={variantFilter}
+        />
         {customIconOverlay}
         {hasSubFlow && (
           <button
@@ -175,19 +183,23 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
             }}
             style={{
               position: 'absolute',
-              top: 0,
-              right: 0,
+              top: -4,
+              // When a custom icon is present on the right, put the drill-down
+              // affordance on the left side of the node so they don't collide.
+              ...(icon
+                ? { right: 'calc(100% - 14px)' }
+                : { left: 'calc(100% - 14px)' }),
               background: 'none',
               border: 'none',
               cursor: 'pointer',
               padding: 0,
-              fontSize: 12,
+              fontSize: 36,
               lineHeight: 1,
-              opacity: 0.85,
+              opacity: 0.9,
             }}
             title="Has sub-flow"
           >
-            🔍
+            +
           </button>
         )}
       </div>
@@ -196,7 +208,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
       <span
         style={{
           color: borderColor,
-          fontSize: 10,
+          fontSize: 14,
           fontFamily: 'monospace',
           textAlign: 'center',
           whiteSpace: 'nowrap',
@@ -218,9 +230,9 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           aria-label={`Progress: ${progressCurrent} of ${progressTotal} steps`}
           onClick={handleProgressBarClick}
           style={{
-            width: 56,
-            height: 3,
-            marginTop: 3,
+            width: 84,
+            height: 5,
+            marginTop: 4,
             background: `${borderColor}33`,
             borderRadius: 1,
             cursor: 'pointer',
