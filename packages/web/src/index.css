@@ -86,6 +86,29 @@ body {
 }
 .conduit-road--active { filter: brightness(1.25) saturate(1.2); }
 
+/* React Flow zoom/fit controls — paint to match the header/sidebar palette. */
+.react-flow .react-flow__controls {
+  background: #0d2612 !important;
+  border: 2px solid #1a4a22;
+  box-shadow: none;
+}
+.react-flow .react-flow__controls-button {
+  background: #0d2612 !important;
+  border-bottom: 1px solid #1a4a22 !important;
+  color: #7df9ff !important;
+  fill: #7df9ff !important;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.react-flow .react-flow__controls-button:last-child { border-bottom: none !important; }
+.react-flow .react-flow__controls-button:hover {
+  background: #1a4a22 !important;
+  color: #5AFEE6 !important;
+  fill: #5AFEE6 !important;
+}
+.react-flow .react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+
 /* Single unified outline + glow around the entire road network.
  * The outline is drawn by the #road-outline SVG filter (feMorphology dilate)
  * which is much cheaper than stacking multiple drop-shadows. */

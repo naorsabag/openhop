@@ -452,15 +452,15 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
           <filter id="road-outline" x="-15%" y="-15%" width="130%" height="130%">
             {/* outermost ring — widest dilation drawn first */}
             <feMorphology in="SourceAlpha" operator="dilate" radius="6" result="outermostMask" />
-            <feFlood floodColor="#031815" result="outermostColor" />
+            <feFlood floodColor="#5AFEE6" result="outermostColor" />
             <feComposite in="outermostColor" in2="outermostMask" operator="in" result="outermostRing" />
             {/* middle ring */}
             <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="middleMask" />
-            <feFlood floodColor="#052421" result="middleColor" />
+            <feFlood floodColor="#62827D" result="middleColor" />
             <feComposite in="middleColor" in2="middleMask" operator="in" result="middleRing" />
             {/* inner ring */}
             <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="innerMask" />
-            <feFlood floodColor="#0a3833" result="innerColor" />
+            <feFlood floodColor="#75AAA2" result="innerColor" />
             <feComposite in="innerColor" in2="innerMask" operator="in" result="innerRing" />
             <feMerge>
               <feMergeNode in="outermostRing" />

@@ -314,9 +314,9 @@ function extendRouteToNodeCenters(
   return [innerStart, ...route, innerEnd]
 }
 
-// Roads stop 25% of the way into the node (instead of at the center) so the
+// Roads stop 43% of the way into the node (instead of at the center) so the
 // sprite's silhouette reads clearly but the road still clearly "connects".
-const INWARD_SHIFT_RATIO = 0.25
+const INWARD_SHIFT_RATIO = 0.42
 
 function shiftInward(port: RoutePoint, side: HandleId): RoutePoint {
   const dx = NODE_WIDTH * INWARD_SHIFT_RATIO
