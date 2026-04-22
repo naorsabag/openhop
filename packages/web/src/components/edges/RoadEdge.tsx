@@ -3,7 +3,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react'
 
-const STROKE_WIDTH = 10
+const STROKE_WIDTH = 4
 
 export function RoadEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props

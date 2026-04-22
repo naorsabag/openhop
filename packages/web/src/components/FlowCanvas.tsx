@@ -449,12 +449,23 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
       >
         <defs>
-          <filter id="road-outline" x="-5%" y="-5%" width="110%" height="110%">
-            <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="outline" />
-            <feFlood floodColor="#0a3833" result="outlineColor" />
-            <feComposite in="outlineColor" in2="outline" operator="in" result="coloredOutline" />
+          <filter id="road-outline" x="-15%" y="-15%" width="130%" height="130%">
+            {/* outermost ring — widest dilation drawn first */}
+            <feMorphology in="SourceAlpha" operator="dilate" radius="6" result="outermostMask" />
+            <feFlood floodColor="#031815" result="outermostColor" />
+            <feComposite in="outermostColor" in2="outermostMask" operator="in" result="outermostRing" />
+            {/* middle ring */}
+            <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="middleMask" />
+            <feFlood floodColor="#052421" result="middleColor" />
+            <feComposite in="middleColor" in2="middleMask" operator="in" result="middleRing" />
+            {/* inner ring */}
+            <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="innerMask" />
+            <feFlood floodColor="#0a3833" result="innerColor" />
+            <feComposite in="innerColor" in2="innerMask" operator="in" result="innerRing" />
             <feMerge>
-              <feMergeNode in="coloredOutline" />
+              <feMergeNode in="outermostRing" />
+              <feMergeNode in="middleRing" />
+              <feMergeNode in="innerRing" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
