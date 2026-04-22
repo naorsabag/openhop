@@ -182,11 +182,6 @@ function App() {
           >
             OpenHop
           </h1>
-          {apiFlow && (
-            <span className="font-pixel text-text/60" style={{ fontSize: 12 }}>
-              {apiFlow.meta.title}
-            </span>
-          )}
         </div>
         {selectedFlowId && (
           <div className="flex items-center">

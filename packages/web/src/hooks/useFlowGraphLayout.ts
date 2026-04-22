@@ -15,11 +15,14 @@ export function useFlowGraphLayout(flow: Flow) {
     return buildReactFlowGraph(topology, fallbackPositions)
   }, [topology])
 
-  const [graph, setGraph] = useState(fallbackGraph)
+  // Start empty so React Flow renders nothing until ELK finishes — prevents
+  // the visible flicker from the fallback column layout.
+  const empty = useMemo(() => ({ nodes: [], edges: [] as typeof fallbackGraph.edges }), [])
+  const [graph, setGraph] = useState<typeof fallbackGraph>(empty as typeof fallbackGraph)
 
   useEffect(() => {
-    setGraph(fallbackGraph)
-  }, [fallbackGraph])
+    setGraph(empty as typeof fallbackGraph)
+  }, [fallbackGraph, empty])
 
   useEffect(() => {
     let cancelled = false
@@ -31,7 +34,7 @@ export function useFlowGraphLayout(flow: Flow) {
       })
       .catch(() => {
         if (cancelled) return
-        setGraph(fallbackGraph)
+        setGraph(fallbackGraph) // fall back only if ELK errors
       })
 
     return () => {

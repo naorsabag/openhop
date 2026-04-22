@@ -562,14 +562,24 @@ export function buildReactFlowGraph(
 
   // Color-variant cycle: when several nodes share the same sprite and have no
   // custom icon, each successive one gets a different CSS filter so viewers
-  // can tell them apart at a glance.
+  // can tell them apart at a glance. The accent palette parallels the sprite
+  // filter so the label, drop-shadow, and progress bar match the sprite's
+  // visible hue.
   const VARIANT_CYCLE: string[] = [
     '',                                                    // original (orange)
     'hue-rotate(210deg)',                                  // purple
     'hue-rotate(90deg)',                                   // green
     'hue-rotate(140deg)',                                  // blue
     'hue-rotate(320deg)',                                  // red
-    'saturate(0)',                                         // grey
+    'hue-rotate(60deg) saturate(1.2)',                     // yellow (was grey)
+  ]
+  const VARIANT_ACCENT: string[] = [
+    '#ff8a4a', // orange
+    '#b47aff', // purple
+    '#4aff7a', // green
+    '#4a9eff', // blue
+    '#ff6b6b', // red
+    '#ffd84a', // yellow
   ]
   const spriteVariantCounters = new Map<string, number>()
 
@@ -583,16 +593,13 @@ export function buildReactFlowGraph(
     const snapshot = topology.nodeSnapshots.get(id)
     const position = positionMap.get(id) ?? defaultPosition()
     const nodeType = snapshot?.nodeType ?? 'service'
-    const hasIcon = !!snapshot?.icon
-    let variantFilter: string | undefined
-    if (!hasIcon) {
-      const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(nodeType)
-        ? FALLBACK_SPRITE_KEY
-        : nodeType
-      const n = spriteVariantCounters.get(counterKey) ?? 0
-      variantFilter = VARIANT_CYCLE[n % VARIANT_CYCLE.length] || undefined
-      spriteVariantCounters.set(counterKey, n + 1)
-    }
+    const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(nodeType)
+      ? FALLBACK_SPRITE_KEY
+      : nodeType
+    const n = spriteVariantCounters.get(counterKey) ?? 0
+    const variantFilter = VARIANT_CYCLE[n % VARIANT_CYCLE.length] || undefined
+    const variantColor = VARIANT_ACCENT[n % VARIANT_ACCENT.length]
+    spriteVariantCounters.set(counterKey, n + 1)
 
     return {
       id,
@@ -608,6 +615,7 @@ export function buildReactFlowGraph(
         currentStep: 0,
         isDynamic: snapshot?.isDynamic ?? false,
         variantFilter,
+        variantColor,
       },
       width: NODE_WIDTH,
       height: NODE_HEIGHT,

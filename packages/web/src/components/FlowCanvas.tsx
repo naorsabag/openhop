@@ -137,8 +137,14 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       } else {
         const from = 'from' in step ? step.from : undefined
         if (from) fromIds.push(from)
-        if ('to' in step) {
-          const targets = getTargets(step.to)
+        // `create` steps travel from the creator to the newly-created node.
+        // Treat `create: <id>` as a single target so a pixel fires.
+        const createTarget = 'create' in step && typeof step.create === 'string' ? step.create : undefined
+        const targets: string[] = [
+          ...('to' in step ? getTargets(step.to) : []),
+          ...(createTarget ? [createTarget] : []),
+        ]
+        if (targets.length) {
           toIds.push(...targets)
           for (const target of targets) {
             if (!from) continue

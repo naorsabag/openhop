@@ -38,6 +38,7 @@ export type FlowNodeData = {
   onDrillDown?: (nodeId: string) => void
   isDynamic?: boolean
   variantFilter?: string
+  variantColor?: string
 }
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
@@ -47,7 +48,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     label, nodeType, color, icon, hasSubFlow,
     isActiveSender, isActiveReceiver,
     totalSteps, currentStep, outgoingStepCount, onNodeClick, onProgressBarClick,
-    onDrillDown, variantFilter,
+    onDrillDown, variantFilter, variantColor,
   } = data
 
   // Use outgoing step count for progress bar (how many steps this node sends)
@@ -57,7 +58,9 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   const style = NODE_STYLES[nodeType] ?? { bg: '#111111', border: color ?? '#666' }
 
   // color override (when provided) always wins, regardless of node type
-  const borderColor = color ?? style.border
+  // When a node is part of a multi-sibling cycle, its variantColor wins;
+  // otherwise fall back to an explicit `color` override, else the type style.
+  const borderColor = variantColor ?? color ?? style.border
 
   // Pick the building component for this node type
   const BuildingComponent = NODE_BUILDINGS[nodeType] ?? CustomBuilding
@@ -73,13 +76,13 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         <img
           src={url}
           alt={label}
-          style={{ width: 36, height: 36, position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', imageRendering: 'auto' }}
+          style={{ width: 40, height: 40, position: 'absolute', top: -4, left: 'calc(100% - 14px)', imageRendering: 'auto' }}
           onError={(e) => { (e.target as HTMLElement).style.display = 'none' }}
         />
       )
     } else {
       customIconOverlay = (
-        <span style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', fontSize: 32, lineHeight: 1 }}>
+        <span style={{ position: 'absolute', top: -2, left: 'calc(100% - 14px)', fontSize: 36, lineHeight: 1 }}>
           {icon}
         </span>
       )
