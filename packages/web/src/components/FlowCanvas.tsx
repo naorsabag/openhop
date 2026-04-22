@@ -441,6 +441,25 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 
   return (
     <div className="w-full h-full relative" ref={containerRef} aria-label="Flow canvas">
+      {/* SVG filter defs — drawn once per canvas, referenced from index.css */}
+      <svg
+        aria-hidden="true"
+        width="0"
+        height="0"
+        style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+      >
+        <defs>
+          <filter id="road-outline" x="-5%" y="-5%" width="110%" height="110%">
+            <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="outline" />
+            <feFlood floodColor="#0a3833" result="outlineColor" />
+            <feComposite in="outlineColor" in2="outline" operator="in" result="coloredOutline" />
+            <feMerge>
+              <feMergeNode in="coloredOutline" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
       <ReactFlow
         nodes={nodes}
         edges={edges}

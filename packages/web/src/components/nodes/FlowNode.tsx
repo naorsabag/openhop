@@ -1,7 +1,7 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
-import { NODE_BUILDINGS, NODE_TYPE_SPRITE, SpriteBuilding, CustomBuilding } from './NodeBuilding'
+import { NODE_TYPE_SPRITE, SpriteBuilding } from './NodeBuilding'
 
 /** Node type color config */
 const NODE_STYLES: Record<string, { bg: string; border: string }> = {
@@ -61,9 +61,6 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   // When a node is part of a multi-sibling cycle, its variantColor wins;
   // otherwise fall back to an explicit `color` override, else the type style.
   const borderColor = variantColor ?? color ?? style.border
-
-  // Pick the building component for this node type
-  const BuildingComponent = NODE_BUILDINGS[nodeType] ?? CustomBuilding
 
   // Icon overlay — allowed on any node type so authors can brand a typed node
   // (e.g. type=database + icon=logos:postgresql renders the DB sprite plus the postgres logo).
@@ -168,12 +165,13 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           transition: 'filter 0.2s ease',
         }}
       >
-        {(() => {
-          const sprite = NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service
-          return sprite
-            ? <SpriteBuilding src={sprite} color={borderColor} active={isActive} nodeType={nodeType} variantFilter={variantFilter} />
-            : <BuildingComponent color={borderColor} active={isActive} />
-        })()}
+        <SpriteBuilding
+          src={NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service}
+          color={borderColor}
+          active={isActive}
+          nodeType={nodeType}
+          variantFilter={variantFilter}
+        />
         {customIconOverlay}
         {hasSubFlow && (
           <button

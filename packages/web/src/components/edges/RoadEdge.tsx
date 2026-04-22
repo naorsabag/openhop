@@ -1,5 +1,4 @@
 import {
-  BaseEdge,
   getSmoothStepPath,
   type EdgeProps,
 } from '@xyflow/react'
@@ -20,12 +19,21 @@ export function RoadEdge(props: EdgeProps) {
 
   if (hiddenRoad || !visible) return null
 
-  const style: React.CSSProperties = {
-    stroke: 'var(--road-bright)',
-    strokeWidth: STROKE_WIDTH,
-    fill: 'none',
-    filter: active ? 'brightness(1.25) saturate(1.2)' : undefined,
-  }
+  const activeFilter = active ? 'brightness(1.25) saturate(1.2)' : undefined
 
-  return <BaseEdge id={id} path={path} style={style} />
+  return (
+    <path
+      id={id}
+      d={path}
+      className="react-flow__edge-path"
+      style={{
+        stroke: 'var(--road-bright)',
+        strokeWidth: STROKE_WIDTH,
+        fill: 'none',
+        strokeLinecap: 'butt',
+        strokeLinejoin: 'miter',
+        filter: activeFilter,
+      }}
+    />
+  )
 }

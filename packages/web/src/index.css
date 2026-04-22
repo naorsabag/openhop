@@ -70,6 +70,7 @@ body {
   --road-mid: #76ABA5;
   --road-dark: #61827B;
   --road-glow: rgba(90, 254, 230, 0.38);
+  --road-border: #0a3833;
 }
 
 /* Straight segments: orientation via --rd (default: to bottom for horizontal). */
@@ -85,7 +86,9 @@ body {
 }
 .conduit-road--active { filter: brightness(1.25) saturate(1.2); }
 
-/* Single glow behind all road edges so junctions don't double. */
+/* Single unified outline + glow around the entire road network.
+ * The outline is drawn by the #road-outline SVG filter (feMorphology dilate)
+ * which is much cheaper than stacking multiple drop-shadows. */
 .react-flow__edges {
-  filter: drop-shadow(0 0 8px var(--road-glow));
+  filter: url(#road-outline) drop-shadow(0 0 8px var(--road-glow));
 }
