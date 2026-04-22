@@ -86,6 +86,19 @@ body {
 }
 .conduit-road--active { filter: brightness(1.25) saturate(1.2); }
 
+/* Header-strip buttons (Play/Pause, Inspect) — match map controls. */
+.openhop-header-btn {
+  background: #0d2612;
+  border-color: #1a4a22;
+  color: #7df9ff;
+  cursor: pointer;
+}
+.openhop-header-btn:hover {
+  background: #1a4a22;
+  border-color: #5AFEE6;
+  color: #5AFEE6;
+}
+
 /* React Flow zoom/fit controls — paint to match the header/sidebar palette. */
 .react-flow .react-flow__controls {
   background: #0d2612 !important;
