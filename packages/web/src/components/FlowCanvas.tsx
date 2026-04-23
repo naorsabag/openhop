@@ -251,18 +251,24 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       const from = 'from' in step ? step.from : undefined
 
       if (parallel) {
+        // Group sub-steps by their `from` node so a single parallel counts as
+        // ONE outgoing event per source (even if it fires multiple edges).
+        const bySource = new Map<string, { step: FlowStep; edgeFlows: EdgeFlowRef[] }>()
         for (const ps of parallel) {
-          if (ps.from) {
-            const entries = map.get(ps.from) ?? []
-            const targets = getTargets(ps.to)
-            const edgeFlows: EdgeFlowRef[] = []
-            for (const t of targets) {
-              const edgeFlow = resolveEdgeFlow(ps.from, t, ps)
-              if (edgeFlow) edgeFlows.push(edgeFlow)
-            }
-            if (edgeFlows.length > 0) entries.push({ stepIndex: si, step: ps, edgeFlows })
-            map.set(ps.from, entries)
+          if (!ps.from) continue
+          const targets = getTargets(ps.to)
+          const grouped = bySource.get(ps.from) ?? { step: ps, edgeFlows: [] }
+          for (const t of targets) {
+            const edgeFlow = resolveEdgeFlow(ps.from, t, ps)
+            if (edgeFlow) grouped.edgeFlows.push(edgeFlow)
           }
+          bySource.set(ps.from, grouped)
+        }
+        for (const [fromId, { step: representativeStep, edgeFlows }] of bySource) {
+          if (edgeFlows.length === 0) continue
+          const entries = map.get(fromId) ?? []
+          entries.push({ stepIndex: si, step: representativeStep, edgeFlows })
+          map.set(fromId, entries)
         }
       } else if (destroy) {
         // Destroy step: outgoing action for the destroyed node (no edge, just triggers deactivation)

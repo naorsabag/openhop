@@ -200,7 +200,17 @@ Each node type has common real-world variants. Use them to choose an accurate `l
 ### Step
 Either a move step, parallel, create, or destroy:
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
-- Parallel: `{ parallel: [move steps] }` (min 2)
+- Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick.
+
+    ```yaml
+    - parallel:
+        - from: api
+          to: order-service
+          data: { label: order payload, fields: [{name: items, type: list}] }
+        - from: authz
+          to: order-service
+          data: { label: auth context, fields: [{name: user_id, type: int}] }
+    ```
 - Create: `{ create: "node-id", from: "creator-node", node: { id, label, type?, icon?, color? }, data? }`
 - Destroy: `{ destroy: "node-id" }`
 
