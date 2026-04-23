@@ -378,6 +378,19 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     setNodeStep(nodeId, targetStep)
   }, [setNodeStep])
 
+  // Wrap onDrillDown so clicking the drill-down glyph first zooms into the
+  // selected node, then hands off to the parent which swaps in the sub-flow.
+  const handleDrillDownWithZoom = useCallback((nodeId: string) => {
+    const node = baseNodes.find(n => n.id === nodeId)
+    if (!node) { onDrillDown?.(nodeId); return }
+    const w = node.width ?? 108
+    const h = node.height ?? 160
+    const cx = node.position.x + w / 2
+    const cy = node.position.y + h / 2
+    reactFlow.setCenter(cx, cy, { zoom: 2.5, duration: 450 })
+    window.setTimeout(() => onDrillDown?.(nodeId), 470)
+  }, [baseNodes, onDrillDown, reactFlow])
+
   // Apply active sender/receiver flags to nodes, and visibility for dynamic nodes
   const nodes: Node<FlowNodeData>[] = useMemo(() => {
     return baseNodes.map((node) => {
@@ -400,11 +413,11 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
           outgoingStepCount: nodeOutgoingSteps.get(node.id)?.length ?? 0,
           onNodeClick: handleNodeClick,
           onProgressBarClick: handleProgressBarClick,
-          onDrillDown,
+          onDrillDown: handleDrillDownWithZoom,
         },
       }
     })
-  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, activeNodes, destroyedNodes, handleNodeClick, handleProgressBarClick, onDrillDown])
+  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, activeNodes, destroyedNodes, handleNodeClick, handleProgressBarClick, handleDrillDownWithZoom])
 
   const edges: Edge[] = useMemo(() => {
     return baseEdges
