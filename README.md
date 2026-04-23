@@ -7,11 +7,13 @@ Data flow visualization platform for AI. Describe flows in YAML, see them as ani
 ## Install
 
 ```bash
-git clone https://github.com/yourorg/openhop.git
+git clone https://github.com/naorsabag/OpenHop.git openhop
 cd openhop
-npm install
-npm link    # makes 'openhop' command available globally
+npm install                   # installs deps and builds the CLI bundle
+cd packages/cli && npm link   # makes 'openhop' command available globally
 ```
+
+The `npm install` at the repo root triggers the CLI `prepare` script which bundles `packages/cli/src/index.ts` into `packages/cli/dist/index.js`; the global `openhop` symlink then points at that pure-JS bundle (no runtime TypeScript loader needed).
 
 ## Run
 
@@ -49,6 +51,17 @@ npx skills add yourorg/openhop
 ```
 
 Or manually copy `skills/openhop/SKILL.md` to `.claude/skills/openhop/SKILL.md`.
+
+### Validate the install end-to-end
+
+```bash
+openhop list -s http://localhost:8787              # should return the example flow
+echo 'meta:
+  title: smoke-test
+flow:
+  nodes: [{id: a, label: A}, {id: b, label: B}]
+  steps: [{from: a, to: b, data: hi}]' | openhop push -
+```
 
 Then ask your AI: *"Show me how data flows through the order processing system"*
 

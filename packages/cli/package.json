@@ -4,15 +4,23 @@
   "private": true,
   "type": "module",
   "bin": {
-    "openhop": "src/index.ts"
+    "openhop": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "start": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --external:commander --external:yaml --external:zod --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "commander": "^12.0.0",
     "yaml": "^2.0.0",
-    "tsx": "^4.0.0",
     "@openhop/shared": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "esbuild": "^0.25.0"
   }
 }
