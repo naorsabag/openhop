@@ -208,12 +208,14 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
       <span
         style={{
           color: borderColor,
-          fontSize: 14,
+          fontSize: 20,
+          fontWeight: 700,
           fontFamily: 'monospace',
           textAlign: 'center',
           whiteSpace: 'nowrap',
-          textShadow: '0 1px 3px #000, 0 0 6px #000',
-          marginTop: 2,
+          letterSpacing: 0.3,
+          textShadow: '0 1px 4px #000, 0 0 6px #000, 0 0 2px #000',
+          marginTop: 4,
           display: 'block',
         }}
       >
