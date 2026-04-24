@@ -51,7 +51,7 @@ When ready to publish to npm, do all of these:
 - **Update skill** — replace `git clone` install instructions with `npm install -g openhop`
 - **Update check-status flow** — install via npm instead of git clone
 - **npx support** — `npx openhop push` works without global install
-- **Publish to skills registry** — push to GitHub so `npx skills add yourorg/openhop` works
+- **Publish to skills registry** — push to GitHub so `npx openskills install naorsabag/openhop` works
 
 ### Future (V2)
 - **Serve frontend from Fastify** — one process, one port

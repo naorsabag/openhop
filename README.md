@@ -1,79 +1,135 @@
-# OpenHop
+<h1 align="center">OpenHop</h1>
 
-Data flow visualization platform for AI. Describe flows in YAML, see them as animated diagrams with data pixels traveling between components.
+<p align="center">
+  <b>Diagrams your AI agent can write.</b><br/>
+  Animated, multi-level data flows — described in YAML, drawn by your coding agent.
+</p>
 
-![OpenHop](docs/image.png)
+<p align="center">
+  <a href="#try-it-in-60-seconds">Quickstart</a> ·
+  <a href="#give-your-agent-the-skill">AI skill</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#examples">Examples</a>
+</p>
 
-## Install
+<p align="center">
+  <img src="docs/image.png" width="720" alt="OpenHop — animated data-flow diagram" />
+</p>
 
-```bash
-git clone https://github.com/naorsabag/OpenHop.git openhop
-cd openhop
-npm install                   # installs deps and builds the CLI bundle
-cd packages/cli && npm link   # makes 'openhop' command available globally
-```
+<p align="center">
+  <a href="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml"><img src="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
+</p>
 
-The `npm install` at the repo root triggers the CLI `prepare` script which bundles `packages/cli/src/index.ts` into `packages/cli/dist/index.js`; the global `openhop` symlink then points at that pure-JS bundle (no runtime TypeScript loader needed).
+---
 
-## Run
+## Why
 
-```bash
-# Start both server + frontend:
-npm run dev
-
-# Or separately:
-npm run serve                    # API server on :8787
-cd packages/web && npm run dev   # Frontend on :8788
-```
-
-- UI: http://localhost:8788
-- API: http://localhost:8787
-- Swagger: http://localhost:8787/docs
-
-## CLI
-
-After `npm link`, the `openhop` command works from anywhere:
-
-```bash
-openhop push <file.yaml>       # Create a flow
-openhop push -                 # Create from stdin
-openhop patch <id> <file.yaml> # Update a flow
-openhop list                   # List all flows
-openhop remove <id>            # Delete a flow
-```
-
-## Add the AI Skill
-
-Teaches your AI assistant how to create and manage flows:
-
-```bash
-npx skills add yourorg/openhop
-```
-
-Or manually copy `skills/openhop/SKILL.md` to `.claude/skills/openhop/SKILL.md`.
-
-### Validate the install end-to-end
-
-```bash
-openhop list -s http://localhost:8787              # should return the example flow
-echo 'meta:
-  title: smoke-test
-flow:
-  nodes: [{id: a, label: A}, {id: b, label: B}]
-  steps: [{from: a, to: b, data: hi}]' | openhop push -
-```
-
-Then ask your AI: *"Show me how data flows through the order processing system"*
+AI coding agents are great at explaining how code works — in 800-line bullet walls you can't verify.
+OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You describe
+the flow in YAML (your agent writes it for you); OpenHop renders animated data pixels traveling
+between components on a pixel-art canvas. Click any node to drill into its sub-flow.
 
 ## Features
 
-- Animated data pixels traveling between components
-- Play/pause flow animation
-- Click nodes to manually fire data
-- Progress bars showing node step completion
-- Hierarchical drill-down into sub-flows with zoom effect
-- File explorer sidebar with folder support
-- PATCH API for incremental updates
-- Strict YAML validation with fuzzy typo suggestions
-- Swagger API docs at /docs
-- Health check at /health
+- 🎞 **Agent-authored.** Ships with a skill any SKILL-compatible agent can load (Claude Code, Cursor, Windsurf, Cline, Continue, and more). Your agent writes the YAML, you watch it animate.
+- 🔍 **Multi-level drill-down.** Click a node to zoom into its sub-flow. Infinite depth.
+- ⚡ **Live re-render.** `openhop patch` applies incremental changes without a full reload.
+- 🧠 **Strict schema + fuzzy typo hints.** Invalid YAML fails loudly with helpful suggestions.
+- 🐚 **CLI + HTTP API + web UI.** Script it, hit it from tools, or browse at <http://localhost:8788>.
+
+## Try it in 60 seconds
+
+```bash
+git clone https://github.com/naorsabag/OpenHop.git
+cd OpenHop
+npm install           # installs deps and builds the CLI bundle
+cd packages/cli && npm link && cd ../..
+npm run dev           # API :8787 + web UI :8788
+```
+
+In another terminal:
+
+```bash
+openhop push examples/auth-flow.yaml
+# → prints a URL. Open it.
+```
+
+## Install
+
+| Scenario | Command |
+|---|---|
+| **Try locally (no install)** | Clone this repo, `npm install`, `npm run dev`. See above. |
+| **Use the CLI globally** | After `npm install`, `cd packages/cli && npm link` |
+
+> npm, plugin-registry, and `npx openhop init` install paths are in progress — track [#18–#37](https://github.com/naorsabag/OpenHop/issues) for launch-readiness.
+
+## Give your agent the skill
+
+OpenHop ships a skill file at [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md) that teaches any
+SKILL-compatible agent how to use OpenHop.
+
+For Claude Code, copy the skill into your skills directory:
+
+```bash
+mkdir -p ~/.claude/skills/openhop
+cp skills/openhop/SKILL.md ~/.claude/skills/openhop/
+```
+
+Then ask your agent:
+
+> "Walk me through the OAuth flow in this codebase."
+
+The agent will sketch the nodes in YAML, push via `openhop push`, and hand you back a URL.
+
+## CLI
+
+```
+openhop serve                        # start API server on :8787
+openhop push <file.yaml>             # create a flow, returns ID + URL
+openhop patch <flow-id> <file.yaml>  # apply patch operations to an existing flow
+openhop list                         # list flows
+openhop remove <flow-id>             # delete a flow
+```
+
+Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
+
+## How it works
+
+```
+┌─────────┐   YAML    ┌────────────┐    JSON    ┌──────────────┐
+│  Agent  │ ────────▶ │  CLI (zod) │ ─────────▶ │  Fastify API │
+└─────────┘           └────────────┘            └──────┬───────┘
+                                                       │
+                                                       ▼
+                                                ┌──────────────┐
+                                                │   Web (PIXI) │ ◀── browser
+                                                └──────────────┘
+```
+
+The CLI validates YAML against a zod schema (with fuzzy typo hints), posts the flow to the API,
+and prints a URL. The web UI subscribes and animates data pixels along the edges.
+
+## Examples
+
+Pre-made flows under [`examples/`](examples/):
+
+- `auth-flow.yaml` — OAuth2 login with JWT
+- `order-flow.yaml` — e-commerce order pipeline
+- `simple-crud.yaml` — minimal CRUD example
+- `type-variants.yaml` — every node type in one flow
+
+Push any of them:
+
+```bash
+openhop push examples/order-flow.yaml
+```
+
+## Contributing
+
+PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+Security reports via [GitHub's private vulnerability reporting](https://github.com/naorsabag/OpenHop/security/advisories/new).
+
+## License
+
+MIT © Naor Sabag. See [LICENSE](LICENSE).

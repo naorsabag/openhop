@@ -21,7 +21,7 @@ If it returns `{"status":"ok"}`, OpenHop is ready.
 If not running, follow the install and run instructions in the repo README at `~/openhop/README.md`. If the repo doesn't exist yet, clone it first:
 
 ```bash
-git clone https://github.com/yourorg/openhop.git ~/openhop
+git clone https://github.com/naorsabag/OpenHop.git ~/openhop
 ```
 
 Then follow the README's Install and Run sections. After starting, open http://localhost:8788.
