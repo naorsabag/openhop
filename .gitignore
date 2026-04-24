@@ -1,6 +1,25 @@
 node_modules/
 dist/
-*.local
+coverage/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
 .DS_Store
-node_modules
-dist
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local-only
+*.local
+tmp/

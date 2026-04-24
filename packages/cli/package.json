@@ -1,7 +1,27 @@
 {
-  "name": "@openhop/cli",
-  "version": "0.0.1",
-  "private": true,
+  "name": "openhop",
+  "version": "0.1.0",
+  "description": "Animated data-flow diagrams your AI agent can write. CLI.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naorsabag/OpenHop.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/naorsabag/OpenHop#readme",
+  "bugs": {
+    "url": "https://github.com/naorsabag/OpenHop/issues"
+  },
+  "license": "MIT",
+  "author": "Naor Sabag <naor.sg@gmail.com>",
+  "keywords": [
+    "ai-agents",
+    "claude-code",
+    "cursor",
+    "data-flow",
+    "visualization",
+    "diagram",
+    "yaml"
+  ],
   "type": "module",
   "bin": {
     "openhop": "dist/index.js"

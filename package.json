@@ -1,10 +1,19 @@
 {
-  "name": "openhop",
+  "name": "openhop-monorepo",
+  "version": "0.1.0",
   "private": true,
-  "workspaces": ["packages/*"],
-  "bin": {
-    "openhop": "packages/cli/src/index.ts"
+  "description": "Animated data-flow diagrams your AI agent can write. Monorepo root.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naorsabag/OpenHop.git"
   },
+  "homepage": "https://github.com/naorsabag/OpenHop",
+  "bugs": {
+    "url": "https://github.com/naorsabag/OpenHop/issues"
+  },
+  "license": "MIT",
+  "author": "Naor Sabag <naor.sg@gmail.com>",
+  "workspaces": ["packages/*"],
   "scripts": {
     "serve": "npx tsx packages/server/src/index.ts",
     "dev": "npx tsx packages/server/src/index.ts & cd packages/web && npm run dev"
