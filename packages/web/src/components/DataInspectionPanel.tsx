@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import type { FlowStep, FlowData } from '../types'
 
 export type DockSide = 'right' | 'bottom'

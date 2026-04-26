@@ -1,7 +1,5 @@
 /** Pixel-art node sprites rendered from files in public/sprites/. */
 
-import type React from 'react'
-
 export interface BuildingProps {
   color: string
   active?: boolean

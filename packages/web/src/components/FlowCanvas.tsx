@@ -257,7 +257,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         for (const ps of parallel) {
           if (!ps.from) continue
           const targets = getTargets(ps.to)
-          const grouped = bySource.get(ps.from) ?? { step: ps, edgeFlows: [] }
+          const grouped = bySource.get(ps.from) ?? { step: ps, edgeFlows: [] as EdgeFlowRef[] }
           for (const t of targets) {
             const edgeFlow = resolveEdgeFlow(ps.from, t, ps)
             if (edgeFlow) grouped.edgeFlows.push(edgeFlow)

@@ -6,7 +6,7 @@ import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import type { FlowNode, FlowStep, Flow } from './types'
 
 interface FlowNavItem {
-  flow: { nodes: FlowNode[]; steps: FlowStep[] }
+  flow: { nodes: FlowNode[]; steps?: FlowStep[] }
   parentNodeId?: string
   parentLabel?: string
   resumeFromStep?: number  // step index to resume from when returning to this level
@@ -62,10 +62,12 @@ function App() {
 
   const displayFlow: Flow | null = useMemo(() => {
     if (!apiFlow || !currentFlowBody) return null
+    // FlowStep (flat) vs Step (zod union) is intentional per shared/schema.ts;
+    // cast here at the boundary instead of restructuring the frontend types.
     return {
       meta: apiFlow.meta,
       flow: currentFlowBody.flow,
-    }
+    } as Flow
   }, [apiFlow, currentFlowBody])
 
   // Track current step index for resume
