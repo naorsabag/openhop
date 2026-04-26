@@ -13,6 +13,28 @@
   },
   "license": "MIT",
   "author": "Naor Sabag (https://github.com/naorsabag)",
+  "keywords": [
+    "ai-agents",
+    "claude-code",
+    "claude-code-skill",
+    "cursor",
+    "windsurf",
+    "cline",
+    "aider",
+    "data-flow",
+    "code-visualization",
+    "developer-tools",
+    "yaml",
+    "diagram",
+    "mermaid-alternative",
+    "langgraph",
+    "typescript",
+    "ai",
+    "llm-tools",
+    "architecture",
+    "flow-chart",
+    "animation"
+  ],
   "workspaces": [
     "packages/*"
   ],
