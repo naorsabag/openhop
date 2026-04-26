@@ -20,7 +20,6 @@ import { ExitCode } from './exit-codes.js'
 import { registerGet } from './get.js'
 import { registerValidate } from './validate.js'
 import { registerHelpJson } from './help-json.js'
-import { registerRender } from './render.js'
 import { registerInit } from './init.js'
 
 const DEFAULT_SERVER = 'http://localhost:8787'
@@ -312,7 +311,6 @@ program
 // --- new commands wired from sibling modules ---
 registerGet(program, DEFAULT_SERVER)
 registerValidate(program)
-registerRender(program)
 registerInit(program)
 registerHelpJson(program, API_VERSION)
 

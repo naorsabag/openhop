@@ -33,13 +33,12 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "build": "tsc --noEmit && esbuild src/index.ts --bundle --platform=node --format=esm --external:commander --external:yaml --external:zod --external:playwright --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
+    "build": "tsc --noEmit && esbuild src/index.ts --bundle --platform=node --format=esm --external:commander --external:yaml --external:zod --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
     "prepare": "npm run build"
   },
   "dependencies": {
     "@openhop/shared": "*",
     "commander": "^12.0.0",
-    "playwright": "^1.48.0",
     "yaml": "^2.0.0"
   },
   "devDependencies": {

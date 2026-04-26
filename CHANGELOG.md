@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI: new commands.
   - `openhop get <id>` — fetch a flow by id (JSON or piped YAML).
   - `openhop validate <file|->` — local schema validation, no server round-trip.
-  - `openhop render <file>` — export to PNG (screenshot) or MP4 (Playwright video → ffmpeg). v0.1 scope: `png`, `mp4`. Requires running server + `npx playwright install chromium` + system `ffmpeg` for MP4.
   - `openhop init` — install the OpenHop skill into every detected AI client (Claude Code, Cursor; advisory output for Windsurf, Cline, Continue). `--dry-run`, `--force`, `--client <name>` supported.
   - `openhop help [command] --json` — emit the full command tree as JSON for agent introspection.
 - CLI: stdin input via `-` on `push`, `patch`, `validate`, `render`.
