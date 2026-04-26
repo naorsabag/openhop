@@ -34,8 +34,8 @@ describe("patchSchema validation", () => {
   it("accepts valid operations", () => {
     const result = patchSchema.safeParse({
       operations: [
-        { op: "add-node", node: { id: "c", label: "Node C" } },
-        { op: "rename-node", node: "a", label: "New A" },
+        { op: "add-nodes", nodes: [{ id: "c", label: "Node C" }] },
+        { op: "rename-nodes", nodes: [{ id: "a", label: "New A" }] },
       ],
     });
     expect(result.success).toBe(true);
@@ -43,12 +43,12 @@ describe("patchSchema validation", () => {
 });
 
 describe("applyPatch", () => {
-  describe("add-node", () => {
+  describe("add-nodes", () => {
     it("adds a new node to the flow", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
         operations: [
-          { op: "add-node", node: { id: "c", label: "Node C", type: "cache" } },
+          { op: "add-nodes", nodes: [{ id: "c", label: "Node C", type: "cache" }] },
         ],
       });
       expect(result.success).toBe(true);
@@ -63,7 +63,7 @@ describe("applyPatch", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
         operations: [
-          { op: "add-node", node: { id: "a", label: "Duplicate" } },
+          { op: "add-nodes", nodes: [{ id: "a", label: "Duplicate" }] },
         ],
       });
       expect(result.success).toBe(false);
@@ -71,11 +71,11 @@ describe("applyPatch", () => {
     });
   });
 
-  describe("remove-node", () => {
+  describe("remove-nodes", () => {
     it("removes a node and its referencing steps", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "remove-node", node: "b" }],
+        operations: [{ op: "remove-nodes", nodes: ["b"] }],
       });
       expect(result.success).toBe(true);
       expect(result.data!.flow.nodes).toHaveLength(1);
@@ -87,18 +87,18 @@ describe("applyPatch", () => {
     it("returns error for nonexistent node", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "remove-node", node: "nonexistent" }],
+        operations: [{ op: "remove-nodes", nodes: ["nonexistent"] }],
       });
       expect(result.success).toBe(false);
       expect(result.errors[0].message).toContain("not found");
     });
   });
 
-  describe("rename-node", () => {
+  describe("rename-nodes", () => {
     it("renames an existing node", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "rename-node", node: "a", label: "Renamed A" }],
+        operations: [{ op: "rename-nodes", nodes: [{ id: "a", label: "Renamed A" }] }],
       });
       expect(result.success).toBe(true);
       expect(result.data!.flow.nodes[0].label).toBe("Renamed A");
@@ -107,24 +107,21 @@ describe("applyPatch", () => {
     it("returns error for nonexistent node", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "rename-node", node: "missing", label: "X" }],
+        operations: [{ op: "rename-nodes", nodes: [{ id: "missing", label: "X" }] }],
       });
       expect(result.success).toBe(false);
       expect(result.errors[0].message).toContain("not found");
     });
   });
 
-  describe("update-node", () => {
+  describe("update-nodes", () => {
     it("updates node type, icon, and color", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
         operations: [
           {
-            op: "update-node",
-            node: "a",
-            type: "database",
-            icon: "db-icon",
-            color: "#00ff00",
+            op: "update-nodes",
+            nodes: [{ id: "a", type: "database", icon: "db-icon", color: "#00ff00" }],
           },
         ],
       });
@@ -138,27 +135,31 @@ describe("applyPatch", () => {
     it("returns error for nonexistent node", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "update-node", node: "missing", type: "cache" }],
+        operations: [{ op: "update-nodes", nodes: [{ id: "missing", type: "cache" }] }],
       });
       expect(result.success).toBe(false);
     });
   });
 
-  describe("set-flow", () => {
+  describe("set-flows", () => {
     it("sets a sub-flow on a node", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
         operations: [
           {
-            op: "set-flow",
-            node: "a",
-            flow: {
-              nodes: [
-                { id: "x", label: "Sub X" },
-                { id: "y", label: "Sub Y" },
-              ],
-              steps: [{ from: "x", to: "y", data: "inner" }],
-            },
+            op: "set-flows",
+            nodes: [
+              {
+                id: "a",
+                flow: {
+                  nodes: [
+                    { id: "x", label: "Sub X" },
+                    { id: "y", label: "Sub Y" },
+                  ],
+                  steps: [{ from: "x", to: "y", data: "inner" }],
+                },
+              },
+            ],
           },
         ],
       });
@@ -173,9 +174,8 @@ describe("applyPatch", () => {
       const result = applyPatch(root, {
         operations: [
           {
-            op: "set-flow",
-            node: "missing",
-            flow: { nodes: [{ id: "x", label: "X" }] },
+            op: "set-flows",
+            nodes: [{ id: "missing", flow: { nodes: [{ id: "x", label: "X" }] } }],
           },
         ],
       });
@@ -183,7 +183,7 @@ describe("applyPatch", () => {
     });
   });
 
-  describe("clear-flow", () => {
+  describe("clear-flows", () => {
     it("removes a sub-flow from a node", () => {
       const root: Root = {
         meta: { title: "Test" },
@@ -203,7 +203,7 @@ describe("applyPatch", () => {
       } as Root;
 
       const result = applyPatch(root, {
-        operations: [{ op: "clear-flow", node: "a" }],
+        operations: [{ op: "clear-flows", nodes: ["a"] }],
       });
       expect(result.success).toBe(true);
       const nodeA = result.data!.flow.nodes.find((n) => n.id === "a");
@@ -213,21 +213,21 @@ describe("applyPatch", () => {
     it("returns error for nonexistent node", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "clear-flow", node: "missing" }],
+        operations: [{ op: "clear-flows", nodes: ["missing"] }],
       });
       expect(result.success).toBe(false);
     });
   });
 
-  describe("add-step", () => {
+  describe("add-steps", () => {
     it("inserts a step at the beginning (after=-1)", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
         operations: [
           {
-            op: "add-step",
+            op: "add-steps",
             after: -1,
-            step: { from: "b", to: "a", data: "response" },
+            steps: [{ from: "b", to: "a", data: "response" }],
           },
         ],
       });
@@ -245,9 +245,9 @@ describe("applyPatch", () => {
       const result = applyPatch(root, {
         operations: [
           {
-            op: "add-step",
+            op: "add-steps",
             after: 0,
-            step: { from: "b", to: "a", data: "response" },
+            steps: [{ from: "b", to: "a", data: "response" }],
           },
         ],
       });
@@ -260,11 +260,11 @@ describe("applyPatch", () => {
     });
   });
 
-  describe("remove-step", () => {
+  describe("remove-steps", () => {
     it("removes a step by index", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "remove-step", index: 0 }],
+        operations: [{ op: "remove-steps", indices: [0] }],
       });
       expect(result.success).toBe(true);
       expect(result.data!.flow.steps ?? []).toHaveLength(0);
@@ -273,46 +273,31 @@ describe("applyPatch", () => {
     it("returns error for out-of-range index", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
-        operations: [{ op: "remove-step", index: 99 }],
+        operations: [{ op: "remove-steps", indices: [99] }],
       });
       expect(result.success).toBe(false);
       expect(result.errors[0].message).toContain("out of range");
     });
   });
 
-  describe("replace-steps", () => {
-    it("replaces the entire steps array", () => {
+  describe("update-step", () => {
+    it("replaces a step by index", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
         operations: [
           {
-            op: "replace-steps",
-            steps: [
-              { from: "b", to: "a", data: "reversed" },
-              { from: "a", to: "b", data: "forward" },
-            ],
+            op: "update-step",
+            index: 0,
+            step: { from: "b", to: "a", data: "reversed" },
           },
         ],
       });
       expect(result.success).toBe(true);
-      expect(result.data!.flow.steps).toHaveLength(2);
-      expect(result.data!.flow.steps![0].from).toBe("b");
-    });
-
-    it("validates step references after replacement", () => {
-      const root = makeRoot();
-      const result = applyPatch(root, {
-        operations: [
-          {
-            op: "replace-steps",
-            steps: [{ from: "a", to: "nonexistent", data: "bad" }],
-          },
-        ],
+      expect(result.data!.flow.steps![0]).toMatchObject({
+        from: "b",
+        to: "a",
+        data: "reversed",
       });
-      expect(result.success).toBe(false);
-      expect(result.errors.some((e) => e.message.includes("not found"))).toBe(
-        true
-      );
     });
   });
 
@@ -321,10 +306,12 @@ describe("applyPatch", () => {
       const root = makeRoot();
       const result = applyPatch(root, {
         operations: [
-          { op: "add-node", node: { id: "c", label: "Node C" } },
-          { op: "rename-node", node: "a", label: "Alpha" },
+          { op: "add-nodes", nodes: [{ id: "c", label: "Node C" }] },
+          { op: "rename-nodes", nodes: [{ id: "a", label: "Alpha" }] },
+          { op: "remove-steps", indices: [0] },
           {
-            op: "replace-steps",
+            op: "add-steps",
+            after: -1,
             steps: [
               { from: "a", to: "c", data: "new step" },
               { from: "c", to: "b", data: "another" },
@@ -346,9 +333,9 @@ describe("applyPatch", () => {
       const result = applyPatch(root, {
         operations: [
           {
-            op: "add-step",
+            op: "add-steps",
             after: 0,
-            step: { from: "a", to: "ghost", data: "bad" },
+            steps: [{ from: "a", to: "ghost", data: "bad" }],
           },
         ],
       });
@@ -364,7 +351,7 @@ describe("applyPatch", () => {
     const originalNodeCount = root.flow.nodes.length;
     applyPatch(root, {
       operations: [
-        { op: "add-node", node: { id: "c", label: "Node C" } },
+        { op: "add-nodes", nodes: [{ id: "c", label: "Node C" }] },
       ],
     });
     expect(root.flow.nodes).toHaveLength(originalNodeCount);
