@@ -64,6 +64,9 @@ jobs:
   gitleaks:
     name: gitleaks (secrets scan)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # gitleaks-action posts a summary comment on PRs
     steps:
       - uses: actions/checkout@v4
         with:
