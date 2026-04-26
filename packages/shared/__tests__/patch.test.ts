@@ -348,4 +348,133 @@ describe('applyPatch', () => {
     })
     expect(root.flow.nodes).toHaveLength(originalNodeCount)
   })
+
+  describe('edge cases', () => {
+    it('add-steps reports out-of-range insertion position', () => {
+      const root = makeRoot()
+      const result = applyPatch(root, {
+        operations: [
+          {
+            op: 'add-steps',
+            after: 99,
+            steps: [{ from: 'a', to: 'b', data: 'x' }],
+          },
+        ],
+      })
+      expect(result.success).toBe(false)
+      expect(result.errors[0].message).toContain('out of range')
+    })
+
+    it('add-steps initializes the steps array when absent', () => {
+      const root: Root = {
+        meta: { title: 'No-steps Flow' },
+        flow: {
+          nodes: [
+            { id: 'a', label: 'A' },
+            { id: 'b', label: 'B' },
+          ],
+        },
+      } as Root
+      const result = applyPatch(root, {
+        operations: [
+          {
+            op: 'add-steps',
+            after: -1,
+            steps: [{ from: 'a', to: 'b', data: 'first' }],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+      expect(result.data!.flow.steps).toHaveLength(1)
+    })
+
+    it('remove-steps reports when there are no steps to remove', () => {
+      const root: Root = {
+        meta: { title: 'No-steps Flow' },
+        flow: { nodes: [{ id: 'a', label: 'A' }] },
+      } as Root
+      const result = applyPatch(root, {
+        operations: [{ op: 'remove-steps', indices: [0] }],
+      })
+      expect(result.success).toBe(false)
+      expect(result.errors[0].message).toContain('No steps')
+    })
+
+    it('update-step reports out-of-range when there are no steps', () => {
+      const root: Root = {
+        meta: { title: 'No-steps Flow' },
+        flow: { nodes: [{ id: 'a', label: 'A' }] },
+      } as Root
+      const result = applyPatch(root, {
+        operations: [{ op: 'update-step', index: 0, step: { from: 'a', to: 'a', data: 'x' } }],
+      })
+      expect(result.success).toBe(false)
+      expect(result.errors[0].message).toContain('out of range')
+    })
+
+    it('remove-nodes drops parallel-step references to the removed node', () => {
+      const root: Root = {
+        meta: { title: 'Parallel Flow' },
+        flow: {
+          nodes: [
+            { id: 'a', label: 'A' },
+            { id: 'b', label: 'B' },
+            { id: 'c', label: 'C' },
+          ],
+          steps: [
+            {
+              parallel: [
+                { from: 'a', to: 'b', data: 'x' },
+                { from: 'a', to: 'c', data: 'y' },
+              ],
+            },
+          ],
+        },
+      } as Root
+      const result = applyPatch(root, {
+        operations: [{ op: 'remove-nodes', nodes: ['b'] }],
+      })
+      // The parallel step references 'b', so it should be dropped.
+      expect(result.success).toBe(true)
+      expect(result.data!.flow.steps ?? []).toHaveLength(0)
+    })
+
+    it('remove-nodes drops broadcast steps that target the removed node', () => {
+      const root: Root = {
+        meta: { title: 'Broadcast Flow' },
+        flow: {
+          nodes: [
+            { id: 'a', label: 'A' },
+            { id: 'b', label: 'B' },
+            { id: 'c', label: 'C' },
+          ],
+          steps: [{ from: 'a', to: ['b', 'c'], data: 'broadcast' }],
+        },
+      } as Root
+      const result = applyPatch(root, {
+        operations: [{ op: 'remove-nodes', nodes: ['b'] }],
+      })
+      expect(result.success).toBe(true)
+      // Broadcast referenced 'b' so the step is removed entirely.
+      expect(result.data!.flow.steps ?? []).toHaveLength(0)
+    })
+
+    it('returns post-patch validation errors when the patched flow is invalid', () => {
+      const root = makeRoot()
+      const result = applyPatch(root, {
+        operations: [
+          { op: 'remove-nodes', nodes: ['b'] },
+          // Now adds a step referencing the removed 'b'
+          {
+            op: 'add-steps',
+            after: -1,
+            steps: [{ from: 'a', to: 'b', data: 'orphan' }],
+          },
+        ],
+      })
+      expect(result.success).toBe(false)
+      // Either operation-time error or post-validation error counts.
+      expect(result.errors.length).toBeGreaterThan(0)
+    })
+  })
 })

@@ -1,34 +1,11 @@
 import { Command } from 'commander'
-import { readFileSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 import YAML from 'yaml'
 import { parseFlowYaml } from '@openhop/shared'
-
-/** Read input from file path or stdin (use "-" for stdin) */
-function readInput(file: string): string {
-  if (file === '-') {
-    return readFileSync(0, 'utf-8') // fd 0 = stdin
-  }
-  return readFileSync(resolve(file), 'utf-8')
-}
-
-// ANSI color helpers
-const green = (s: string) => `\x1b[32m${s}\x1b[0m`
-const red = (s: string) => `\x1b[31m${s}\x1b[0m`
-const bold = (s: string) => `\x1b[1m${s}\x1b[0m`
-const dim = (s: string) => `\x1b[2m${s}\x1b[0m`
-const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`
+import { readInput, errorMessage, padRight, green, red, bold, dim, cyan } from './utils.js'
 
 const DEFAULT_SERVER = 'http://localhost:8787'
-
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
-}
-
-function padRight(str: string, len: number): string {
-  return str.length >= len ? str.slice(0, len) : str + ' '.repeat(len - str.length)
-}
 
 const program = new Command()
 

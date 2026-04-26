@@ -7,7 +7,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary'],
       include: ['src/**'],
-      exclude: ['src/**/*.test.ts'],
+      // index.ts is the bootstrap (Fastify.listen at module load); not unit-testable.
+      exclude: ['src/**/*.test.ts', 'src/index.ts'],
+      thresholds: {
+        lines: 80,
+        statements: 80,
+        functions: 80,
+        branches: 70,
+      },
     },
   },
 })

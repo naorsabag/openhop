@@ -233,6 +233,56 @@ describe('Schema validation', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts a create step that introduces a new node', () => {
+    const result = validateFlow({
+      meta: { title: 'Create Flow' },
+      flow: {
+        nodes: [{ id: 'a', label: 'A' }],
+        steps: [
+          {
+            create: 'b',
+            from: 'a',
+            node: { id: 'b', label: 'B', type: 'service' },
+            data: 'spawn',
+          },
+        ],
+      },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a create step whose target ID already exists', () => {
+    const result = validateFlow({
+      meta: { title: 'Dup Create' },
+      flow: {
+        nodes: [
+          { id: 'a', label: 'A' },
+          { id: 'b', label: 'B' },
+        ],
+        steps: [{ create: 'b', from: 'a', node: { id: 'b', label: 'B' } }],
+      },
+    })
+    expect(result.success).toBe(false)
+    expect(result.errors.some((e) => e.message.includes('already exists'))).toBe(true)
+  })
+
+  it('rejects a destroy step whose target ID is unknown — with a fuzzy suggestion', () => {
+    const result = validateFlow({
+      meta: { title: 'Bad Destroy' },
+      flow: {
+        nodes: [
+          { id: 'temp-worker', label: 'Temp' },
+          { id: 'b', label: 'B' },
+        ],
+        steps: [{ destroy: 'temp-workker' }],
+      },
+    })
+    expect(result.success).toBe(false)
+    const err = result.errors.find((e) => e.message.includes('temp-workker'))
+    expect(err).toBeDefined()
+    expect(err!.suggestion).toMatch(/temp-worker/i)
+  })
+
   it('accepts parallel steps', () => {
     const result = validateFlow({
       meta: { title: 'Test' },
