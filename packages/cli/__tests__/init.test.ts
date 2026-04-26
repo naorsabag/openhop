@@ -57,6 +57,33 @@ describe('buildClients', () => {
     expect(cc.detectDir()).toBe('/home/u/.claude')
     expect(cc.skillsDir()).toBe('/home/u/.claude/skills')
   })
+
+  it('points cursor at ~/.cursor/skills (Cursor v2.4+ native skills)', () => {
+    const c = buildClients(HOME).find((x) => x.id === 'cursor')!
+    expect(c.detectDir()).toBe('/home/u/.cursor')
+    expect(c.skillsDir()).toBe('/home/u/.cursor/skills')
+    expect(c.advisory).toBeFalsy()
+  })
+
+  it('points windsurf at ~/.codeium/windsurf/skills (Cascade docs)', () => {
+    const c = buildClients(HOME).find((x) => x.id === 'windsurf')!
+    expect(c.detectDir()).toBe('/home/u/.codeium/windsurf')
+    expect(c.skillsDir()).toBe('/home/u/.codeium/windsurf/skills')
+    expect(c.advisory).toBeFalsy()
+  })
+
+  it('points cline at ~/.cline/skills with a post-install note', () => {
+    const c = buildClients(HOME).find((x) => x.id === 'cline')!
+    expect(c.detectDir()).toBe('/home/u/.cline')
+    expect(c.skillsDir()).toBe('/home/u/.cline/skills')
+    expect(c.advisory).toBeFalsy()
+    expect(c.postInstallNote).toMatch(/Enable Skills/)
+  })
+
+  it('keeps continue as advisory (no native file-drop surface yet)', () => {
+    const c = buildClients(HOME).find((x) => x.id === 'continue')!
+    expect(c.advisory).toBe(true)
+  })
 })
 
 describe('runInit — detection', () => {
@@ -139,6 +166,22 @@ describe('runInit — advisory clients', () => {
     const { results } = runInit({ client: 'continue' }, buildClients(HOME), SOURCE, fs)
     expect(results[0].status).toBe('advisory')
     expect(fs.writes).toHaveLength(0)
+  })
+})
+
+describe('runInit — post-install notes', () => {
+  it('attaches Cline post-install note as the result reason', () => {
+    const fs = makeFs({ dirs: [SOURCE, `${HOME}/.cline`] })
+    const { results } = runInit({ client: 'cline' }, buildClients(HOME), SOURCE, fs)
+    expect(results[0].status).toBe('installed')
+    expect(results[0].reason).toMatch(/Enable Skills/)
+  })
+
+  it('does not attach a note for clients without one', () => {
+    const fs = makeFs({ dirs: [SOURCE, `${HOME}/.claude`] })
+    const { results } = runInit({ client: 'claude-code' }, buildClients(HOME), SOURCE, fs)
+    expect(results[0].status).toBe('installed')
+    expect(results[0].reason).toBeUndefined()
   })
 })
 

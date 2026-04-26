@@ -49,34 +49,42 @@ export interface ClientSpec {
   advisory?: boolean
   /** Notes to print/emit when advisory. */
   advisoryNote?: string
+  /**
+   * Optional post-install note printed/emitted after a successful install.
+   * Used for clients that need a one-time setup step after the file lands
+   * (e.g. Cline requires enabling its experimental Skills toggle).
+   */
+  postInstallNote?: string
 }
 
 /**
- * Build the per-OS client list. Paths are sourced primarily from
- * 17-install-and-activation-flow.md ("Client-specific install variants" table)
- * and confirmed against each project's docs at time of writing (April 2026).
+ * Build the per-OS client list. Paths confirmed against official docs
+ * (April 2026). All four front-line clients now natively consume the
+ * Anthropic SKILL.md format from a global per-user skills directory; only
+ * Continue.dev still has no equivalent file-drop surface.
  *
  * Sources:
- *  - Claude Code: https://docs.anthropic.com/en/docs/claude-code/skills
- *      → ~/.claude/skills/<name>/
- *  - Cursor: https://docs.cursor.com (rules live under .cursor/rules; the
- *      community skills convention is .cursor/skills/<name>/, used by
- *      `cursor-anthropic-skills`). Spec table: `.cursor/skills/openhop/`.
- *  - Windsurf (Cascade): per spec table — `.windsurf/skills/openhop/`. Path
- *      is project-local in current Windsurf docs; the global ~/.windsurf
- *      convention is community-driven, so we mark advisory.
- *  - Cline: per spec table — `.cline/skills/openhop/`. Cline reads skills
- *      from a workspace dir; global path is community-driven → advisory.
- *  - Continue.dev: ~/.continue/ exists per https://docs.continue.dev. Skill
- *      registration is via Continue Hub blocks rather than file copy, so we
- *      mark advisory and print a manual hint.
+ *  - Claude Code → ~/.claude/skills/<name>/
+ *      https://docs.anthropic.com/en/docs/claude-code/skills
+ *  - Cursor (added in v2.4) → ~/.cursor/skills/<name>/ (also auto-discovers
+ *      ~/.agents/skills/ and legacy ~/.claude/skills/)
+ *      https://cursor.com/docs/skills
+ *  - Windsurf (Cascade) → ~/.codeium/windsurf/skills/<name>/
+ *      https://docs.windsurf.com/windsurf/cascade/skills
+ *  - Cline (3.48+) → ~/.cline/skills/<name>/
+ *      https://docs.cline.bot/customization/skills
+ *      Requires a one-time toggle: VS Code → Settings → Cline → Features →
+ *      Enable Skills (experimental). We surface that as a post-install note.
+ *  - Continue.dev → no native skills surface; the rules system at
+ *      ~/.continue/rules/ injects content into every system prompt, which
+ *      is too heavy for a full SKILL.md. Tracked as advisory until a
+ *      condensed-rule translator lands.
+ *      https://docs.continue.dev/customize/deep-dives/rules
  */
 export function buildClients(home: string = homedir(), os: string = platform()): ClientSpec[] {
-  // For v0.1 we use POSIX-style ~/.<client>/ on every OS; this matches the
-  // documented Claude Code path and is consistent with how the other clients
-  // namespace their config on Windows (under %USERPROFILE%) and macOS/Linux
-  // (under $HOME). os.homedir() handles the platform difference for us.
-  void os // reserved for future per-OS branching (e.g. AppData on Windows)
+  // For v0.1 we use POSIX-style ~/.<client>/ on every OS; os.homedir() handles
+  // the platform difference (resolves to %USERPROFILE% on Windows).
+  void os // reserved for future per-OS branching
 
   return [
     {
@@ -94,20 +102,16 @@ export function buildClients(home: string = homedir(), os: string = platform()):
     {
       id: 'windsurf',
       label: 'Windsurf',
-      detectDir: () => join(home, '.windsurf'),
-      skillsDir: () => join(home, '.windsurf', 'skills'),
-      advisory: true,
-      advisoryNote:
-        'Windsurf uses workspace-local skills today; copy skills/openhop/ into <project>/.windsurf/skills/.',
+      detectDir: () => join(home, '.codeium', 'windsurf'),
+      skillsDir: () => join(home, '.codeium', 'windsurf', 'skills'),
     },
     {
       id: 'cline',
       label: 'Cline',
       detectDir: () => join(home, '.cline'),
       skillsDir: () => join(home, '.cline', 'skills'),
-      advisory: true,
-      advisoryNote:
-        'Cline reads skills from the active workspace; copy skills/openhop/ into <project>/.cline/skills/.',
+      postInstallNote:
+        'enable in VS Code → Settings → Cline → Features → Enable Skills (experimental).',
     },
     {
       id: 'continue',
@@ -116,7 +120,7 @@ export function buildClients(home: string = homedir(), os: string = platform()):
       skillsDir: () => join(home, '.continue', 'skills'),
       advisory: true,
       advisoryNote:
-        'Continue uses Hub blocks, not skill directories; install the OpenHop block from Continue Hub instead.',
+        'Continue.dev has no native skills surface; SKILL.md is too large for its rules system. Tracked for translation in a future release.',
     },
   ]
 }
@@ -234,7 +238,12 @@ export function runInit(
     try {
       fs.mkdirSync(c.skillsDir(), { recursive: true })
       fs.cpSync(sourceSkill, dest, { recursive: true, force: !!opts.force })
-      results.push({ client: c.id, status: 'installed', path: dest })
+      results.push({
+        client: c.id,
+        status: 'installed',
+        path: dest,
+        ...(c.postInstallNote ? { reason: c.postInstallNote } : {}),
+      })
     } catch (err) {
       results.push({
         client: c.id,
@@ -311,7 +320,7 @@ export function registerInit(program: Command): void {
       } else {
         process.stderr.write(renderTable(results) + '\n')
         for (const r of results) {
-          if (r.status === 'advisory' && r.reason) {
+          if (r.reason && (r.status === 'advisory' || r.status === 'installed')) {
             process.stderr.write(`  note (${r.client}): ${r.reason}\n`)
           }
         }
