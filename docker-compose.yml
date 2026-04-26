@@ -8,7 +8,7 @@ services:
       - "8787:8787"
       - "8788:8788"
     volumes:
-      - /mnt/c/Users/nsabag/Documents/dev/openhop:/app
+      - .:/app
       - openhop-node-modules:/app/node_modules
       - openhop-web-modules:/app/packages/web/node_modules
       - openhop-flows:/root/.openhop
