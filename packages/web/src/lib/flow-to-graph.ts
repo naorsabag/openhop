@@ -1,9 +1,5 @@
 import type { Flow } from '../types'
-import {
-  buildFlowTopology,
-  buildReactFlowGraph,
-  computeFallbackPositions,
-} from './flow-layout'
+import { buildFlowTopology, buildReactFlowGraph, computeFallbackPositions } from './flow-layout'
 
 export { buildFlowTopology, buildReactFlowGraph, computeFallbackPositions } from './flow-layout'
 

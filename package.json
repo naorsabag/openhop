@@ -13,9 +13,17 @@
   },
   "license": "MIT",
   "author": "Naor Sabag (https://github.com/naorsabag)",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "serve": "npx tsx packages/server/src/index.ts",
-    "dev": "npx tsx packages/server/src/index.ts & cd packages/web && npm run dev"
+    "dev": "npx tsx packages/server/src/index.ts & cd packages/web && npm run dev",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\" --ignore-path .prettierignore"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3"
   }
 }

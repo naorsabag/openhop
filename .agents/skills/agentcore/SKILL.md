@@ -32,13 +32,13 @@ agent-browser close
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `AGENTCORE_REGION` | AWS region | `us-east-1` |
-| `AGENTCORE_BROWSER_ID` | Browser identifier | `aws.browser.v1` |
-| `AGENTCORE_PROFILE_ID` | Persistent browser profile (cookies, localStorage) | (none) |
-| `AGENTCORE_SESSION_TIMEOUT` | Session timeout in seconds | `3600` |
-| `AWS_PROFILE` | AWS CLI profile for credential resolution | `default` |
+| Variable                    | Description                                        | Default          |
+| --------------------------- | -------------------------------------------------- | ---------------- |
+| `AGENTCORE_REGION`          | AWS region                                         | `us-east-1`      |
+| `AGENTCORE_BROWSER_ID`      | Browser identifier                                 | `aws.browser.v1` |
+| `AGENTCORE_PROFILE_ID`      | Persistent browser profile (cookies, localStorage) | (none)           |
+| `AGENTCORE_SESSION_TIMEOUT` | Session timeout in seconds                         | `3600`           |
+| `AWS_PROFILE`               | AWS CLI profile for credential resolution          | `default`        |
 
 ## Persistent Profiles
 

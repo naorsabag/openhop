@@ -1,7 +1,18 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { nanoid } from 'nanoid'
-import { parseFlowYaml, parseFlowJson, validateFlow, patchSchema, applyPatch } from '@openhop/shared'
-import { storedFlowJsonSchema, flowSummaryJsonSchema, rootJsonSchema, patchOperationsJsonSchema } from '@openhop/shared'
+import {
+  parseFlowYaml,
+  parseFlowJson,
+  validateFlow,
+  patchSchema,
+  applyPatch,
+} from '@openhop/shared'
+import {
+  storedFlowJsonSchema,
+  flowSummaryJsonSchema,
+  rootJsonSchema,
+  patchOperationsJsonSchema,
+} from '@openhop/shared'
 import { FlowStore } from './store.js'
 
 const store = new FlowStore()
@@ -30,7 +41,11 @@ flow:
 const VALIDATION_ERROR_EXAMPLE = {
   error: 'validation_error',
   details: [
-    { path: 'flow.steps[0].to', message: 'Node "nonexistent" not found. Did you mean "api"?', suggestion: 'Change "nonexistent" to "api"' },
+    {
+      path: 'flow.steps[0].to',
+      message: 'Node "nonexistent" not found. Did you mean "api"?',
+      suggestion: 'Change "nonexistent" to "api"',
+    },
   ],
 }
 
@@ -44,24 +59,28 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
   app.addSchema(patchOperationsJsonSchema)
 
   // ── GET /health — Health check ──────────────────────────────────────
-  app.get('/health', {
-    schema: {
-      summary: 'Health check',
-      description: 'Returns server status. Use to verify OpenHop is running.',
-      tags: ['system'],
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            status: { type: 'string', example: 'ok' },
-            version: { type: 'string', example: '0.1.0' },
+  app.get(
+    '/health',
+    {
+      schema: {
+        summary: 'Health check',
+        description: 'Returns server status. Use to verify OpenHop is running.',
+        tags: ['system'],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              status: { type: 'string', example: 'ok' },
+              version: { type: 'string', example: '0.1.0' },
+            },
           },
         },
       },
     },
-  }, async (_req, reply) => {
-    return reply.send({ status: 'ok', version: '0.1.0' })
-  })
+    async (_req, reply) => {
+      return reply.send({ status: 'ok', version: '0.1.0' })
+    }
+  )
 
   // Register content type parsers for YAML
   app.addContentTypeParser(
@@ -81,213 +100,235 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
   )
 
   // ── POST /api/flows — Create a new flow ────────────────────────────
-  app.post('/api/flows', {
-    schema: {
-      summary: 'Create a new flow',
-      description: 'Accepts a flow definition in YAML or JSON format. Validates the schema and stores the flow.',
-      tags: ['flows'],
-      body: {
-        oneOf: [
-          { type: 'string', description: 'Flow in YAML format' },
-          { type: 'object', additionalProperties: true, description: 'Flow in JSON format' },
-        ],
-      },
-      response: {
-        201: {
-          type: 'object',
-          description: 'Flow created successfully',
-          properties: {
-            id: { type: 'string', description: 'Unique flow ID', example: 'abc123' },
-            version: { type: 'number', description: 'Flow version', example: 1 },
-            title: { type: 'string', description: 'Flow title', example: 'Simple Flow' },
-          },
+  app.post(
+    '/api/flows',
+    {
+      schema: {
+        summary: 'Create a new flow',
+        description:
+          'Accepts a flow definition in YAML or JSON format. Validates the schema and stores the flow.',
+        tags: ['flows'],
+        body: {
+          oneOf: [
+            { type: 'string', description: 'Flow in YAML format' },
+            { type: 'object', additionalProperties: true, description: 'Flow in JSON format' },
+          ],
         },
-        400: {
-          type: 'object',
-          description: 'Validation error',
-          properties: {
-            error: { type: 'string', examples: ['validation_error'] },
-            details: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  path: { type: 'string', example: 'flow.steps[0].to' },
-                  message: { type: 'string', example: 'Node "nonexistent" not found. Did you mean "api"?' },
-                  suggestion: { type: 'string', example: 'Change "nonexistent" to "api"' },
+        response: {
+          201: {
+            type: 'object',
+            description: 'Flow created successfully',
+            properties: {
+              id: { type: 'string', description: 'Unique flow ID', example: 'abc123' },
+              version: { type: 'number', description: 'Flow version', example: 1 },
+              title: { type: 'string', description: 'Flow title', example: 'Simple Flow' },
+            },
+          },
+          400: {
+            type: 'object',
+            description: 'Validation error',
+            properties: {
+              error: { type: 'string', examples: ['validation_error'] },
+              details: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    path: { type: 'string', example: 'flow.steps[0].to' },
+                    message: {
+                      type: 'string',
+                      example: 'Node "nonexistent" not found. Did you mean "api"?',
+                    },
+                    suggestion: { type: 'string', example: 'Change "nonexistent" to "api"' },
+                  },
                 },
               },
             },
+            example: VALIDATION_ERROR_EXAMPLE,
           },
-          example: VALIDATION_ERROR_EXAMPLE,
         },
       },
     },
-  }, async (req: FastifyRequest, reply: FastifyReply) => {
-    const contentType = req.headers['content-type'] ?? ''
-    let validationResult
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const contentType = req.headers['content-type'] ?? ''
+      let validationResult
 
-    if (
-      contentType.includes('text/yaml') ||
-      contentType.includes('application/x-yaml') ||
-      contentType.includes('text/x-yaml')
-    ) {
-      const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
-      validationResult = parseFlowYaml(body)
-    } else if (contentType.includes('application/json')) {
-      if (typeof req.body === 'string') {
-        validationResult = parseFlowJson(req.body)
-      } else {
-        validationResult = validateFlow(req.body)
-      }
-    } else {
-      if (typeof req.body === 'string') {
-        const trimmed = req.body.trimStart()
-        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      if (
+        contentType.includes('text/yaml') ||
+        contentType.includes('application/x-yaml') ||
+        contentType.includes('text/x-yaml')
+      ) {
+        const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+        validationResult = parseFlowYaml(body)
+      } else if (contentType.includes('application/json')) {
+        if (typeof req.body === 'string') {
           validationResult = parseFlowJson(req.body)
         } else {
-          validationResult = parseFlowYaml(req.body)
+          validationResult = validateFlow(req.body)
         }
-      } else if (typeof req.body === 'object' && req.body !== null) {
-        validationResult = validateFlow(req.body)
       } else {
+        if (typeof req.body === 'string') {
+          const trimmed = req.body.trimStart()
+          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            validationResult = parseFlowJson(req.body)
+          } else {
+            validationResult = parseFlowYaml(req.body)
+          }
+        } else if (typeof req.body === 'object' && req.body !== null) {
+          validationResult = validateFlow(req.body)
+        } else {
+          return reply.status(400).send({
+            error: 'invalid_body',
+            details: [{ path: '', message: 'Request body is required' }],
+          })
+        }
+      }
+
+      if (!validationResult.success) {
         return reply.status(400).send({
-          error: 'invalid_body',
-          details: [{ path: '', message: 'Request body is required' }],
+          error: 'validation_error',
+          details: validationResult.errors,
         })
       }
-    }
 
-    if (!validationResult.success) {
-      return reply.status(400).send({
-        error: 'validation_error',
-        details: validationResult.errors,
+      const id = nanoid(12)
+      const stored = await store.save(id, validationResult.data!)
+
+      return reply.status(201).send({
+        id: stored.id,
+        version: stored.version,
+        title: stored.meta.title,
       })
     }
-
-    const id = nanoid(12)
-    const stored = await store.save(id, validationResult.data!)
-
-    return reply.status(201).send({
-      id: stored.id,
-      version: stored.version,
-      title: stored.meta.title,
-    })
-  })
+  )
 
   // ── GET /api/flows — List all flows (summary) ─────────────────────
-  app.get('/api/flows', {
-    schema: {
-      summary: 'List all flows',
-      description: 'Returns a summary of all stored flows.',
-      tags: ['flows'],
-      response: {
-        200: {
-          type: 'array',
-          description: 'List of flow summaries',
-          items: flowSummaryJsonSchema,
+  app.get(
+    '/api/flows',
+    {
+      schema: {
+        summary: 'List all flows',
+        description: 'Returns a summary of all stored flows.',
+        tags: ['flows'],
+        response: {
+          200: {
+            type: 'array',
+            description: 'List of flow summaries',
+            items: flowSummaryJsonSchema,
+          },
         },
       },
     },
-  }, async (_req: FastifyRequest, reply: FastifyReply) => {
-    const flows = await store.list()
-    const summaries = flows.map((f) => ({
-      id: f.id,
-      title: f.meta.title,
-      description: f.meta.description ?? null,
-      path: f.meta.path ?? null,
-      version: f.version,
-      updatedAt: f.updatedAt,
-    }))
-    return reply.send(summaries)
-  })
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const flows = await store.list()
+      const summaries = flows.map((f) => ({
+        id: f.id,
+        title: f.meta.title,
+        description: f.meta.description ?? null,
+        path: f.meta.path ?? null,
+        version: f.version,
+        updatedAt: f.updatedAt,
+      }))
+      return reply.send(summaries)
+    }
+  )
 
   // ── GET /api/flows/:id — Get full flow ─────────────────────────────
-  app.get('/api/flows/:id', {
-    schema: {
-      summary: 'Get a flow by ID',
-      description: 'Returns the full flow definition including metadata, nodes, and steps.',
-      tags: ['flows'],
-      params: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', description: 'Flow ID' },
-        },
-        required: ['id'],
-      },
-      response: {
-        200: storedFlowJsonSchema,
-        404: {
+  app.get(
+    '/api/flows/:id',
+    {
+      schema: {
+        summary: 'Get a flow by ID',
+        description: 'Returns the full flow definition including metadata, nodes, and steps.',
+        tags: ['flows'],
+        params: {
           type: 'object',
-          description: 'Flow not found',
           properties: {
-            error: { type: 'string' },
-            details: { type: 'array', items: { type: 'object' } },
+            id: { type: 'string', description: 'Flow ID' },
           },
-          example: NOT_FOUND_EXAMPLE,
+          required: ['id'],
+        },
+        response: {
+          200: storedFlowJsonSchema,
+          404: {
+            type: 'object',
+            description: 'Flow not found',
+            properties: {
+              error: { type: 'string' },
+              details: { type: 'array', items: { type: 'object' } },
+            },
+            example: NOT_FOUND_EXAMPLE,
+          },
         },
       },
     },
-  }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { id } = req.params
-    const stored = await store.get(id)
-    if (!stored) {
-      return reply.status(404).send({
-        error: 'not_found',
-        details: [{ path: '', message: `Flow "${id}" not found` }],
-      })
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = req.params
+      const stored = await store.get(id)
+      if (!stored) {
+        return reply.status(404).send({
+          error: 'not_found',
+          details: [{ path: '', message: `Flow "${id}" not found` }],
+        })
+      }
+      return reply.send(stored)
     }
-    return reply.send(stored)
-  })
+  )
 
   // ── GET /api/flows/:id/version — Get version number only ──────────
-  app.get('/api/flows/:id/version', {
-    schema: {
-      summary: 'Get flow version',
-      description: 'Returns only the version number. Used by the UI for polling.',
-      tags: ['flows'],
-      params: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', description: 'Flow ID' },
-        },
-        required: ['id'],
-      },
-      response: {
-        200: {
+  app.get(
+    '/api/flows/:id/version',
+    {
+      schema: {
+        summary: 'Get flow version',
+        description: 'Returns only the version number. Used by the UI for polling.',
+        tags: ['flows'],
+        params: {
           type: 'object',
-          description: 'Version number',
           properties: {
-            version: { type: 'number', example: 1 },
+            id: { type: 'string', description: 'Flow ID' },
           },
+          required: ['id'],
         },
-        404: {
-          type: 'object',
-          description: 'Flow not found',
-          properties: {
-            error: { type: 'string' },
-            details: { type: 'array', items: { type: 'object' } },
+        response: {
+          200: {
+            type: 'object',
+            description: 'Version number',
+            properties: {
+              version: { type: 'number', example: 1 },
+            },
+          },
+          404: {
+            type: 'object',
+            description: 'Flow not found',
+            properties: {
+              error: { type: 'string' },
+              details: { type: 'array', items: { type: 'object' } },
+            },
           },
         },
       },
     },
-  }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { id } = req.params
-    const version = await store.getVersion(id)
-    if (version === null) {
-      return reply.status(404).send({
-        error: 'not_found',
-        details: [{ path: '', message: `Flow "${id}" not found` }],
-      })
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = req.params
+      const version = await store.getVersion(id)
+      if (version === null) {
+        return reply.status(404).send({
+          error: 'not_found',
+          details: [{ path: '', message: `Flow "${id}" not found` }],
+        })
+      }
+      return reply.send({ version })
     }
-    return reply.send({ version })
-  })
+  )
 
   // ── PATCH /api/flows/:id — Patch a flow with incremental operations ─
-  app.patch('/api/flows/:id', {
-    schema: {
-      summary: 'Update a flow with patch operations',
-      description: `Apply incremental updates to an existing flow using patch operations.
+  app.patch(
+    '/api/flows/:id',
+    {
+      schema: {
+        summary: 'Update a flow with patch operations',
+        description: `Apply incremental updates to an existing flow using patch operations.
 
 Supported operations:
 - **add-node**: Add a new node (id, label, optional type/icon/color)
@@ -299,138 +340,144 @@ Supported operations:
 - **add-step**: Insert a step after a given index (-1 for beginning)
 - **remove-step**: Remove a step by index
 - **replace-steps**: Replace the entire steps array`,
-      tags: ['flows'],
-      params: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', description: 'Flow ID' },
-        },
-        required: ['id'],
-      },
-      body: { $ref: 'https://openhop.dev/schemas/patch-operations#' },
-      response: {
-        200: {
+        tags: ['flows'],
+        params: {
           type: 'object',
-          description: 'Flow updated successfully',
           properties: {
-            id: { type: 'string' },
-            version: { type: 'number' },
-            title: { type: 'string' },
+            id: { type: 'string', description: 'Flow ID' },
           },
+          required: ['id'],
         },
-        400: {
-          type: 'object',
-          description: 'Patch validation or application error',
-          properties: {
-            error: { type: 'string' },
-            details: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  path: { type: 'string' },
-                  message: { type: 'string' },
-                  suggestion: { type: 'string' },
+        body: { $ref: 'https://openhop.dev/schemas/patch-operations#' },
+        response: {
+          200: {
+            type: 'object',
+            description: 'Flow updated successfully',
+            properties: {
+              id: { type: 'string' },
+              version: { type: 'number' },
+              title: { type: 'string' },
+            },
+          },
+          400: {
+            type: 'object',
+            description: 'Patch validation or application error',
+            properties: {
+              error: { type: 'string' },
+              details: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    path: { type: 'string' },
+                    message: { type: 'string' },
+                    suggestion: { type: 'string' },
+                  },
                 },
               },
             },
           },
-        },
-        404: {
-          type: 'object',
-          description: 'Flow not found',
-          properties: {
-            error: { type: 'string' },
-            details: { type: 'array', items: { type: 'object' } },
+          404: {
+            type: 'object',
+            description: 'Flow not found',
+            properties: {
+              error: { type: 'string' },
+              details: { type: 'array', items: { type: 'object' } },
+            },
+            example: NOT_FOUND_EXAMPLE,
           },
-          example: NOT_FOUND_EXAMPLE,
         },
       },
     },
-  }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { id } = req.params
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = req.params
 
-    // Load existing flow
-    const stored = await store.get(id)
-    if (!stored) {
-      return reply.status(404).send({
-        error: 'not_found',
-        details: [{ path: '', message: `Flow "${id}" not found` }],
+      // Load existing flow
+      const stored = await store.get(id)
+      if (!stored) {
+        return reply.status(404).send({
+          error: 'not_found',
+          details: [{ path: '', message: `Flow "${id}" not found` }],
+        })
+      }
+
+      // Parse and validate patch body
+      const parseResult = patchSchema.safeParse(req.body)
+      if (!parseResult.success) {
+        const zodErrors = parseResult.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        }))
+        return reply.status(400).send({
+          error: 'validation_error',
+          details: zodErrors,
+        })
+      }
+
+      // Reconstruct Root from stored flat structure
+      const root = { meta: stored.meta, flow: stored.flow }
+
+      // Apply patch
+      const patchResult = applyPatch(root, parseResult.data)
+      if (!patchResult.success) {
+        return reply.status(400).send({
+          error: 'patch_error',
+          details: patchResult.errors,
+        })
+      }
+
+      // Save updated flow (version increments via store.updateFlow)
+      const updated = await store.updateFlow(id, patchResult.data!)
+
+      return reply.send({
+        id: updated.id,
+        version: updated.version,
+        title: updated.meta.title,
       })
     }
-
-    // Parse and validate patch body
-    const parseResult = patchSchema.safeParse(req.body)
-    if (!parseResult.success) {
-      const zodErrors = parseResult.error.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message,
-      }))
-      return reply.status(400).send({
-        error: 'validation_error',
-        details: zodErrors,
-      })
-    }
-
-    // Reconstruct Root from stored flat structure
-    const root = { meta: stored.meta, flow: stored.flow }
-
-    // Apply patch
-    const patchResult = applyPatch(root, parseResult.data)
-    if (!patchResult.success) {
-      return reply.status(400).send({
-        error: 'patch_error',
-        details: patchResult.errors,
-      })
-    }
-
-    // Save updated flow (version increments via store.updateFlow)
-    const updated = await store.updateFlow(id, patchResult.data!)
-
-    return reply.send({
-      id: updated.id,
-      version: updated.version,
-      title: updated.meta.title,
-    })
-  })
+  )
 
   // ── DELETE /api/flows/:id — Delete a flow ──────────────────────────
-  app.delete('/api/flows/:id', {
-    schema: {
-      summary: 'Delete a flow',
-      description: 'Permanently deletes a flow by ID.',
-      tags: ['flows'],
-      params: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', description: 'Flow ID' },
-        },
-        required: ['id'],
-      },
-      response: {
-        204: {
-          type: 'null',
-          description: 'Flow deleted successfully',
-        },
-        404: {
+  app.delete(
+    '/api/flows/:id',
+    {
+      schema: {
+        summary: 'Delete a flow',
+        description: 'Permanently deletes a flow by ID.',
+        tags: ['flows'],
+        params: {
           type: 'object',
-          description: 'Flow not found',
           properties: {
-            error: { type: 'string' },
-            details: { type: 'array', items: { type: 'object' } },
+            id: { type: 'string', description: 'Flow ID' },
+          },
+          required: ['id'],
+        },
+        response: {
+          204: {
+            type: 'null',
+            description: 'Flow deleted successfully',
+          },
+          404: {
+            type: 'object',
+            description: 'Flow not found',
+            properties: {
+              error: { type: 'string' },
+              details: { type: 'array', items: { type: 'object' } },
+            },
           },
         },
       },
     },
-  }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { id } = req.params
-    const deleted = await store.delete(id)
-    if (!deleted) {
-      return reply.status(404).send({
-        error: 'not_found',
-        details: [{ path: '', message: `Flow "${id}" not found` }],
-      })
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = req.params
+      const deleted = await store.delete(id)
+      if (!deleted) {
+        return reply.status(404).send({
+          error: 'not_found',
+          details: [{ path: '', message: `Flow "${id}" not found` }],
+        })
+      }
+      return reply.status(204).send()
     }
-    return reply.status(204).send()
-  })
+  )
 }

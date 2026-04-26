@@ -28,24 +28,26 @@
 
 ## Tech Stack
 
-| Component | Library |
-|-----------|---------|
-| Isometric renderer | PixiJS v8 |
-| React binding | @pixi/react v8 |
-| Viewport (zoom/pan) | pixi-viewport |
-| UI Chrome | React + Tailwind + 8bitcn (existing) |
-| Sprite authoring | Aseprite / AI-generated + refinement |
-| Sprite loading | PixiJS Assets.load() |
+| Component           | Library                              |
+| ------------------- | ------------------------------------ |
+| Isometric renderer  | PixiJS v8                            |
+| React binding       | @pixi/react v8                       |
+| Viewport (zoom/pan) | pixi-viewport                        |
+| UI Chrome           | React + Tailwind + 8bitcn (existing) |
+| Sprite authoring    | Aseprite / AI-generated + refinement |
+| Sprite loading      | PixiJS Assets.load()                 |
 
 ## Tile System
 
 **Tile size:** 64x32 pixels (standard isometric diamond)
 **Grid:** Nodes placed on an isometric grid. Paths connect adjacent tiles.
 **Coordinate conversion:**
+
 ```
 screenX = (gridX - gridY) * 32
 screenY = (gridX + gridY) * 16
 ```
+
 **Depth sort:** `zIndex = gridX + gridY` (farther = drawn first)
 
 ## Phases
@@ -136,13 +138,15 @@ Convert flow nodes + edges into isometric grid positions:
 ## Sprite Prompts (for AI image generation)
 
 ### Ground Tiles
+
 ```
-Pixel art isometric grass tile, 64x32 pixels, diamond shape, 
-Stardew Valley style, green grass with subtle texture, 
+Pixel art isometric grass tile, 64x32 pixels, diamond shape,
+Stardew Valley style, green grass with subtle texture,
 transparent background, no shadow, crisp pixels
 ```
 
 ### Road Tiles (need all directions)
+
 ```
 Pixel art isometric cobblestone road tile, 64x32 pixels, diamond shape,
 warm brown cobblestone with grass edges, Stardew Valley style,
@@ -152,6 +156,7 @@ transparent background
 4 road tiles total. The engine rotates/flips them as needed for different directions.
 
 ### Road — Straight
+
 ```
 Pixel art isometric cobblestone road, 64x32 diamond,
 road runs from top-right to bottom-left with grass on both sides,
@@ -159,6 +164,7 @@ warm brown stones, Stardew Valley pixel art style, transparent background
 ```
 
 ### Road — Turn
+
 ```
 Pixel art isometric cobblestone road corner, 64x32 diamond,
 road turns from top-right to bottom-right (L-shaped),
@@ -167,6 +173,7 @@ transparent background
 ```
 
 ### Road — T-Junction
+
 ```
 Pixel art isometric cobblestone T-junction, 64x32 diamond,
 road comes from top-left, splits to bottom-left and bottom-right,
@@ -175,6 +182,7 @@ Stardew Valley style, transparent background
 ```
 
 ### Road — Crossroads
+
 ```
 Pixel art isometric cobblestone crossroads, 64x32 diamond,
 road goes in all 4 isometric directions,
@@ -183,6 +191,7 @@ Stardew Valley style, transparent background
 ```
 
 ### Building — API Endpoint (Burrow Entrance)
+
 ```
 Pixel art isometric rabbit burrow entrance, 64x64 pixels on 64x32 base,
 cozy hole in a grassy hill with wooden door frame and small sign,
@@ -191,6 +200,7 @@ transparent background, facing camera
 ```
 
 ### Building — Database (Storage Barn)
+
 ```
 Pixel art isometric wooden storage barn, 64x64 pixels on 64x32 base,
 small barn with harvest crates and barrels stacked outside,
@@ -199,6 +209,7 @@ transparent background, facing camera
 ```
 
 ### Building — External API (Trading Post)
+
 ```
 Pixel art isometric trading post, 64x64 pixels on 64x32 base,
 market stall with globe on top and hanging lanterns,
@@ -207,6 +218,7 @@ transparent background, facing camera
 ```
 
 ### Building — Transform (Workshop)
+
 ```
 Pixel art isometric workshop, 64x64 pixels on 64x32 base,
 small wooden workbench with tools and gears,
@@ -215,6 +227,7 @@ transparent background, facing camera
 ```
 
 ### Building — Validation (Checkpoint Gate)
+
 ```
 Pixel art isometric checkpoint gate, 64x64 pixels on 64x32 base,
 wooden gate with a checkmark sign hanging from a post,
@@ -224,6 +237,7 @@ transparent background, facing camera
 ```
 
 ### Building — Auth (Guard Tower)
+
 ```
 Pixel art isometric small guard tower, 64x64 pixels on 64x32 base,
 wooden watchtower with a lock symbol on the front,
@@ -233,6 +247,7 @@ transparent background, facing camera
 ```
 
 ### Building — Actor (Bunny Character)
+
 ```
 Pixel art isometric cute bunny character standing on grass, 64x64 pixels on 64x32 base,
 large orange-brown bunny with big ears, standing upright on hind legs,
@@ -240,9 +255,11 @@ wearing a tiny blue scarf or messenger bag,
 friendly expression with black dot eyes and pink nose,
 Stardew Valley style, transparent background, facing camera
 ```
+
 The actor/user is a bunny character — not a building. It represents the human or system that initiates the flow.
 
 ### Building — Service (Compound)
+
 ```
 Pixel art isometric fenced compound, 96x64 pixels on 96x32 base,
 larger area with wooden fence, multiple small structures inside,
@@ -251,15 +268,18 @@ transparent background, facing camera
 ```
 
 ### Building — Custom / Generic (Wooden Hut)
+
 ```
 Pixel art isometric small wooden hut, 64x64 pixels on 64x32 base,
 simple A-frame cabin with a question mark sign on the door,
 neutral brown wood, Stardew Valley style,
 transparent background, facing camera
 ```
+
 Used for `type: custom` nodes or when no specific building matches.
 
 ### Building — Cache (Lightning Hutch)
+
 ```
 Pixel art isometric small hutch with lightning bolt, 64x64 pixels on 64x32 base,
 fast-looking small structure with cyan/electric accents,
@@ -268,6 +288,7 @@ transparent background, facing camera
 ```
 
 ### Building — Queue (Post Office)
+
 ```
 Pixel art isometric small post office, 64x64 pixels on 64x32 base,
 row of wooden mailboxes in front of a small hut,
@@ -276,6 +297,7 @@ Stardew Valley style, transparent background, facing camera
 ```
 
 ### Data Carrot (hovering — represents all data flowing between nodes)
+
 ```
 Pixel art sprite sheet of a hovering carrot, isometric 3/4 view.
 
@@ -306,6 +328,7 @@ Each frame must be cleanly separated with no overlap between frames.
 One carrot sprite for all data types. Hover the carrot to see the data it carries. Click carrot or road to see data details popup.
 
 ### START/END Signs
+
 ```
 Pixel art isometric wooden road sign, 32x48 pixels,
 green arrow pointing right with "START" text,

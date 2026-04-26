@@ -92,14 +92,14 @@ flow:
   steps:
     # Minimal connective tissue so nodes aren't orphans and ELK has something
     # to lay out. Chain the first of each type to the next type's first.
-    - { from: actor-1,    to: endpoint-1, data: "→" }
-    - { from: endpoint-1, to: auth-1,     data: "→" }
-    - { from: auth-1,     to: db-1,       data: "→" }
-    - { from: db-1,       to: ext-1,      data: "→" }
-    - { from: ext-1,      to: cache-1,    data: "→" }
-    - { from: cache-1,    to: queue-1,    data: "→" }
-    - { from: queue-1,    to: svc-1,      data: "→" }
-    - { from: svc-1,      to: docker-1,   data: "→" }
-    - { from: docker-1,   to: k8s-1,      data: "→" }
-    - { from: k8s-1,      to: sched-1,    data: "→" }
-    - { from: sched-1,    to: custom-1,   data: "→" }
+    - { from: actor-1, to: endpoint-1, data: "→" }
+    - { from: endpoint-1, to: auth-1, data: "→" }
+    - { from: auth-1, to: db-1, data: "→" }
+    - { from: db-1, to: ext-1, data: "→" }
+    - { from: ext-1, to: cache-1, data: "→" }
+    - { from: cache-1, to: queue-1, data: "→" }
+    - { from: queue-1, to: svc-1, data: "→" }
+    - { from: svc-1, to: docker-1, data: "→" }
+    - { from: docker-1, to: k8s-1, data: "→" }
+    - { from: k8s-1, to: sched-1, data: "→" }
+    - { from: sched-1, to: custom-1, data: "→" }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FlowStep, FlowData } from '../types'
 
 interface DataPopupProps {
-  steps: FlowStep[]  // multiple steps can share an edge
+  steps: FlowStep[] // multiple steps can share an edge
   position: { x: number; y: number }
   onClose: () => void
 }
@@ -13,17 +13,17 @@ export function DataPopup({ steps, position, onClose }: DataPopupProps) {
   const total = steps.length
 
   const data: FlowData =
-    typeof step.data === 'string' ? { label: step.data } :
-    Array.isArray(step.data) ? { label: step.data.map(d => d.label).join(', ') } :
-    step.data ?? { label: '' }
+    typeof step.data === 'string'
+      ? { label: step.data }
+      : Array.isArray(step.data)
+        ? { label: step.data.map((d) => d.label).join(', ') }
+        : (step.data ?? { label: '' })
 
   const from = step.from ?? '?'
-  const to = Array.isArray(step.to)
-    ? step.to.join(', ')
-    : step.to ?? step.create ?? '?'
+  const to = Array.isArray(step.to) ? step.to.join(', ') : (step.to ?? step.create ?? '?')
 
-  const prev = () => setCurrentIndex(i => (i - 1 + total) % total)
-  const next = () => setCurrentIndex(i => (i + 1) % total)
+  const prev = () => setCurrentIndex((i) => (i - 1 + total) % total)
+  const next = () => setCurrentIndex((i) => (i + 1) % total)
 
   return (
     <div
@@ -48,35 +48,29 @@ export function DataPopup({ steps, position, onClose }: DataPopupProps) {
       }}
     >
       {/* Header row */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 6,
-        paddingBottom: 6,
-        borderBottom: '1px solid #2a2a4a',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 6,
+          paddingBottom: 6,
+          borderBottom: '1px solid #2a2a4a',
+        }}
+      >
         <span style={{ color: '#4a9eff' }}>
           {from} &rarr; {to}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {total > 1 && (
             <>
-              <button
-                onClick={prev}
-                aria-label="Previous data"
-                style={navBtnStyle}
-              >
+              <button onClick={prev} aria-label="Previous data" style={navBtnStyle}>
                 ◂
               </button>
               <span style={{ color: '#888', fontSize: 12 }}>
                 {currentIndex + 1}/{total}
               </span>
-              <button
-                onClick={next}
-                aria-label="Next data"
-                style={navBtnStyle}
-              >
+              <button onClick={next} aria-label="Next data" style={navBtnStyle}>
                 ▸
               </button>
             </>
@@ -124,7 +118,11 @@ export function DataPopup({ steps, position, onClose }: DataPopupProps) {
               <div key={field.name} style={{ color: fieldColor, textDecoration }}>
                 <span style={{ opacity: 0.7 }}>{prefix}</span>
                 {field.name}
-                {field.type ? <span style={{ opacity: 0.6, marginLeft: 8 }}>{field.type}</span> : ''}
+                {field.type ? (
+                  <span style={{ opacity: 0.6, marginLeft: 8 }}>{field.type}</span>
+                ) : (
+                  ''
+                )}
               </div>
             )
           })}

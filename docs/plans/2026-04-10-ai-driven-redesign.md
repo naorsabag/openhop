@@ -50,68 +50,68 @@ AI Tool (Claude Code, Cursor, etc.)
 
 ### Root
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `meta` | Meta | yes | Flow metadata |
-| `flow` | Flow | yes | The root flow |
+| Field  | Type | Required | Description   |
+| ------ | ---- | -------- | ------------- |
+| `meta` | Meta | yes      | Flow metadata |
+| `flow` | Flow | yes      | The root flow |
 
 ### Meta
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `title` | string | yes | — | Flow title |
-| `description` | string | no | — | Description |
-| `tags` | string[] | no | [] | Tags for search/filter |
+| Field         | Type     | Required | Default | Description            |
+| ------------- | -------- | -------- | ------- | ---------------------- |
+| `title`       | string   | yes      | —       | Flow title             |
+| `description` | string   | no       | —       | Description            |
+| `tags`        | string[] | no       | []      | Tags for search/filter |
 
 ### Flow
 
 Every level of the hierarchy is a Flow — the root and every nested sub-flow inside a node.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
+| Field   | Type   | Required    | Description             |
+| ------- | ------ | ----------- | ----------------------- |
 | `nodes` | Node[] | yes (min 1) | Components in this flow |
-| `steps` | Step[] | no | Ordered data movements |
+| `steps` | Step[] | no          | Ordered data movements  |
 
 ### Node
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `id` | string | yes | — | Unique ID (alphanumeric, hyphens, underscores) |
-| `label` | string | yes | — | Display name |
-| `type` | NodeType | no | `transform` | Built-in type or `custom` |
-| `icon` | string | no | type default | Iconify icon ID (e.g., `logos:postgresql`) |
-| `color` | string | no | type default | Hex color for border/accent |
-| `flow` | Flow | no | — | Nested sub-flow (shows 🔍 on the node) |
+| Field   | Type     | Required | Default      | Description                                    |
+| ------- | -------- | -------- | ------------ | ---------------------------------------------- |
+| `id`    | string   | yes      | —            | Unique ID (alphanumeric, hyphens, underscores) |
+| `label` | string   | yes      | —            | Display name                                   |
+| `type`  | NodeType | no       | `transform`  | Built-in type or `custom`                      |
+| `icon`  | string   | no       | type default | Iconify icon ID (e.g., `logos:postgresql`)     |
+| `color` | string   | no       | type default | Hex color for border/accent                    |
+| `flow`  | Flow     | no       | —            | Nested sub-flow (shows 🔍 on the node)         |
 
 ### NodeType
 
-| Value | Default Color | Building | Description |
-|-------|---------------|----------|-------------|
-| `actor` | #4a9eff (blue) | Rabbit home | Human or system |
-| `endpoint` | #4a9eff (blue) | Burrow entrance | API endpoint |
-| `transform` | #b47aff (purple) | Workshop | Auto data transformation (serialization, mapping) |
-| `validation` | #ffcc4a (yellow) | Checkpoint gate | Input validation, schema checking |
-| `auth` | #ff6b6b (red) | Guard tower | Authentication/authorization check |
-| `database` | #4aff7a (green) | Storage barn | Data store |
-| `external` | #ff8a4a (orange) | Trading post | External API, 3rd party service |
-| `cache` | #4affee (cyan) | Lightning hutch | Cache layer |
-| `queue` | #4aeeff (teal) | Post office | Message queue |
-| `service` | #888 (gray) | Fenced compound | Logical grouping with sub-flow |
-| `custom` | from `color` | Wooden hut | AI-defined, any icon + color |
+| Value        | Default Color    | Building        | Description                                       |
+| ------------ | ---------------- | --------------- | ------------------------------------------------- |
+| `actor`      | #4a9eff (blue)   | Rabbit home     | Human or system                                   |
+| `endpoint`   | #4a9eff (blue)   | Burrow entrance | API endpoint                                      |
+| `transform`  | #b47aff (purple) | Workshop        | Auto data transformation (serialization, mapping) |
+| `validation` | #ffcc4a (yellow) | Checkpoint gate | Input validation, schema checking                 |
+| `auth`       | #ff6b6b (red)    | Guard tower     | Authentication/authorization check                |
+| `database`   | #4aff7a (green)  | Storage barn    | Data store                                        |
+| `external`   | #ff8a4a (orange) | Trading post    | External API, 3rd party service                   |
+| `cache`      | #4affee (cyan)   | Lightning hutch | Cache layer                                       |
+| `queue`      | #4aeeff (teal)   | Post office     | Message queue                                     |
+| `service`    | #888 (gray)      | Fenced compound | Logical grouping with sub-flow                    |
+| `custom`     | from `color`     | Wooden hut      | AI-defined, any icon + color                      |
 
 ### Step
 
 Every step moves data between nodes. A step is one frame in the animation.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `from` | string | yes* | Source node ID |
-| `to` | string or string[] | yes* | Target(s). Array = broadcast to multiple simultaneously |
-| `data` | string or Data | yes* | What data is sent |
-| `drilldown` | boolean | no | Auto-zoom into target node's sub-flow when this step plays |
-| `parallel` | Step[] | yes* | Multiple simultaneous movements (replaces from/to/data) |
+| Field       | Type               | Required | Description                                                |
+| ----------- | ------------------ | -------- | ---------------------------------------------------------- |
+| `from`      | string             | yes\*    | Source node ID                                             |
+| `to`        | string or string[] | yes\*    | Target(s). Array = broadcast to multiple simultaneously    |
+| `data`      | string or Data     | yes\*    | What data is sent                                          |
+| `drilldown` | boolean            | no       | Auto-zoom into target node's sub-flow when this step plays |
+| `parallel`  | Step[]             | yes\*    | Multiple simultaneous movements (replaces from/to/data)    |
 
-*Either `from` + `to` + `data`, OR `parallel`. Not both.
+\*Either `from` + `to` + `data`, OR `parallel`. Not both.
 
 ### Data
 
@@ -135,13 +135,13 @@ data:
 
 ### Field
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `name` | string | yes | — | Field name |
-| `type` | string | no | — | Type annotation |
-| `changed` | boolean | no | false | Yellow highlight (modified) |
-| `added` | boolean | no | false | Green highlight (new) |
-| `removed` | boolean | no | false | Red strikethrough (removed) |
+| Field     | Type    | Required | Default | Description                 |
+| --------- | ------- | -------- | ------- | --------------------------- |
+| `name`    | string  | yes      | —       | Field name                  |
+| `type`    | string  | no       | —       | Type annotation             |
+| `changed` | boolean | no       | false   | Yellow highlight (modified) |
+| `added`   | boolean | no       | false   | Green highlight (new)       |
+| `removed` | boolean | no       | false   | Red strikethrough (removed) |
 
 ### Icons
 
@@ -293,13 +293,13 @@ operations:
     color: "#336791"
     icon: "logos:postgresql"
 
-  - op: set-flow           # add/replace sub-flow on a node
+  - op: set-flow # add/replace sub-flow on a node
     node: order-service
     flow:
       nodes: [...]
       steps: [...]
 
-  - op: clear-flow          # remove sub-flow from a node
+  - op: clear-flow # remove sub-flow from a node
     node: order-service
 
   - op: add-step
@@ -312,7 +312,7 @@ operations:
   - op: remove-step
     index: 4
 
-  - op: replace-steps       # replace all steps, keep nodes
+  - op: replace-steps # replace all steps, keep nodes
     steps: [...]
 ```
 
@@ -338,6 +338,7 @@ Strict validation on every POST/PATCH. Error format:
 ```
 
 Checks:
+
 - Required fields present
 - Valid node types
 - `from`/`to` reference existing node IDs (with fuzzy typo suggestions)
@@ -376,12 +377,14 @@ Checks:
 ### Two Zones
 
 **Chrome (modern dark theme):**
+
 - Sidebar: flow list, search, tag filter
 - Header: title, search, single play/pause button (top-right)
 - Standard web fonts, Tailwind dark theme
 - No bottom control bar — clean and minimal
 
 **Canvas (pixel art world):**
+
 - Dark background (#0a0a1a) with subtle dot grid
 - Pixelated node borders (`pixel-borders`)
 - Pixel fonts: `Press Start 2P` for labels, `VT323` for data
@@ -426,24 +429,29 @@ Checks:
 ### Interaction
 
 **Play/Pause (top-right):**
+
 - Play runs the full flow: pixels travel, nodes glow, progress bars advance, auto-zoom triggers
 - Pause freezes everything in place
 - Flow loops when done
 
 **Click node:**
+
 - Fires a data pixel from that node based on its current step
 - Works during play (extra pixels coexist) or pause (manual exploration)
 
 **Click progress bar:**
+
 - Jump the node to a specific step
 - Next pixel fired reflects that step's data
 
 **Click 🔍:**
+
 - Smooth zoom into the node's sub-flow
 - Back button returns to parent view
 - Works at any hierarchy level
 
 **Drilldown (automatic):**
+
 - Steps with `drilldown: true` auto-zoom into the target node's sub-flow during playback
 
 ### Flow Library (Home)
@@ -481,18 +489,18 @@ openhop remove <id>                      # delete a flow
 
 ## Tech Stack
 
-| Layer | Choice |
-|-------|--------|
-| Language | TypeScript (full stack) |
-| Backend | Node.js + Fastify |
-| Validation | Zod v4 |
-| Frontend | React + React Flow |
-| Animation | CSS offset-path + requestAnimationFrame |
-| Styling | Tailwind (chrome) + pixel-borders (canvas) |
-| Fonts | Press Start 2P, VT323 |
-| Icons | Iconify logos set |
-| Storage | Filesystem (YAML files) |
-| CLI | Commander.js |
+| Layer      | Choice                                     |
+| ---------- | ------------------------------------------ |
+| Language   | TypeScript (full stack)                    |
+| Backend    | Node.js + Fastify                          |
+| Validation | Zod v4                                     |
+| Frontend   | React + React Flow                         |
+| Animation  | CSS offset-path + requestAnimationFrame    |
+| Styling    | Tailwind (chrome) + pixel-borders (canvas) |
+| Fonts      | Press Start 2P, VT323                      |
+| Icons      | Iconify logos set                          |
+| Storage    | Filesystem (YAML files)                    |
+| CLI        | Commander.js                               |
 
 ---
 

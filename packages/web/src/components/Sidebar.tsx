@@ -17,7 +17,7 @@ function buildTree(flows: FlowListItem[]): TreeNode[] {
     let currentPath = ''
     for (const part of parts) {
       currentPath = currentPath ? `${currentPath}/${part}` : part
-      let folder = current.find(n => n.type === 'folder' && n.name === part)
+      let folder = current.find((n) => n.type === 'folder' && n.name === part)
       if (!folder) {
         folder = { name: part, type: 'folder', children: [], path: currentPath }
         current.push(folder)
@@ -36,8 +36,10 @@ function buildTree(flows: FlowListItem[]): TreeNode[] {
 }
 
 function sortTree(nodes: TreeNode[]): TreeNode[] {
-  const folders = nodes.filter(n => n.type === 'folder').sort((a, b) => a.name.localeCompare(b.name))
-  const flows = nodes.filter(n => n.type === 'flow').sort((a, b) => a.name.localeCompare(b.name))
+  const folders = nodes
+    .filter((n) => n.type === 'folder')
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const flows = nodes.filter((n) => n.type === 'flow').sort((a, b) => a.name.localeCompare(b.name))
   for (const folder of folders) {
     folder.children = sortTree(folder.children)
   }
@@ -56,7 +58,10 @@ function filterTree(nodes: TreeNode[], query: string): TreeNode[] {
       // Folder: include if name matches or any children match
       const filteredChildren = filterTree(node.children, query)
       if (node.name.toLowerCase().includes(q) || filteredChildren.length > 0) {
-        result.push({ ...node, children: filteredChildren.length > 0 ? filteredChildren : node.children })
+        result.push({
+          ...node,
+          children: filteredChildren.length > 0 ? filteredChildren : node.children,
+        })
       }
     }
   }
@@ -72,7 +77,14 @@ interface TreeItemProps {
   onSelectFlow: (id: string) => void
 }
 
-function TreeItem({ node, depth, selectedFlowId, expandedFolders, toggleFolder, onSelectFlow }: TreeItemProps) {
+function TreeItem({
+  node,
+  depth,
+  selectedFlowId,
+  expandedFolders,
+  toggleFolder,
+  onSelectFlow,
+}: TreeItemProps) {
   if (node.type === 'folder') {
     const expanded = expandedFolders.has(node.path)
     return (
@@ -108,11 +120,7 @@ function TreeItem({ node, depth, selectedFlowId, expandedFolders, toggleFolder, 
 
   const isActive = node.flowId === selectedFlowId
   return (
-    <li
-      role="treeitem"
-      aria-selected={isActive}
-      data-testid={`sidebar-flow-${node.flowId}`}
-    >
+    <li role="treeitem" aria-selected={isActive} data-testid={`sidebar-flow-${node.flowId}`}>
       <button
         onClick={() => node.flowId && onSelectFlow(node.flowId)}
         className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm transition-colors truncate"
@@ -170,7 +178,7 @@ export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: Sideba
   }, [tree, search])
 
   const toggleFolder = useCallback((path: string) => {
-    setExpandedFolders(prev => {
+    setExpandedFolders((prev) => {
       const next = new Set(prev)
       if (next.has(path)) {
         next.delete(path)
@@ -181,9 +189,12 @@ export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: Sideba
     })
   }, [])
 
-  const handleSelectFlow = useCallback((id: string) => {
-    onSelectFlow(id)
-  }, [onSelectFlow])
+  const handleSelectFlow = useCallback(
+    (id: string) => {
+      onSelectFlow(id)
+    },
+    [onSelectFlow]
+  )
 
   return (
     <aside

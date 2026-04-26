@@ -58,15 +58,15 @@ export function DataPixel({
   const color =
     sourceNodeType === 'custom' && sourceNodeColor
       ? sourceNodeColor
-      : NODE_COLORS[sourceNodeType] ?? '#888'
+      : (NODE_COLORS[sourceNodeType] ?? '#888')
 
   const dataLabel = dataOverride
     ? dataOverride.label
     : typeof step.data === 'string'
       ? step.data
       : Array.isArray(step.data)
-        ? step.data.map(d => d.label).join(', ')
-        : step.data?.label ?? ''
+        ? step.data.map((d) => d.label).join(', ')
+        : (step.data?.label ?? '')
 
   const animate = useCallback(() => {
     const container = containerRef.current
@@ -74,7 +74,7 @@ export function DataPixel({
 
     // Find the SVG path for this edge
     const edgePath = container.querySelector<SVGPathElement>(
-      `[data-testid="rf__edge-${edgeId}"] path.react-flow__edge-path`,
+      `[data-testid="rf__edge-${edgeId}"] path.react-flow__edge-path`
     )
     if (!edgePath) return
 
@@ -93,16 +93,14 @@ export function DataPixel({
 
       // Ease in-out cubic
       const eased =
-        progress < 0.5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2
+        progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2
 
       const point = edgePath.getPointAtLength((reverse ? 1 - eased : eased) * totalLength)
 
       // Get the viewport transform to convert SVG coordinates to screen coordinates
       const viewportTransform = viewport.style.transform
       const match = viewportTransform.match(
-        /translate\(([^,]+)px,\s*([^)]+)px\)\s*scale\(([^)]+)\)/,
+        /translate\(([^,]+)px,\s*([^)]+)px\)\s*scale\(([^)]+)\)/
       )
 
       let tx = 0
@@ -219,12 +217,7 @@ export function DataPixel({
         {dataLabel}
       </div>
       {hovered && position && (
-        <DataTooltip
-          step={step}
-          color={color}
-          x={position.x}
-          y={position.y}
-        />
+        <DataTooltip step={step} color={color} x={position.x} y={position.y} />
       )}
     </>
   )

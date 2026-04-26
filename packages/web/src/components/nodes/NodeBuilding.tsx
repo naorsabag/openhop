@@ -8,16 +8,16 @@ export interface BuildingProps {
 // Sprite per node type. Types not in this map fall back to the service sprite
 // at render time (see FlowNode.tsx).
 export const NODE_TYPE_SPRITE: Record<string, string> = {
-  actor:     '/sprites/user_node.svg',
-  endpoint:  '/sprites/endpoint_node.svg',
-  auth:      '/sprites/auth_node.svg',
-  database:  '/sprites/database_node.svg',
-  external:  '/sprites/external_node.svg',
-  cache:     '/sprites/cache_node.svg',
-  queue:     '/sprites/queue_node.svg',
-  service:   '/sprites/service_node.svg',
-  docker:    '/sprites/docker_node.svg',
-  k8s:       '/sprites/k8s_node.svg',
+  actor: '/sprites/user_node.svg',
+  endpoint: '/sprites/endpoint_node.svg',
+  auth: '/sprites/auth_node.svg',
+  database: '/sprites/database_node.svg',
+  external: '/sprites/external_node.svg',
+  cache: '/sprites/cache_node.svg',
+  queue: '/sprites/queue_node.svg',
+  service: '/sprites/service_node.svg',
+  docker: '/sprites/docker_node.svg',
+  k8s: '/sprites/k8s_node.svg',
   scheduler: '/sprites/scheduler_node.svg',
 }
 
@@ -47,7 +47,9 @@ export function SpriteBuilding({
   if (active) filters.push(`drop-shadow(0 0 6px ${color})`)
 
   return (
-    <div style={{ position: 'relative', width: SPRITE_SIZE, height: SPRITE_SIZE, overflow: 'visible' }}>
+    <div
+      style={{ position: 'relative', width: SPRITE_SIZE, height: SPRITE_SIZE, overflow: 'visible' }}
+    >
       <img
         src={src}
         alt=""

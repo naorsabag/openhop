@@ -5,16 +5,16 @@ import { NODE_TYPE_SPRITE, SpriteBuilding } from './NodeBuilding'
 
 /** Node type color config */
 const NODE_STYLES: Record<string, { bg: string; border: string }> = {
-  actor:      { bg: '#0a1230', border: '#4a9eff' },
-  endpoint:   { bg: '#0a1230', border: '#4a9eff' },
-  transform:  { bg: '#1a0a2a', border: '#b47aff' },
+  actor: { bg: '#0a1230', border: '#4a9eff' },
+  endpoint: { bg: '#0a1230', border: '#4a9eff' },
+  transform: { bg: '#1a0a2a', border: '#b47aff' },
   validation: { bg: '#1a1a08', border: '#ffcc4a' },
-  auth:       { bg: '#1a0808', border: '#ff6b6b' },
-  database:   { bg: '#081a08', border: '#4aff7a' },
-  external:   { bg: '#1a0c04', border: '#ff8a4a' },
-  cache:      { bg: '#081a1a', border: '#4affee' },
-  queue:      { bg: '#081618', border: '#4aeeff' },
-  service:    { bg: '#111111', border: '#888'    },
+  auth: { bg: '#1a0808', border: '#ff6b6b' },
+  database: { bg: '#081a08', border: '#4aff7a' },
+  external: { bg: '#1a0c04', border: '#ff8a4a' },
+  cache: { bg: '#081a1a', border: '#4affee' },
+  queue: { bg: '#081618', border: '#4aeeff' },
+  service: { bg: '#111111', border: '#888' },
 }
 
 const NODE_ART_SIZE = 72
@@ -45,10 +45,21 @@ type FlowNodeType = Node<FlowNodeData, 'flowNode'>
 
 export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
   const {
-    label, nodeType, color, icon, hasSubFlow,
-    isActiveSender, isActiveReceiver,
-    totalSteps, currentStep, outgoingStepCount, onNodeClick, onProgressBarClick,
-    onDrillDown, variantFilter, variantColor,
+    label,
+    nodeType,
+    color,
+    icon,
+    hasSubFlow,
+    isActiveSender,
+    isActiveReceiver,
+    totalSteps,
+    currentStep,
+    outgoingStepCount,
+    onNodeClick,
+    onProgressBarClick,
+    onDrillDown,
+    variantFilter,
+    variantColor,
   } = data
 
   // Use outgoing step count for progress bar (how many steps this node sends)
@@ -73,13 +84,30 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         <img
           src={url}
           alt={label}
-          style={{ width: 40, height: 40, position: 'absolute', top: -4, left: 'calc(100% - 14px)', imageRendering: 'auto' }}
-          onError={(e) => { (e.target as HTMLElement).style.display = 'none' }}
+          style={{
+            width: 40,
+            height: 40,
+            position: 'absolute',
+            top: -4,
+            left: 'calc(100% - 14px)',
+            imageRendering: 'auto',
+          }}
+          onError={(e) => {
+            ;(e.target as HTMLElement).style.display = 'none'
+          }}
         />
       )
     } else {
       customIconOverlay = (
-        <span style={{ position: 'absolute', top: -2, left: 'calc(100% - 14px)', fontSize: 36, lineHeight: 1 }}>
+        <span
+          style={{
+            position: 'absolute',
+            top: -2,
+            left: 'calc(100% - 14px)',
+            fontSize: 36,
+            lineHeight: 1,
+          }}
+        >
           {icon}
         </span>
       )
@@ -95,10 +123,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     if (!onProgressBarClick || totalSteps <= 1) return
     const rect = e.currentTarget.getBoundingClientRect()
     const x = e.clientX - rect.left
-    const targetStep = Math.min(
-      Math.floor((x / rect.width) * totalSteps),
-      totalSteps - 1,
-    )
+    const targetStep = Math.min(Math.floor((x / rect.width) * totalSteps), totalSteps - 1)
     onProgressBarClick(id, targetStep)
   }
 
@@ -159,9 +184,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
           position: 'relative',
           display: 'flex',
           justifyContent: 'center',
-          filter: isActive
-            ? `drop-shadow(0 0 8px ${borderColor})`
-            : undefined,
+          filter: isActive ? `drop-shadow(0 0 8px ${borderColor})` : undefined,
           transition: 'filter 0.2s ease',
         }}
       >
@@ -186,9 +209,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
               top: -4,
               // When a custom icon is present on the right, put the drill-down
               // affordance on the left side of the node so they don't collide.
-              ...(icon
-                ? { right: 'calc(100% - 14px)' }
-                : { left: 'calc(100% - 14px)' }),
+              ...(icon ? { right: 'calc(100% - 14px)' } : { left: 'calc(100% - 14px)' }),
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -255,4 +276,3 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     </div>
   )
 }
-

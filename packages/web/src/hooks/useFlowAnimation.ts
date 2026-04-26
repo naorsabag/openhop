@@ -31,8 +31,8 @@ export interface AnimationState {
   activeStep: FlowStep | null
   nodeProgress: Map<string, number>
   manualPixels: ManualPixel[]
-  activeNodes: Set<string>      // dynamically created nodes currently visible
-  destroyedNodes: Set<string>   // nodes that have been destroyed
+  activeNodes: Set<string> // dynamically created nodes currently visible
+  destroyedNodes: Set<string> // nodes that have been destroyed
 }
 
 export interface StepEdgeMapping {
@@ -53,7 +53,7 @@ export function useFlowAnimation(
   stepMappings: StepEdgeMapping[],
   playing: boolean,
   onCycleComplete?: () => void,
-  startFromStep?: number,
+  startFromStep?: number
 ) {
   const [state, setState] = useState<AnimationState>({
     playing: false,
@@ -180,11 +180,14 @@ export function useFlowAnimation(
         nodeProgress: new Map(nodeProgressRef.current),
       }))
 
-      timerRef.current = setTimeout(() => {
-        advanceStep()
-      }, (STEP_DURATION_BASE - PIXEL_DURATION_BASE) / getSpeed())
+      timerRef.current = setTimeout(
+        () => {
+          advanceStep()
+        },
+        (STEP_DURATION_BASE - PIXEL_DURATION_BASE) / getSpeed()
+      )
     }, PIXEL_DURATION_BASE / getSpeed())
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steps.length])
 
   useEffect(() => {

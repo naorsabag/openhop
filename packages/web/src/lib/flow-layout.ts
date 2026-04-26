@@ -102,7 +102,8 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
       for (const parallelStep of step.parallel) {
         pushOrdered(ordered, seenOrdered, parallelStep.from)
         if (parallelStep.to) {
-          for (const target of getTargets(parallelStep.to)) pushOrdered(ordered, seenOrdered, target)
+          for (const target of getTargets(parallelStep.to))
+            pushOrdered(ordered, seenOrdered, target)
         }
       }
     }
@@ -115,7 +116,10 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
   for (const node of flowNodes) pushOrdered(ordered, seenOrdered, node.id)
 
   const flowNodeMap = new Map(flowNodes.map((node) => [node.id, node]))
-  const dynamicNodeDefs = new Map<string, { label: string; type?: string; icon?: string; color?: string }>()
+  const dynamicNodeDefs = new Map<
+    string,
+    { label: string; type?: string; icon?: string; color?: string }
+  >()
   const dynamicNodeIds = new Set<string>()
   const nodeStepCount = new Map<string, number>()
 
@@ -241,7 +245,7 @@ function getBaseHandle(nodePos: Position, neighborPos: Position): HandleId {
 function pickHandleWithPeers(
   nodePos: Position,
   neighborPos: Position,
-  peers: Array<{ id: string; position: Position }>,
+  peers: Array<{ id: string; position: Position }>
 ): HandleId {
   const baseHandle = getBaseHandle(nodePos, neighborPos)
   const dx = neighborPos.x - nodePos.x
@@ -250,7 +254,9 @@ function pickHandleWithPeers(
   if (baseHandle === 'right' || baseHandle === 'left') {
     const sameSidePeers = peers.filter(({ position }) => {
       const peerDx = position.x - nodePos.x
-      return Math.sign(peerDx) === Math.sign(dx) && Math.abs(peerDx) >= Math.abs(position.y - nodePos.y)
+      return (
+        Math.sign(peerDx) === Math.sign(dx) && Math.abs(peerDx) >= Math.abs(position.y - nodePos.y)
+      )
     })
 
     if (sameSidePeers.length > 1) {
@@ -263,7 +269,9 @@ function pickHandleWithPeers(
 
   const sameSidePeers = peers.filter(({ position }) => {
     const peerDy = position.y - nodePos.y
-    return Math.sign(peerDy) === Math.sign(dy) && Math.abs(peerDy) > Math.abs(position.x - nodePos.x)
+    return (
+      Math.sign(peerDy) === Math.sign(dy) && Math.abs(peerDy) > Math.abs(position.x - nodePos.x)
+    )
   })
 
   if (sameSidePeers.length > 1) {
@@ -274,7 +282,10 @@ function pickHandleWithPeers(
   return baseHandle
 }
 
-function makePositionMap(positions: Map<string, Position>, orderedIds: string[]): Map<string, Position> {
+function makePositionMap(
+  positions: Map<string, Position>,
+  orderedIds: string[]
+): Map<string, Position> {
   const positionMap = new Map<string, Position>()
   for (const id of orderedIds) {
     positionMap.set(id, positions.get(id) ?? defaultPosition())
@@ -293,9 +304,7 @@ export function buildOrthogonalPath(points: RoutePoint[]): string | null {
   const deduped = dedupeRoutePoints(points)
   if (deduped.length < 2) return null
 
-  return deduped
-    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-    .join(' ')
+  return deduped.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
 }
 
 /**
@@ -304,7 +313,7 @@ export function buildOrthogonalPath(points: RoutePoint[]): string | null {
  */
 function extendRouteToNodeCenters(
   route: RoutePoint[],
-  assignment: EdgePortAssignment | undefined,
+  assignment: EdgePortAssignment | undefined
 ): RoutePoint[] {
   if (route.length < 2 || !assignment) return route
   const start = route[0]
@@ -322,10 +331,14 @@ function shiftInward(port: RoutePoint, side: HandleId): RoutePoint {
   const dx = NODE_WIDTH * INWARD_SHIFT_RATIO
   const dy = NODE_HEIGHT * INWARD_SHIFT_RATIO
   switch (side) {
-    case 'right':  return { x: port.x - dx, y: port.y }
-    case 'left':   return { x: port.x + dx, y: port.y }
-    case 'bottom': return { x: port.x, y: port.y - dy }
-    case 'top':    return { x: port.x, y: port.y + dy }
+    case 'right':
+      return { x: port.x - dx, y: port.y }
+    case 'left':
+      return { x: port.x + dx, y: port.y }
+    case 'bottom':
+      return { x: port.x, y: port.y - dy }
+    case 'top':
+      return { x: port.x, y: port.y + dy }
   }
 }
 
@@ -371,7 +384,7 @@ function targetHandleFromSegment(dx: number, dy: number): HandleId {
 export function inferPortAssignmentsFromRoutes(
   topology: FlowTopology,
   positions: Map<string, Position>,
-  routes: Map<string, RoutePoint[]>,
+  routes: Map<string, RoutePoint[]>
 ): Map<string, EdgePortAssignment> {
   const assignments = new Map<string, EdgePortAssignment>()
 
@@ -382,8 +395,12 @@ export function inferPortAssignmentsFromRoutes(
 
     if (!route || route.length < 2) {
       assignments.set(edge.id, {
-        source: pickHandleWithPeers(sourcePos, targetPos, [{ id: edge.target, position: targetPos }]),
-        target: pickHandleWithPeers(targetPos, sourcePos, [{ id: edge.source, position: sourcePos }]),
+        source: pickHandleWithPeers(sourcePos, targetPos, [
+          { id: edge.target, position: targetPos },
+        ]),
+        target: pickHandleWithPeers(targetPos, sourcePos, [
+          { id: edge.source, position: sourcePos },
+        ]),
       })
       continue
     }
@@ -398,8 +415,14 @@ export function inferPortAssignmentsFromRoutes(
     const dyEnd = last.y - penultimate.y
 
     assignments.set(edge.id, {
-      source: dxStart === 0 && dyStart === 0 ? nearestHandle(sourcePos, second) : getBaseHandle(first, second),
-      target: dxEnd === 0 && dyEnd === 0 ? nearestHandle(targetPos, penultimate) : targetHandleFromSegment(dxEnd, dyEnd),
+      source:
+        dxStart === 0 && dyStart === 0
+          ? nearestHandle(sourcePos, second)
+          : getBaseHandle(first, second),
+      target:
+        dxEnd === 0 && dyEnd === 0
+          ? nearestHandle(targetPos, penultimate)
+          : targetHandleFromSegment(dxEnd, dyEnd),
     })
   }
 
@@ -410,11 +433,14 @@ const MIN_SHARED_STUB_LENGTH = 120
 
 export function bundleSharedSourcePrefixes(
   routes: Map<string, RoutePoint[]>,
-  assignments: Map<string, EdgePortAssignment>,
+  assignments: Map<string, EdgePortAssignment>
 ): Map<string, RoutePoint[]> {
   const bundled = new Map<string, RoutePoint[]>()
   for (const [edgeId, route] of routes) {
-    bundled.set(edgeId, route.map((point) => ({ ...point })))
+    bundled.set(
+      edgeId,
+      route.map((point) => ({ ...point }))
+    )
   }
 
   const groups = new Map<string, Array<{ edgeId: string; route: RoutePoint[]; side: HandleId }>>()
@@ -434,17 +460,24 @@ export function bundleSharedSourcePrefixes(
     const side = group[0].side
     const start = group[0].route[0]
     if (side === 'right' || side === 'left') {
-      const naturalTrunkX = side === 'right'
-        ? Math.min(...group.map(({ route }) => route[1].x))
-        : Math.max(...group.map(({ route }) => route[1].x))
-      const nearestTargetX = side === 'right'
-        ? Math.min(...group.map(({ route }) => route[route.length - 1].x))
-        : Math.max(...group.map(({ route }) => route[route.length - 1].x))
-      const lo = side === 'right' ? start.x + MIN_SHARED_STUB_LENGTH : nearestTargetX + MIN_SHARED_STUB_LENGTH
-      const hi = side === 'right' ? nearestTargetX - MIN_SHARED_STUB_LENGTH : start.x - MIN_SHARED_STUB_LENGTH
-      const trunkX = lo > hi
-        ? (start.x + nearestTargetX) / 2
-        : Math.min(hi, Math.max(lo, naturalTrunkX))
+      const naturalTrunkX =
+        side === 'right'
+          ? Math.min(...group.map(({ route }) => route[1].x))
+          : Math.max(...group.map(({ route }) => route[1].x))
+      const nearestTargetX =
+        side === 'right'
+          ? Math.min(...group.map(({ route }) => route[route.length - 1].x))
+          : Math.max(...group.map(({ route }) => route[route.length - 1].x))
+      const lo =
+        side === 'right'
+          ? start.x + MIN_SHARED_STUB_LENGTH
+          : nearestTargetX + MIN_SHARED_STUB_LENGTH
+      const hi =
+        side === 'right'
+          ? nearestTargetX - MIN_SHARED_STUB_LENGTH
+          : start.x - MIN_SHARED_STUB_LENGTH
+      const trunkX =
+        lo > hi ? (start.x + nearestTargetX) / 2 : Math.min(hi, Math.max(lo, naturalTrunkX))
 
       for (const item of group) {
         const [edgeStart, ...rest] = item.route
@@ -456,17 +489,24 @@ export function bundleSharedSourcePrefixes(
     }
 
     if (side === 'bottom' || side === 'top') {
-      const naturalTrunkY = side === 'bottom'
-        ? Math.min(...group.map(({ route }) => route[1].y))
-        : Math.max(...group.map(({ route }) => route[1].y))
-      const nearestTargetY = side === 'bottom'
-        ? Math.min(...group.map(({ route }) => route[route.length - 1].y))
-        : Math.max(...group.map(({ route }) => route[route.length - 1].y))
-      const lo = side === 'bottom' ? start.y + MIN_SHARED_STUB_LENGTH : nearestTargetY + MIN_SHARED_STUB_LENGTH
-      const hi = side === 'bottom' ? nearestTargetY - MIN_SHARED_STUB_LENGTH : start.y - MIN_SHARED_STUB_LENGTH
-      const trunkY = lo > hi
-        ? (start.y + nearestTargetY) / 2
-        : Math.min(hi, Math.max(lo, naturalTrunkY))
+      const naturalTrunkY =
+        side === 'bottom'
+          ? Math.min(...group.map(({ route }) => route[1].y))
+          : Math.max(...group.map(({ route }) => route[1].y))
+      const nearestTargetY =
+        side === 'bottom'
+          ? Math.min(...group.map(({ route }) => route[route.length - 1].y))
+          : Math.max(...group.map(({ route }) => route[route.length - 1].y))
+      const lo =
+        side === 'bottom'
+          ? start.y + MIN_SHARED_STUB_LENGTH
+          : nearestTargetY + MIN_SHARED_STUB_LENGTH
+      const hi =
+        side === 'bottom'
+          ? nearestTargetY - MIN_SHARED_STUB_LENGTH
+          : start.y - MIN_SHARED_STUB_LENGTH
+      const trunkY =
+        lo > hi ? (start.y + nearestTargetY) / 2 : Math.min(hi, Math.max(lo, naturalTrunkY))
 
       for (const item of group) {
         const [edgeStart, ...rest] = item.route
@@ -482,7 +522,7 @@ export function bundleSharedSourcePrefixes(
 
 function bundleSharedTargetSuffixes(
   routes: Map<string, RoutePoint[]>,
-  assignments: Map<string, EdgePortAssignment>,
+  assignments: Map<string, EdgePortAssignment>
 ): Map<string, RoutePoint[]> {
   const groups = new Map<string, Array<{ edgeId: string; route: RoutePoint[]; side: HandleId }>>()
   for (const [edgeId, route] of routes) {
@@ -502,38 +542,44 @@ function bundleSharedTargetSuffixes(
     const side = group[0].side
     const end = group[0].route[group[0].route.length - 1]
     if (side === 'left' || side === 'right') {
-      const naturalApproachX = side === 'left'
-        ? Math.max(...bent.map(({ route }) => route[route.length - 2].x))
-        : Math.min(...bent.map(({ route }) => route[route.length - 2].x))
-      const desiredApproachX = side === 'left'
-        ? end.x - MIN_SHARED_STUB_LENGTH
-        : end.x + MIN_SHARED_STUB_LENGTH
-      const approachX = side === 'left'
-        ? Math.max(naturalApproachX, desiredApproachX)
-        : Math.min(naturalApproachX, desiredApproachX)
+      const naturalApproachX =
+        side === 'left'
+          ? Math.max(...bent.map(({ route }) => route[route.length - 2].x))
+          : Math.min(...bent.map(({ route }) => route[route.length - 2].x))
+      const desiredApproachX =
+        side === 'left' ? end.x - MIN_SHARED_STUB_LENGTH : end.x + MIN_SHARED_STUB_LENGTH
+      const approachX =
+        side === 'left'
+          ? Math.max(naturalApproachX, desiredApproachX)
+          : Math.min(naturalApproachX, desiredApproachX)
       for (const item of bent) {
         const route = item.route
         const tail = route[route.length - 1]
-        const shifted = route.slice(0, -1).map((p) => (p.x === naturalApproachX ? { x: approachX, y: p.y } : p))
+        const shifted = route
+          .slice(0, -1)
+          .map((p) => (p.x === naturalApproachX ? { x: approachX, y: p.y } : p))
         shifted[shifted.length - 1] = { x: approachX, y: tail.y }
         routes.set(item.edgeId, dedupeRoutePoints([...shifted, tail]))
       }
       continue
     }
     if (side === 'top' || side === 'bottom') {
-      const naturalApproachY = side === 'top'
-        ? Math.max(...bent.map(({ route }) => route[route.length - 2].y))
-        : Math.min(...bent.map(({ route }) => route[route.length - 2].y))
-      const desiredApproachY = side === 'top'
-        ? end.y - MIN_SHARED_STUB_LENGTH
-        : end.y + MIN_SHARED_STUB_LENGTH
-      const approachY = side === 'top'
-        ? Math.max(naturalApproachY, desiredApproachY)
-        : Math.min(naturalApproachY, desiredApproachY)
+      const naturalApproachY =
+        side === 'top'
+          ? Math.max(...bent.map(({ route }) => route[route.length - 2].y))
+          : Math.min(...bent.map(({ route }) => route[route.length - 2].y))
+      const desiredApproachY =
+        side === 'top' ? end.y - MIN_SHARED_STUB_LENGTH : end.y + MIN_SHARED_STUB_LENGTH
+      const approachY =
+        side === 'top'
+          ? Math.max(naturalApproachY, desiredApproachY)
+          : Math.min(naturalApproachY, desiredApproachY)
       for (const item of bent) {
         const route = item.route
         const tail = route[route.length - 1]
-        const shifted = route.slice(0, -1).map((p) => (p.y === naturalApproachY ? { x: p.x, y: approachY } : p))
+        const shifted = route
+          .slice(0, -1)
+          .map((p) => (p.y === naturalApproachY ? { x: p.x, y: approachY } : p))
         shifted[shifted.length - 1] = { x: tail.x, y: approachY }
         routes.set(item.edgeId, dedupeRoutePoints([...shifted, tail]))
       }
@@ -546,7 +592,7 @@ export function buildReactFlowGraph(
   topology: FlowTopology,
   positions: Map<string, Position>,
   routes?: Map<string, RoutePoint[]>,
-  portAssignments?: Map<string, EdgePortAssignment>,
+  portAssignments?: Map<string, EdgePortAssignment>
 ): { nodes: Node<FlowNodeData>[]; edges: Edge[] } {
   const positionMap = makePositionMap(positions, topology.orderedIds)
 
@@ -572,12 +618,12 @@ export function buildReactFlowGraph(
   // filter so the label, drop-shadow, and progress bar match the sprite's
   // visible hue.
   const VARIANT_CYCLE: string[] = [
-    '',                                                    // original (orange)
-    'hue-rotate(210deg)',                                  // purple
-    'hue-rotate(90deg)',                                   // green
-    'hue-rotate(140deg)',                                  // blue
-    'hue-rotate(320deg)',                                  // red
-    'hue-rotate(60deg) saturate(1.2)',                     // yellow (was grey)
+    '', // original (orange)
+    'hue-rotate(210deg)', // purple
+    'hue-rotate(90deg)', // green
+    'hue-rotate(140deg)', // blue
+    'hue-rotate(320deg)', // red
+    'hue-rotate(60deg) saturate(1.2)', // yellow (was grey)
   ]
   const VARIANT_ACCENT: string[] = [
     '#ff8a4a', // orange
@@ -599,9 +645,7 @@ export function buildReactFlowGraph(
     const snapshot = topology.nodeSnapshots.get(id)
     const position = positionMap.get(id) ?? defaultPosition()
     const nodeType = snapshot?.nodeType ?? 'service'
-    const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(nodeType)
-      ? FALLBACK_SPRITE_KEY
-      : nodeType
+    const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(nodeType) ? FALLBACK_SPRITE_KEY : nodeType
     const n = spriteVariantCounters.get(counterKey) ?? 0
     const variantFilter = VARIANT_CYCLE[n % VARIANT_CYCLE.length] || undefined
     const variantColor = VARIANT_ACCENT[n % VARIANT_ACCENT.length]
@@ -640,10 +684,12 @@ export function buildReactFlowGraph(
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      sourceHandle: portAssignments?.get(edge.id)?.source
-        ?? pickHandleWithPeers(sourcePos, targetPos, outgoingBySource.get(edge.source) ?? []),
-      targetHandle: portAssignments?.get(edge.id)?.target
-        ?? pickHandleWithPeers(targetPos, sourcePos, incomingByTarget.get(edge.target) ?? []),
+      sourceHandle:
+        portAssignments?.get(edge.id)?.source ??
+        pickHandleWithPeers(sourcePos, targetPos, outgoingBySource.get(edge.source) ?? []),
+      targetHandle:
+        portAssignments?.get(edge.id)?.target ??
+        pickHandleWithPeers(targetPos, sourcePos, incomingByTarget.get(edge.target) ?? []),
       data: {
         active: false,
         ...(elkPath ? { elkPath } : null),
@@ -753,8 +799,16 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
     }),
     edges: topology.displayEdges.map((edge) => ({
       id: edge.id,
-      sources: [portAssignments ? `${edge.source}:${portAssignments.get(edge.id)?.source ?? 'right'}` : edge.source],
-      targets: [portAssignments ? `${edge.target}:${portAssignments.get(edge.id)?.target ?? 'left'}` : edge.target],
+      sources: [
+        portAssignments
+          ? `${edge.source}:${portAssignments.get(edge.id)?.source ?? 'right'}`
+          : edge.source,
+      ],
+      targets: [
+        portAssignments
+          ? `${edge.target}:${portAssignments.get(edge.id)?.target ?? 'left'}`
+          : edge.target,
+      ],
     })),
   }
 }
@@ -786,8 +840,14 @@ function extractElkLayout(graph: Awaited<ReturnType<typeof elk.layout>>) {
 
 export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayoutResult> {
   const firstPass = extractElkLayout(await elk.layout(buildElkGraph(topology)))
-  const inferredAssignments = inferPortAssignmentsFromRoutes(topology, firstPass.positions, firstPass.routes)
-  const secondPass = extractElkLayout(await elk.layout(buildElkGraph(topology, inferredAssignments)))
+  const inferredAssignments = inferPortAssignmentsFromRoutes(
+    topology,
+    firstPass.positions,
+    firstPass.routes
+  )
+  const secondPass = extractElkLayout(
+    await elk.layout(buildElkGraph(topology, inferredAssignments))
+  )
   const bundledRoutes = bundleSharedSourcePrefixes(secondPass.routes, inferredAssignments)
 
   return {

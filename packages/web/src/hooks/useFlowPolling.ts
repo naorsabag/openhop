@@ -18,8 +18,11 @@ export function useFlowList() {
 
   useEffect(() => {
     fetch(`${API_BASE}/api/flows`)
-      .then(r => r.json())
-      .then(data => { setFlows(data); setLoading(false) })
+      .then((r) => r.json())
+      .then((data) => {
+        setFlows(data)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [])
 
@@ -33,11 +36,14 @@ export function useFlowData(flowId: string | null) {
 
   // Fetch the full flow when flowId changes
   useEffect(() => {
-    if (!flowId) { setFlow(null); return }
+    if (!flowId) {
+      setFlow(null)
+      return
+    }
     setLoading(true)
     fetch(`${API_BASE}/api/flows/${flowId}`)
-      .then(r => r.json())
-      .then(data => {
+      .then((r) => r.json())
+      .then((data) => {
         setFlow({ meta: data.meta, flow: data.flow }) // StoredFlow has { id, meta, flow, version, ... }
         versionRef.current = data.version
         setLoading(false)

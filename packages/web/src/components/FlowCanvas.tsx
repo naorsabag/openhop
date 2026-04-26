@@ -42,7 +42,16 @@ interface FlowCanvasProps {
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
-function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleComplete, startFromStep, onStepChange, onInspectStep }: FlowCanvasProps) {
+function FlowCanvasInner({
+  flow,
+  playing,
+  onDrillDown,
+  onDrilldownStep,
+  onCycleComplete,
+  startFromStep,
+  onStepChange,
+  onInspectStep,
+}: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const flowSteps = useMemo(() => flow.flow.steps ?? [], [flow.flow.steps])
   const [pinnedEdge, setPinnedEdge] = useState<{
@@ -59,8 +68,8 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   // on-mount run lands on the fallback; this effect catches subsequent updates
   // (and drill-down flow swaps).
   const layoutKey = useMemo(
-    () => baseNodes.map(n => `${n.id}@${n.position.x},${n.position.y}`).join('|'),
-    [baseNodes],
+    () => baseNodes.map((n) => `${n.id}@${n.position.x},${n.position.y}`).join('|'),
+    [baseNodes]
   )
   useEffect(() => {
     if (baseNodes.length === 0) return
@@ -70,8 +79,8 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
       const paneW = pane.offsetWidth
       const paneH = pane.offsetHeight
       if (paneW === 0 || paneH === 0) return
-      const xs = baseNodes.map(n => n.position.x)
-      const ys = baseNodes.map(n => n.position.y)
+      const xs = baseNodes.map((n) => n.position.x)
+      const ys = baseNodes.map((n) => n.position.y)
       const w = baseNodes[0].width ?? 108
       const h = baseNodes[0].height ?? 160
       const minX = Math.min(...xs)
@@ -90,7 +99,10 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     }
     const t1 = setTimeout(fit, 50)
     const t2 = setTimeout(fit, 400)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
   }, [layoutKey, reactFlow]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pairEdgeMap = useMemo(() => {
@@ -101,18 +113,21 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     return map
   }, [baseEdges])
 
-  const resolveEdgeFlow = useCallback((fromId: string, toId: string, step: FlowStep): EdgeFlowRef | null => {
-    const edge = pairEdgeMap.get(pairKey(fromId, toId))
-    if (!edge) return null
+  const resolveEdgeFlow = useCallback(
+    (fromId: string, toId: string, step: FlowStep): EdgeFlowRef | null => {
+      const edge = pairEdgeMap.get(pairKey(fromId, toId))
+      if (!edge) return null
 
-    return {
-      edgeId: edge.id,
-      fromId,
-      toId,
-      reverse: edge.source !== fromId || edge.target !== toId,
-      step,
-    }
-  }, [pairEdgeMap])
+      return {
+        edgeId: edge.id,
+        fromId,
+        toId,
+        reverse: edge.source !== fromId || edge.target !== toId,
+        step,
+      }
+    },
+    [pairEdgeMap]
+  )
 
   const stepMappings = useMemo<StepEdgeMapping[]>(() => {
     return flowSteps.map((step, stepIndex) => {
@@ -139,7 +154,8 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         if (from) fromIds.push(from)
         // `create` steps travel from the creator to the newly-created node.
         // Treat `create: <id>` as a single target so a pixel fires.
-        const createTarget = 'create' in step && typeof step.create === 'string' ? step.create : undefined
+        const createTarget =
+          'create' in step && typeof step.create === 'string' ? step.create : undefined
         const targets: string[] = [
           ...('to' in step ? getTargets(step.to) : []),
           ...(createTarget ? [createTarget] : []),
@@ -176,34 +192,37 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     return map
   }, [stepMappings])
 
-  const handlePinPopup = useCallback((step: FlowStep, position: { x: number; y: number }, edgeId?: string) => {
-    const id = edgeId ?? '__pixel__'
-    if (pinnedEdge?.edgeId === id) {
-      setPinnedEdge(null)
-      return
-    }
-    // If the step has array data, create virtual steps (one per data object) for pagination
-    let edgeSteps: FlowStep[]
-    if (Array.isArray(step.data)) {
-      edgeSteps = step.data.map(d => ({ ...step, data: d }))
-    } else {
-      edgeSteps = [step]
-    }
-    if (id !== '__pixel__') {
-      const relatedSteps = edgeStepsById.get(id) ?? []
-      for (const relatedStep of relatedSteps) {
-        if (relatedStep === step) continue
-        if (Array.isArray(relatedStep.data)) {
-          for (const d of relatedStep.data) {
-            edgeSteps.push({ ...relatedStep, data: d })
+  const handlePinPopup = useCallback(
+    (step: FlowStep, position: { x: number; y: number }, edgeId?: string) => {
+      const id = edgeId ?? '__pixel__'
+      if (pinnedEdge?.edgeId === id) {
+        setPinnedEdge(null)
+        return
+      }
+      // If the step has array data, create virtual steps (one per data object) for pagination
+      let edgeSteps: FlowStep[]
+      if (Array.isArray(step.data)) {
+        edgeSteps = step.data.map((d) => ({ ...step, data: d }))
+      } else {
+        edgeSteps = [step]
+      }
+      if (id !== '__pixel__') {
+        const relatedSteps = edgeStepsById.get(id) ?? []
+        for (const relatedStep of relatedSteps) {
+          if (relatedStep === step) continue
+          if (Array.isArray(relatedStep.data)) {
+            for (const d of relatedStep.data) {
+              edgeSteps.push({ ...relatedStep, data: d })
+            }
+          } else {
+            edgeSteps.push(relatedStep)
           }
-        } else {
-          edgeSteps.push(relatedStep)
         }
       }
-    }
-    setPinnedEdge({ edgeId: id, steps: edgeSteps, position })
-  }, [pinnedEdge, edgeStepsById])
+      setPinnedEdge({ edgeId: id, steps: edgeSteps, position })
+    },
+    [pinnedEdge, edgeStepsById]
+  )
 
   // Build a map from node id to node type for pixel coloring
   const nodeTypeMap = useMemo(() => {
@@ -215,19 +234,28 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   }, [flow])
 
   const {
-    fireManualPixel, removeManualPixel, setNodeStep, activateNode, deactivateNode,
-    manualPixels, nodeProgress,
-    activeNodes, destroyedNodes,
+    fireManualPixel,
+    removeManualPixel,
+    setNodeStep,
+    activateNode,
+    deactivateNode,
+    manualPixels,
+    nodeProgress,
+    activeNodes,
+    destroyedNodes,
     ...animState
   } = useFlowAnimation(flowSteps, stepMappings, playing, onCycleComplete, startFromStep)
 
   // Helper: check if a node is currently alive (static nodes always are, dynamic nodes need to be in activeNodes and not destroyed)
-  const isNodeAlive = useCallback((nodeId: string) => {
-    const node = baseNodes.find(n => n.id === nodeId)
-    const isDynamic = node?.data?.isDynamic ?? false
-    if (!isDynamic) return true
-    return activeNodes.has(nodeId) && !destroyedNodes.has(nodeId)
-  }, [baseNodes, activeNodes, destroyedNodes])
+  const isNodeAlive = useCallback(
+    (nodeId: string) => {
+      const node = baseNodes.find((n) => n.id === nodeId)
+      const isDynamic = node?.data?.isDynamic ?? false
+      if (!isDynamic) return true
+      return activeNodes.has(nodeId) && !destroyedNodes.has(nodeId)
+    },
+    [baseNodes, activeNodes, destroyedNodes]
+  )
 
   // Report step changes to parent
   const onStepChangeRef = useRef(onStepChange)
@@ -241,7 +269,10 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
   // Build a map: nodeId -> list of outgoing logical steps
   // A broadcast (to: [db, cache]) is ONE logical step with multiple edge flows.
   const nodeOutgoingSteps = useMemo(() => {
-    const map = new Map<string, Array<{ stepIndex: number; step: FlowStep; edgeFlows: EdgeFlowRef[] }>>()
+    const map = new Map<
+      string,
+      Array<{ stepIndex: number; step: FlowStep; edgeFlows: EdgeFlowRef[] }>
+    >()
     const steps = flowSteps
     for (let si = 0; si < steps.length; si++) {
       const step = steps[si]
@@ -314,7 +345,11 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     const step = animState.activeStep
     if (!step) return
     if (!('drilldown' in step) || !step.drilldown) return
-    const targetId = Array.isArray(step.to) ? step.to[0] : typeof step.to === 'string' ? step.to : null
+    const targetId = Array.isArray(step.to)
+      ? step.to[0]
+      : typeof step.to === 'string'
+        ? step.to
+        : null
     if (!targetId) return
     if (lastDrilldownStepRef.current === animState.currentStepIndex) return
     lastDrilldownStepRef.current = animState.currentStepIndex
@@ -324,78 +359,103 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
     // Capture the current step index NOW before the animation advances
     const capturedStepIndex = animState.currentStepIndex
 
-    drilldownTimerRef.current = setTimeout(() => {
-      // Pass both the target node and the step to resume from
-      onDrilldownStep(targetId, capturedStepIndex)
-      drilldownTimerRef.current = null
-    }, 1500 / ((window as any).__flowSpeed ?? 1))
+    drilldownTimerRef.current = setTimeout(
+      () => {
+        // Pass both the target node and the step to resume from
+        onDrilldownStep(targetId, capturedStepIndex)
+        drilldownTimerRef.current = null
+      },
+      1500 / ((window as any).__flowSpeed ?? 1)
+    )
   }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep])
 
-  const handleNodeClick = useCallback((nodeId: string) => {
-    const outgoing = nodeOutgoingSteps.get(nodeId)
-    if (!outgoing || outgoing.length === 0) return
+  const handleNodeClick = useCallback(
+    (nodeId: string) => {
+      const outgoing = nodeOutgoingSteps.get(nodeId)
+      if (!outgoing || outgoing.length === 0) return
 
-    let currentProg = nodeProgress.get(nodeId) ?? 0
+      let currentProg = nodeProgress.get(nodeId) ?? 0
 
-    // If past the last step, reset progress and fire first step
-    if (currentProg >= outgoing.length) {
-      setNodeStep(nodeId, 0)
-      currentProg = 0
-    }
+      // If past the last step, reset progress and fire first step
+      if (currentProg >= outgoing.length) {
+        setNodeStep(nodeId, 0)
+        currentProg = 0
+      }
 
-    // Block only if THIS EXACT logical step is already animating
-    const stepKey = `${nodeId}:${currentProg}`
-    if (activePixelSteps.has(stepKey)) return
+      // Block only if THIS EXACT logical step is already animating
+      const stepKey = `${nodeId}:${currentProg}`
+      if (activePixelSteps.has(stepKey)) return
 
-    const entry = outgoing[currentProg]
-    const sourceInfo = nodeTypeMap.get(nodeId) ?? { type: 'service' }
+      const entry = outgoing[currentProg]
+      const sourceInfo = nodeTypeMap.get(nodeId) ?? { type: 'service' }
 
-    onInspectStep?.(entry.step)
+      onInspectStep?.(entry.step)
 
-    // Increment progress once for this logical step
-    setNodeStep(nodeId, currentProg + 1)
+      // Increment progress once for this logical step
+      setNodeStep(nodeId, currentProg + 1)
 
-    // If this is a create step, activate the new node
-    if (entry.step.create) {
-      activateNode(entry.step.create)
-    }
+      // If this is a create step, activate the new node
+      if (entry.step.create) {
+        activateNode(entry.step.create)
+      }
 
-    // If this is a destroy step, deactivate the node
-    if (entry.step.destroy) {
-      deactivateNode(entry.step.destroy)
-      return // no pixel to fire
-    }
+      // If this is a destroy step, deactivate the node
+      if (entry.step.destroy) {
+        deactivateNode(entry.step.destroy)
+        return // no pixel to fire
+      }
 
-    // Fire a pixel for EACH edge flow in this logical step (broadcast = multiple edges)
-    for (const edgeFlow of entry.edgeFlows) {
-      fireManualPixel({
-        edgeId: edgeFlow.edgeId,
-        reverse: edgeFlow.reverse,
-        step: edgeFlow.step,
-        sourceNodeId: nodeId,
-        sourceStepIndex: currentProg,
-        sourceNodeType: sourceInfo.type,
-        sourceNodeColor: sourceInfo.color,
-      })
-    }
-  }, [nodeOutgoingSteps, nodeProgress, nodeTypeMap, fireManualPixel, setNodeStep, activePixelSteps, activateNode, deactivateNode, onInspectStep])
+      // Fire a pixel for EACH edge flow in this logical step (broadcast = multiple edges)
+      for (const edgeFlow of entry.edgeFlows) {
+        fireManualPixel({
+          edgeId: edgeFlow.edgeId,
+          reverse: edgeFlow.reverse,
+          step: edgeFlow.step,
+          sourceNodeId: nodeId,
+          sourceStepIndex: currentProg,
+          sourceNodeType: sourceInfo.type,
+          sourceNodeColor: sourceInfo.color,
+        })
+      }
+    },
+    [
+      nodeOutgoingSteps,
+      nodeProgress,
+      nodeTypeMap,
+      fireManualPixel,
+      setNodeStep,
+      activePixelSteps,
+      activateNode,
+      deactivateNode,
+      onInspectStep,
+    ]
+  )
 
-  const handleProgressBarClick = useCallback((nodeId: string, targetStep: number) => {
-    setNodeStep(nodeId, targetStep)
-  }, [setNodeStep])
+  const handleProgressBarClick = useCallback(
+    (nodeId: string, targetStep: number) => {
+      setNodeStep(nodeId, targetStep)
+    },
+    [setNodeStep]
+  )
 
   // Wrap onDrillDown so clicking the drill-down glyph first zooms into the
   // selected node, then hands off to the parent which swaps in the sub-flow.
-  const handleDrillDownWithZoom = useCallback((nodeId: string) => {
-    const node = baseNodes.find(n => n.id === nodeId)
-    if (!node) { onDrillDown?.(nodeId); return }
-    const w = node.width ?? 108
-    const h = node.height ?? 160
-    const cx = node.position.x + w / 2
-    const cy = node.position.y + h / 2
-    reactFlow.setCenter(cx, cy, { zoom: 2.5, duration: 450 })
-    window.setTimeout(() => onDrillDown?.(nodeId), 470)
-  }, [baseNodes, onDrillDown, reactFlow])
+  const handleDrillDownWithZoom = useCallback(
+    (nodeId: string) => {
+      const node = baseNodes.find((n) => n.id === nodeId)
+      if (!node) {
+        onDrillDown?.(nodeId)
+        return
+      }
+      const w = node.width ?? 108
+      const h = node.height ?? 160
+      const cx = node.position.x + w / 2
+      const cy = node.position.y + h / 2
+      reactFlow.setCenter(cx, cy, { zoom: 2.5, duration: 450 })
+      window.setTimeout(() => onDrillDown?.(nodeId), 470)
+    },
+    [baseNodes, onDrillDown, reactFlow]
+  )
 
   // Apply active sender/receiver flags to nodes, and visibility for dynamic nodes
   const nodes: Node<FlowNodeData>[] = useMemo(() => {
@@ -423,32 +483,42 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
         },
       }
     })
-  }, [baseNodes, animState.activeFromIds, animState.activeToIds, nodeProgress, activeNodes, destroyedNodes, handleNodeClick, handleProgressBarClick, handleDrillDownWithZoom])
+  }, [
+    baseNodes,
+    animState.activeFromIds,
+    animState.activeToIds,
+    nodeProgress,
+    activeNodes,
+    destroyedNodes,
+    handleNodeClick,
+    handleProgressBarClick,
+    handleDrillDownWithZoom,
+  ])
 
   const edges: Edge[] = useMemo(() => {
     return baseEdges
       .filter((edge) => isNodeAlive(edge.source) && isNodeAlive(edge.target))
       .map((edge) => {
-      const sourceAlive = isNodeAlive(edge.source)
-      const targetAlive = isNodeAlive(edge.target)
-      const bothAlive = sourceAlive && targetAlive
-      const isActive = animState.activeEdgeIds.has(edge.id)
+        const sourceAlive = isNodeAlive(edge.source)
+        const targetAlive = isNodeAlive(edge.target)
+        const bothAlive = sourceAlive && targetAlive
+        const isActive = animState.activeEdgeIds.has(edge.id)
 
-      return {
-        ...edge,
-        interactionWidth: undefined,
-        style: {
-          ...edge.style,
-          opacity: 1,
-          pointerEvents: 'auto' as any,
-          transition: 'opacity 0.4s ease',
-        },
-        data: {
-          ...edge.data,
-          active: isActive,
-          visible: bothAlive,
-        },
-      }
+        return {
+          ...edge,
+          interactionWidth: undefined,
+          style: {
+            ...edge.style,
+            opacity: 1,
+            pointerEvents: 'auto' as any,
+            transition: 'opacity 0.4s ease',
+          },
+          data: {
+            ...edge.data,
+            active: isActive,
+            visible: bothAlive,
+          },
+        }
       })
   }, [baseEdges, animState.activeEdgeIds, isNodeAlive])
 
@@ -472,7 +542,12 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
             {/* outermost ring — widest dilation drawn first */}
             <feMorphology in="SourceAlpha" operator="dilate" radius="6" result="outermostMask" />
             <feFlood floodColor="#5AFEE6" result="outermostColor" />
-            <feComposite in="outermostColor" in2="outermostMask" operator="in" result="outermostRing" />
+            <feComposite
+              in="outermostColor"
+              in2="outermostMask"
+              operator="in"
+              result="outermostRing"
+            />
             {/* middle ring */}
             <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="middleMask" />
             <feFlood floodColor="#62827D" result="middleColor" />
@@ -584,7 +659,7 @@ function FlowCanvasInner({ flow, playing, onDrillDown, onDrilldownStep, onCycleC
 export function FlowCanvas(props: FlowCanvasProps) {
   return (
     <ReactFlowProvider>
-      <FlowCanvasInner key={JSON.stringify(props.flow.flow.nodes.map(n => n.id))} {...props} />
+      <FlowCanvasInner key={JSON.stringify(props.flow.flow.nodes.map((n) => n.id))} {...props} />
     </ReactFlowProvider>
   )
 }

@@ -15,27 +15,39 @@ interface DataInspectionPanelProps {
 const MIN_SIZE = 200
 const MAX_SIZE = 800
 
-export function DataInspectionPanel({ step, side, size, onSideChange, onSizeChange, onClose }: DataInspectionPanelProps) {
+export function DataInspectionPanel({
+  step,
+  side,
+  size,
+  onSideChange,
+  onSizeChange,
+  onClose,
+}: DataInspectionPanelProps) {
   const dragState = useRef<{ startPos: number; startSize: number } | null>(null)
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault()
-    dragState.current = {
-      startPos: side === 'right' ? e.clientX : e.clientY,
-      startSize: size,
-    }
-    ;(e.target as Element).setPointerCapture(e.pointerId)
-  }, [side, size])
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault()
+      dragState.current = {
+        startPos: side === 'right' ? e.clientX : e.clientY,
+        startSize: size,
+      }
+      ;(e.target as Element).setPointerCapture(e.pointerId)
+    },
+    [side, size]
+  )
 
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragState.current) return
-    const pos = side === 'right' ? e.clientX : e.clientY
-    const delta = pos - dragState.current.startPos
-    const next = side === 'right'
-      ? dragState.current.startSize - delta
-      : dragState.current.startSize - delta
-    onSizeChange(Math.min(MAX_SIZE, Math.max(MIN_SIZE, next)))
-  }, [side, onSizeChange])
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragState.current) return
+      const pos = side === 'right' ? e.clientX : e.clientY
+      const delta = pos - dragState.current.startPos
+      const next =
+        side === 'right' ? dragState.current.startSize - delta : dragState.current.startSize - delta
+      onSizeChange(Math.min(MAX_SIZE, Math.max(MIN_SIZE, next)))
+    },
+    [side, onSizeChange]
+  )
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     dragState.current = null
@@ -61,7 +73,11 @@ export function DataInspectionPanel({ step, side, size, onSideChange, onSizeChan
   }
 
   return (
-    <aside data-testid="data-inspection-panel" aria-label="Data inspection panel" style={containerStyle}>
+    <aside
+      data-testid="data-inspection-panel"
+      aria-label="Data inspection panel"
+      style={containerStyle}
+    >
       <div
         role="separator"
         aria-orientation={side === 'right' ? 'vertical' : 'horizontal'}
@@ -78,7 +94,15 @@ export function DataInspectionPanel({ step, side, size, onSideChange, onSizeChan
   )
 }
 
-function Header({ side, onSideChange, onClose }: { side: DockSide; onSideChange: (s: DockSide) => void; onClose: () => void }) {
+function Header({
+  side,
+  onSideChange,
+  onClose,
+}: {
+  side: DockSide
+  onSideChange: (s: DockSide) => void
+  onClose: () => void
+}) {
   const nextSide: DockSide = side === 'right' ? 'bottom' : 'right'
   return (
     <div
@@ -96,10 +120,7 @@ function Header({ side, onSideChange, onClose }: { side: DockSide; onSideChange:
     >
       <span style={{ color: '#4a9eff', letterSpacing: 0.5 }}>INSPECT</span>
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-        <IconButton
-          label={`Dock to ${nextSide}`}
-          onClick={() => onSideChange(nextSide)}
-        >
+        <IconButton label={`Dock to ${nextSide}`} onClick={() => onSideChange(nextSide)}>
           <DockIcon side={side} />
         </IconButton>
         <IconButton label="Close inspector" onClick={onClose}>
@@ -110,7 +131,15 @@ function Header({ side, onSideChange, onClose }: { side: DockSide; onSideChange:
   )
 }
 
-function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+function IconButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  children: React.ReactNode
+}) {
   return (
     <button
       onClick={onClick}
@@ -150,7 +179,12 @@ function DockIcon({ side }: { side: DockSide }) {
 function CloseIcon() {
   return (
     <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden="true">
-      <path d="M3 3 L11 11 M11 3 L3 11" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
+      <path
+        d="M3 3 L11 11 M11 3 L3 11"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+      />
     </svg>
   )
 }
@@ -184,7 +218,14 @@ function normalizeData(raw: FlowStep['data']): FlowData[] {
 function StepBody({ step }: { step: FlowStep | null }) {
   if (!step) {
     return (
-      <div style={{ padding: 12, color: '#888', fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 14 }}>
+      <div
+        style={{
+          padding: 12,
+          color: '#888',
+          fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+          fontSize: 14,
+        }}
+      >
         No step selected. Play the flow or click a step to inspect its data.
       </div>
     )
@@ -193,18 +234,30 @@ function StepBody({ step }: { step: FlowStep | null }) {
   const flows = expandStep(step)
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '10px 12px', fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 14, color: '#e0e0e0' }}>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        overflow: 'auto',
+        padding: '10px 12px',
+        fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+        fontSize: 14,
+        color: '#e0e0e0',
+      }}
+    >
       {flows.map((f, i) => (
         <section
           key={`${f.from}-${f.to}-${i}`}
-          style={{ marginTop: i > 0 ? 12 : 0, paddingTop: i > 0 ? 10 : 0, borderTop: i > 0 ? '1px solid #2a2a4a' : undefined }}
+          style={{
+            marginTop: i > 0 ? 12 : 0,
+            paddingTop: i > 0 ? 10 : 0,
+            borderTop: i > 0 ? '1px solid #2a2a4a' : undefined,
+          }}
         >
           <div style={{ color: '#4a9eff', marginBottom: 6 }}>
             {f.from} &rarr; {f.to}
           </div>
-          {f.data.length === 0 && (
-            <div style={{ color: '#888' }}>No data.</div>
-          )}
+          {f.data.length === 0 && <div style={{ color: '#888' }}>No data.</div>}
           {f.data.map((d, di) => (
             <DataBlock key={di} data={d} separated={di > 0} />
           ))}
@@ -216,7 +269,13 @@ function StepBody({ step }: { step: FlowStep | null }) {
 
 function DataBlock({ data, separated }: { data: FlowData; separated: boolean }) {
   return (
-    <div style={{ marginTop: separated ? 10 : 0, paddingTop: separated ? 8 : 0, borderTop: separated ? '1px dashed #2a2a4a' : undefined }}>
+    <div
+      style={{
+        marginTop: separated ? 10 : 0,
+        paddingTop: separated ? 8 : 0,
+        borderTop: separated ? '1px dashed #2a2a4a' : undefined,
+      }}
+    >
       {data.label && <div style={{ marginBottom: data.fields?.length ? 6 : 0 }}>{data.label}</div>}
       {data.fields && data.fields.length > 0 && (
         <div style={{ fontSize: 13 }}>
@@ -224,14 +283,26 @@ function DataBlock({ data, separated }: { data: FlowData; separated: boolean }) 
             let color = '#bbb'
             let prefix = '  '
             let decoration: React.CSSProperties['textDecoration'] = 'none'
-            if (field.added) { color = '#4aff7a'; prefix = '+ ' }
-            else if (field.changed) { color = '#ffcc4a'; prefix = '~ ' }
-            else if (field.removed) { color = '#ff4a4a'; prefix = '- '; decoration = 'line-through' }
+            if (field.added) {
+              color = '#4aff7a'
+              prefix = '+ '
+            } else if (field.changed) {
+              color = '#ffcc4a'
+              prefix = '~ '
+            } else if (field.removed) {
+              color = '#ff4a4a'
+              prefix = '- '
+              decoration = 'line-through'
+            }
             return (
               <div key={field.name} style={{ color, textDecoration: decoration }}>
                 <span style={{ opacity: 0.7 }}>{prefix}</span>
                 {field.name}
-                {field.type ? <span style={{ opacity: 0.6, marginLeft: 8 }}>{field.type}</span> : ''}
+                {field.type ? (
+                  <span style={{ opacity: 0.6, marginLeft: 8 }}>{field.type}</span>
+                ) : (
+                  ''
+                )}
               </div>
             )
           })}

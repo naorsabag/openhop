@@ -18,7 +18,7 @@ interface StoredFlowFile {
   version: number
   createdAt: string
   updatedAt: string
-  root: Root  // the full Root object on disk
+  root: Root // the full Root object on disk
 }
 
 export class FlowStore {
@@ -75,7 +75,9 @@ export class FlowStore {
         const content = await readFile(join(this.dir, f), 'utf-8')
         const file = YAML.parse(content) as StoredFlowFile
         results.push(this.toStoredFlow(file))
-      } catch { /* skip corrupt */ }
+      } catch {
+        /* skip corrupt */
+      }
     }
     return results
   }

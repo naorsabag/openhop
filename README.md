@@ -57,10 +57,10 @@ openhop push examples/auth-flow.yaml
 
 ## Install
 
-| Scenario | Command |
-|---|---|
+| Scenario                     | Command                                                   |
+| ---------------------------- | --------------------------------------------------------- |
 | **Try locally (no install)** | Clone this repo, `npm install`, `npm run dev`. See above. |
-| **Use the CLI globally** | After `npm install`, `cd packages/cli && npm link` |
+| **Use the CLI globally**     | After `npm install`, `cd packages/cli && npm link`        |
 
 > npm, plugin-registry, and `npx openhop init` install paths are in progress — track [#18–#37](https://github.com/naorsabag/OpenHop/issues) for launch-readiness.
 

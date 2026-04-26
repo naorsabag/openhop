@@ -23,7 +23,7 @@ npm run dev          # API + web UI on :8788
 
 - Run `npm run build` — the CLI must bundle cleanly.
 - Keep changes scoped. One logical change per PR.
-- Write a clear commit message describing the *why*, not the *what*.
+- Write a clear commit message describing the _why_, not the _what_.
 - If the change is user-facing, update `README.md` and add an entry under `Unreleased` in `CHANGELOG.md`.
 
 ## Reporting bugs

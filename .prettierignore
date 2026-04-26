@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.lock
+package-lock.json
+.git/
+docs/svgs/
+packages/web/public/sprites/

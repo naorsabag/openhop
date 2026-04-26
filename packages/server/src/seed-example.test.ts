@@ -15,9 +15,7 @@ test('syncExampleOrderFlow updates an existing example flow from examples/order-
       title: 'Old Example',
     },
     flow: {
-      nodes: [
-        { id: 'old-node', label: 'Old Node' },
-      ],
+      nodes: [{ id: 'old-node', label: 'Old Node' }],
       steps: [],
     },
   })

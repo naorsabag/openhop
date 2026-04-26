@@ -10,14 +10,14 @@ export default defineConfig({
     port: 8788,
     proxy: {
       '/api': 'http://localhost:8787',
-      '/health': 'http://localhost:8787'
-    }
+      '/health': 'http://localhost:8787',
+    },
   },
   build: {
     // elkjs ships an optional `web-worker` import for node usage; not needed
     // in the browser bundle, so we mark it external to keep rolldown happy.
     rollupOptions: {
-      external: ['web-worker']
-    }
-  }
+      external: ['web-worker'],
+    },
+  },
 })

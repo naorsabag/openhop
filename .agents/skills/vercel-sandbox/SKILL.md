@@ -18,37 +18,53 @@ The sandbox VM needs system dependencies for Chromium plus agent-browser itself.
 ## Core Pattern
 
 ```ts
-import { Sandbox } from "@vercel/sandbox";
+import { Sandbox } from "@vercel/sandbox"
 
 // System libraries required by Chromium on the sandbox VM (Amazon Linux / dnf)
 const CHROMIUM_SYSTEM_DEPS = [
-  "nss", "nspr", "libxkbcommon", "atk", "at-spi2-atk", "at-spi2-core",
-  "libXcomposite", "libXdamage", "libXrandr", "libXfixes", "libXcursor",
-  "libXi", "libXtst", "libXScrnSaver", "libXext", "mesa-libgbm", "libdrm",
-  "mesa-libGL", "mesa-libEGL", "cups-libs", "alsa-lib", "pango", "cairo",
-  "gtk3", "dbus-libs",
-];
+  "nss",
+  "nspr",
+  "libxkbcommon",
+  "atk",
+  "at-spi2-atk",
+  "at-spi2-core",
+  "libXcomposite",
+  "libXdamage",
+  "libXrandr",
+  "libXfixes",
+  "libXcursor",
+  "libXi",
+  "libXtst",
+  "libXScrnSaver",
+  "libXext",
+  "mesa-libgbm",
+  "libdrm",
+  "mesa-libGL",
+  "mesa-libEGL",
+  "cups-libs",
+  "alsa-lib",
+  "pango",
+  "cairo",
+  "gtk3",
+  "dbus-libs",
+]
 
 function getSandboxCredentials() {
-  if (
-    process.env.VERCEL_TOKEN &&
-    process.env.VERCEL_TEAM_ID &&
-    process.env.VERCEL_PROJECT_ID
-  ) {
+  if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID) {
     return {
       token: process.env.VERCEL_TOKEN,
       teamId: process.env.VERCEL_TEAM_ID,
       projectId: process.env.VERCEL_PROJECT_ID,
-    };
+    }
   }
-  return {};
+  return {}
 }
 
 async function withBrowser<T>(
-  fn: (sandbox: InstanceType<typeof Sandbox>) => Promise<T>,
+  fn: (sandbox: InstanceType<typeof Sandbox>) => Promise<T>
 ): Promise<T> {
-  const snapshotId = process.env.AGENT_BROWSER_SNAPSHOT_ID;
-  const credentials = getSandboxCredentials();
+  const snapshotId = process.env.AGENT_BROWSER_SNAPSHOT_ID
+  const credentials = getSandboxCredentials()
 
   const sandbox = snapshotId
     ? await Sandbox.create({
@@ -56,21 +72,21 @@ async function withBrowser<T>(
         source: { type: "snapshot", snapshotId },
         timeout: 120_000,
       })
-    : await Sandbox.create({ ...credentials, runtime: "node24", timeout: 120_000 });
+    : await Sandbox.create({ ...credentials, runtime: "node24", timeout: 120_000 })
 
   if (!snapshotId) {
     await sandbox.runCommand("sh", [
       "-c",
       `sudo dnf clean all 2>&1 && sudo dnf install -y --skip-broken ${CHROMIUM_SYSTEM_DEPS.join(" ")} 2>&1 && sudo ldconfig 2>&1`,
-    ]);
-    await sandbox.runCommand("npm", ["install", "-g", "agent-browser"]);
-    await sandbox.runCommand("npx", ["agent-browser", "install"]);
+    ])
+    await sandbox.runCommand("npm", ["install", "-g", "agent-browser"])
+    await sandbox.runCommand("npx", ["agent-browser", "install"])
   }
 
   try {
-    return await fn(sandbox);
+    return await fn(sandbox)
   } finally {
-    await sandbox.stop();
+    await sandbox.stop()
   }
 }
 ```
@@ -82,24 +98,20 @@ The `screenshot --json` command saves to a file and returns the path. Read the f
 ```ts
 export async function screenshotUrl(url: string) {
   return withBrowser(async (sandbox) => {
-    await sandbox.runCommand("agent-browser", ["open", url]);
+    await sandbox.runCommand("agent-browser", ["open", url])
 
-    const titleResult = await sandbox.runCommand("agent-browser", [
-      "get", "title", "--json",
-    ]);
-    const title = JSON.parse(await titleResult.stdout())?.data?.title || url;
+    const titleResult = await sandbox.runCommand("agent-browser", ["get", "title", "--json"])
+    const title = JSON.parse(await titleResult.stdout())?.data?.title || url
 
-    const ssResult = await sandbox.runCommand("agent-browser", [
-      "screenshot", "--json",
-    ]);
-    const ssPath = JSON.parse(await ssResult.stdout())?.data?.path;
-    const b64Result = await sandbox.runCommand("base64", ["-w", "0", ssPath]);
-    const screenshot = (await b64Result.stdout()).trim();
+    const ssResult = await sandbox.runCommand("agent-browser", ["screenshot", "--json"])
+    const ssPath = JSON.parse(await ssResult.stdout())?.data?.path
+    const b64Result = await sandbox.runCommand("base64", ["-w", "0", ssPath])
+    const screenshot = (await b64Result.stdout()).trim()
 
-    await sandbox.runCommand("agent-browser", ["close"]);
+    await sandbox.runCommand("agent-browser", ["close"])
 
-    return { title, screenshot };
-  });
+    return { title, screenshot }
+  })
 }
 ```
 
@@ -108,22 +120,18 @@ export async function screenshotUrl(url: string) {
 ```ts
 export async function snapshotUrl(url: string) {
   return withBrowser(async (sandbox) => {
-    await sandbox.runCommand("agent-browser", ["open", url]);
+    await sandbox.runCommand("agent-browser", ["open", url])
 
-    const titleResult = await sandbox.runCommand("agent-browser", [
-      "get", "title", "--json",
-    ]);
-    const title = JSON.parse(await titleResult.stdout())?.data?.title || url;
+    const titleResult = await sandbox.runCommand("agent-browser", ["get", "title", "--json"])
+    const title = JSON.parse(await titleResult.stdout())?.data?.title || url
 
-    const snapResult = await sandbox.runCommand("agent-browser", [
-      "snapshot", "-i", "-c",
-    ]);
-    const snapshot = await snapResult.stdout();
+    const snapResult = await sandbox.runCommand("agent-browser", ["snapshot", "-i", "-c"])
+    const snapshot = await snapResult.stdout()
 
-    await sandbox.runCommand("agent-browser", ["close"]);
+    await sandbox.runCommand("agent-browser", ["close"])
 
-    return { title, snapshot };
-  });
+    return { title, snapshot }
+  })
 }
 ```
 
@@ -134,32 +142,28 @@ The sandbox persists between commands, so you can run full automation sequences:
 ```ts
 export async function fillAndSubmitForm(url: string, data: Record<string, string>) {
   return withBrowser(async (sandbox) => {
-    await sandbox.runCommand("agent-browser", ["open", url]);
+    await sandbox.runCommand("agent-browser", ["open", url])
 
-    const snapResult = await sandbox.runCommand("agent-browser", [
-      "snapshot", "-i",
-    ]);
-    const snapshot = await snapResult.stdout();
+    const snapResult = await sandbox.runCommand("agent-browser", ["snapshot", "-i"])
+    const snapshot = await snapResult.stdout()
     // Parse snapshot to find element refs...
 
     for (const [ref, value] of Object.entries(data)) {
-      await sandbox.runCommand("agent-browser", ["fill", ref, value]);
+      await sandbox.runCommand("agent-browser", ["fill", ref, value])
     }
 
-    await sandbox.runCommand("agent-browser", ["click", "@e5"]);
-    await sandbox.runCommand("agent-browser", ["wait", "--load", "networkidle"]);
+    await sandbox.runCommand("agent-browser", ["click", "@e5"])
+    await sandbox.runCommand("agent-browser", ["wait", "--load", "networkidle"])
 
-    const ssResult = await sandbox.runCommand("agent-browser", [
-      "screenshot", "--json",
-    ]);
-    const ssPath = JSON.parse(await ssResult.stdout())?.data?.path;
-    const b64Result = await sandbox.runCommand("base64", ["-w", "0", ssPath]);
-    const screenshot = (await b64Result.stdout()).trim();
+    const ssResult = await sandbox.runCommand("agent-browser", ["screenshot", "--json"])
+    const ssPath = JSON.parse(await ssResult.stdout())?.data?.path
+    const b64Result = await sandbox.runCommand("base64", ["-w", "0", ssPath])
+    const screenshot = (await b64Result.stdout()).trim()
 
-    await sandbox.runCommand("agent-browser", ["close"]);
+    await sandbox.runCommand("agent-browser", ["close"])
 
-    return { screenshot };
-  });
+    return { screenshot }
+  })
 }
 ```
 
@@ -167,7 +171,7 @@ export async function fillAndSubmitForm(url: string, data: Record<string, string
 
 A **sandbox snapshot** is a saved VM image of a Vercel Sandbox with system dependencies + agent-browser + Chromium already installed. Think of it like a Docker image -- instead of installing dependencies from scratch every time, the sandbox boots from the pre-built image.
 
-This is unrelated to agent-browser's *accessibility snapshot* feature (`agent-browser snapshot`), which dumps a page's accessibility tree. A sandbox snapshot is a Vercel infrastructure concept for fast VM startup.
+This is unrelated to agent-browser's _accessibility snapshot_ feature (`agent-browser snapshot`), which dumps a page's accessibility tree. A sandbox snapshot is a Vercel infrastructure concept for fast VM startup.
 
 Without a sandbox snapshot, each run installs system deps + agent-browser + Chromium (~30s). With one, startup is sub-second.
 
@@ -176,31 +180,51 @@ Without a sandbox snapshot, each run installs system deps + agent-browser + Chro
 The snapshot must include system dependencies (via `dnf`), agent-browser, and Chromium:
 
 ```ts
-import { Sandbox } from "@vercel/sandbox";
+import { Sandbox } from "@vercel/sandbox"
 
 const CHROMIUM_SYSTEM_DEPS = [
-  "nss", "nspr", "libxkbcommon", "atk", "at-spi2-atk", "at-spi2-core",
-  "libXcomposite", "libXdamage", "libXrandr", "libXfixes", "libXcursor",
-  "libXi", "libXtst", "libXScrnSaver", "libXext", "mesa-libgbm", "libdrm",
-  "mesa-libGL", "mesa-libEGL", "cups-libs", "alsa-lib", "pango", "cairo",
-  "gtk3", "dbus-libs",
-];
+  "nss",
+  "nspr",
+  "libxkbcommon",
+  "atk",
+  "at-spi2-atk",
+  "at-spi2-core",
+  "libXcomposite",
+  "libXdamage",
+  "libXrandr",
+  "libXfixes",
+  "libXcursor",
+  "libXi",
+  "libXtst",
+  "libXScrnSaver",
+  "libXext",
+  "mesa-libgbm",
+  "libdrm",
+  "mesa-libGL",
+  "mesa-libEGL",
+  "cups-libs",
+  "alsa-lib",
+  "pango",
+  "cairo",
+  "gtk3",
+  "dbus-libs",
+]
 
 async function createSnapshot(): Promise<string> {
   const sandbox = await Sandbox.create({
     runtime: "node24",
     timeout: 300_000,
-  });
+  })
 
   await sandbox.runCommand("sh", [
     "-c",
     `sudo dnf clean all 2>&1 && sudo dnf install -y --skip-broken ${CHROMIUM_SYSTEM_DEPS.join(" ")} 2>&1 && sudo ldconfig 2>&1`,
-  ]);
-  await sandbox.runCommand("npm", ["install", "-g", "agent-browser"]);
-  await sandbox.runCommand("npx", ["agent-browser", "install"]);
+  ])
+  await sandbox.runCommand("npm", ["install", "-g", "agent-browser"])
+  await sandbox.runCommand("npx", ["agent-browser", "install"])
 
-  const snapshot = await sandbox.snapshot();
-  return snapshot.snapshotId;
+  const snapshot = await sandbox.snapshot()
+  return snapshot.snapshotId
 }
 ```
 
@@ -238,14 +262,14 @@ Combine with Vercel Cron Jobs for recurring browser tasks:
 // app/api/cron/route.ts  (or equivalent in your framework)
 export async function GET() {
   const result = await withBrowser(async (sandbox) => {
-    await sandbox.runCommand("agent-browser", ["open", "https://example.com/pricing"]);
-    const snap = await sandbox.runCommand("agent-browser", ["snapshot", "-i", "-c"]);
-    await sandbox.runCommand("agent-browser", ["close"]);
-    return await snap.stdout();
-  });
+    await sandbox.runCommand("agent-browser", ["open", "https://example.com/pricing"])
+    const snap = await sandbox.runCommand("agent-browser", ["snapshot", "-i", "-c"])
+    await sandbox.runCommand("agent-browser", ["close"])
+    return await snap.stdout()
+  })
 
   // Process results, send alerts, store data...
-  return Response.json({ ok: true, snapshot: result });
+  return Response.json({ ok: true, snapshot: result })
 }
 ```
 
@@ -256,24 +280,24 @@ export async function GET() {
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `AGENT_BROWSER_SNAPSHOT_ID` | No (but recommended) | Pre-built sandbox snapshot ID for sub-second startup (see above) |
-| `VERCEL_TOKEN` | No | Vercel personal access token (for local dev; OIDC is automatic on Vercel) |
-| `VERCEL_TEAM_ID` | No | Vercel team ID (for local dev) |
-| `VERCEL_PROJECT_ID` | No | Vercel project ID (for local dev) |
+| Variable                    | Required             | Description                                                               |
+| --------------------------- | -------------------- | ------------------------------------------------------------------------- |
+| `AGENT_BROWSER_SNAPSHOT_ID` | No (but recommended) | Pre-built sandbox snapshot ID for sub-second startup (see above)          |
+| `VERCEL_TOKEN`              | No                   | Vercel personal access token (for local dev; OIDC is automatic on Vercel) |
+| `VERCEL_TEAM_ID`            | No                   | Vercel team ID (for local dev)                                            |
+| `VERCEL_PROJECT_ID`         | No                   | Vercel project ID (for local dev)                                         |
 
 ## Framework Examples
 
 The pattern works identically across frameworks. The only difference is where you put the server-side code:
 
-| Framework | Server code location |
-|---|---|
-| Next.js | Server actions, API routes, route handlers |
-| SvelteKit | `+page.server.ts`, `+server.ts` |
-| Nuxt | `server/api/`, `server/routes/` |
-| Remix | `loader`, `action` functions |
-| Astro | `.astro` frontmatter, API routes |
+| Framework | Server code location                       |
+| --------- | ------------------------------------------ |
+| Next.js   | Server actions, API routes, route handlers |
+| SvelteKit | `+page.server.ts`, `+server.ts`            |
+| Nuxt      | `server/api/`, `server/routes/`            |
+| Remix     | `loader`, `action` functions               |
+| Astro     | `.astro` frontmatter, API routes           |
 
 ## Example
 

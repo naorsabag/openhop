@@ -27,7 +27,9 @@ async function loadExampleOrderFlow(): Promise<Root | null> {
   return null
 }
 
-export async function syncExampleOrderFlow(store: FlowStore): Promise<'created' | 'updated' | 'skipped'> {
+export async function syncExampleOrderFlow(
+  store: FlowStore
+): Promise<'created' | 'updated' | 'skipped'> {
   const example = await loadExampleOrderFlow()
   if (!example) return 'skipped'
 

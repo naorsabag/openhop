@@ -67,6 +67,7 @@ openhop push flow.yaml
 ```
 
 Output:
+
 ```
 ✓ Flow created
   ID:    abc123
@@ -154,6 +155,7 @@ openhop remove <flow-id>                 # Delete a flow
 ```
 
 Stdin is useful when generating YAML programmatically:
+
 ```bash
 echo 'meta:
   title: Quick Test
@@ -168,10 +170,12 @@ flow:
 ## Schema Reference
 
 ### Root
+
 - `meta` (required): { title (required), description, path }
 - `flow` (required): { nodes (required, min 1), steps }
 
 ### Node
+
 - `id` (required): alphanumeric + hyphens + underscores
 - `label` (required): display name
 - `type`: actor | endpoint | transform | validation | auth | database | external | cache | queue | service | custom
@@ -183,63 +187,70 @@ flow:
 
 Each node type has common real-world variants. Use them to choose an accurate `label` and, where applicable, a matching Iconify icon. First entry is the canonical/most common variant for that type.
 
-| Type        | Common variants |
-|-------------|-----------------|
-| actor       | user, admin, customer, operator, agent, bot, service-account, system |
-| endpoint    | rest-api, graphql, grpc, webhook, websocket, sse, rpc |
-| transform   | parser, serializer, formatter, mapper, aggregator, filter, enricher |
-| validation  | schema-validator, input-validator, permission-check, rate-limiter, csrf, feature-flag |
-| auth        | oauth, jwt, session, api-key, saml, ldap, mfa |
-| database    | postgres, mysql, mongodb, sqlite, cassandra, dynamodb, cockroachdb, bigquery, snowflake, elasticsearch, disk |
-| external    | stripe, twilio, sendgrid, github, slack, openai, anthropic, firebase, s3, maps-api |
-| cache       | redis, memcached, ram, cdn, http-cache, local-cache |
-| queue       | kafka, rabbitmq, sqs, pubsub, nats, kinesis, celery |
-| service     | microservice, worker, scheduler, processor, orchestrator, gateway, proxy, loadbalancer |
-| custom      | (anything — also set `icon` and `color`) |
+| Type       | Common variants                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| actor      | user, admin, customer, operator, agent, bot, service-account, system                                         |
+| endpoint   | rest-api, graphql, grpc, webhook, websocket, sse, rpc                                                        |
+| transform  | parser, serializer, formatter, mapper, aggregator, filter, enricher                                          |
+| validation | schema-validator, input-validator, permission-check, rate-limiter, csrf, feature-flag                        |
+| auth       | oauth, jwt, session, api-key, saml, ldap, mfa                                                                |
+| database   | postgres, mysql, mongodb, sqlite, cassandra, dynamodb, cockroachdb, bigquery, snowflake, elasticsearch, disk |
+| external   | stripe, twilio, sendgrid, github, slack, openai, anthropic, firebase, s3, maps-api                           |
+| cache      | redis, memcached, ram, cdn, http-cache, local-cache                                                          |
+| queue      | kafka, rabbitmq, sqs, pubsub, nats, kinesis, celery                                                          |
+| service    | microservice, worker, scheduler, processor, orchestrator, gateway, proxy, loadbalancer                       |
+| custom     | (anything — also set `icon` and `color`)                                                                     |
 
 ### Step
+
 Either a move step, parallel, create, or destroy:
+
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
 - Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick.
 
-    ```yaml
-    - parallel:
-        - from: api
-          to: order-service
-          data: { label: order payload, fields: [{name: items, type: list}] }
-        - from: authz
-          to: order-service
-          data: { label: auth context, fields: [{name: user_id, type: int}] }
-    ```
+  ```yaml
+  - parallel:
+      - from: api
+        to: order-service
+        data: { label: order payload, fields: [{ name: items, type: list }] }
+      - from: authz
+        to: order-service
+        data: { label: auth context, fields: [{ name: user_id, type: int }] }
+  ```
+
 - Create: `{ create: "node-id", from: "creator-node", node: { id, label, type?, icon?, color? }, data? }`
 - Destroy: `{ destroy: "node-id" }`
 
 ### Data
+
 Either a string (sketch) or object (detailed):
 
 **String** — just a label:
+
 ```yaml
 data: "HTTP Request"
 ```
 
 **Object** — with optional fields:
+
 ```yaml
 data:
-  label: "Order payload"      # required
-  color: "#4aff7a"            # optional — override pixel color (hex)
-  fields:                      # optional — shown in tooltip on hover
-    - name: items              # required
-      type: "list[OrderItem]"  # optional
+  label: "Order payload" # required
+  color: "#4aff7a" # optional — override pixel color (hex)
+  fields: # optional — shown in tooltip on hover
+    - name: items # required
+      type: "list[OrderItem]" # optional
     - name: total
       type: float
-      added: true              # optional — green highlight (new field)
+      added: true # optional — green highlight (new field)
     - name: old_field
-      removed: true            # optional — red strikethrough
+      removed: true # optional — red strikethrough
     - name: amount
-      changed: true            # optional — yellow highlight (modified)
+      changed: true # optional — yellow highlight (modified)
 ```
 
 **Array** — multiple data objects sent simultaneously:
+
 ```yaml
 data:
   - label: request body
@@ -256,17 +267,17 @@ data:
 
 All operations support multiple items. Apply with `openhop patch <id> <file.yaml>`.
 
-| Operation | Fields | Description |
-|-----------|--------|-------------|
-| add-nodes | nodes: [{id, label, type?, icon?, color?}] | Add nodes |
-| remove-nodes | nodes: ["id1", "id2"] | Remove nodes + their steps |
-| rename-nodes | nodes: [{id, label}] | Change labels |
-| update-nodes | nodes: [{id, type?, icon?, color?}] | Update properties |
-| set-flows | nodes: [{id, flow: {nodes, steps}}] | Add sub-flows |
-| clear-flows | nodes: ["id1"] | Remove sub-flows |
-| add-steps | after: N, steps: [...] | Insert steps (-1 = beginning) |
-| remove-steps | indices: [0, 3] | Remove steps by index |
-| update-step | index: N, step: {...} | Replace a step |
+| Operation    | Fields                                     | Description                   |
+| ------------ | ------------------------------------------ | ----------------------------- |
+| add-nodes    | nodes: [{id, label, type?, icon?, color?}] | Add nodes                     |
+| remove-nodes | nodes: ["id1", "id2"]                      | Remove nodes + their steps    |
+| rename-nodes | nodes: [{id, label}]                       | Change labels                 |
+| update-nodes | nodes: [{id, type?, icon?, color?}]        | Update properties             |
+| set-flows    | nodes: [{id, flow: {nodes, steps}}]        | Add sub-flows                 |
+| clear-flows  | nodes: ["id1"]                             | Remove sub-flows              |
+| add-steps    | after: N, steps: [...]                     | Insert steps (-1 = beginning) |
+| remove-steps | indices: [0, 3]                            | Remove steps by index         |
+| update-step  | index: N, step: {...}                      | Replace a step                |
 
 ## Icons
 

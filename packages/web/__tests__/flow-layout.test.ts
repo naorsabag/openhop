@@ -88,7 +88,9 @@ describe('computeElkLayout', () => {
     const { computeElkLayout, NODE_WIDTH } = await import('../src/lib/flow-layout.ts')
     const topology = buildFlowTopology(parsed.data as Flow)
     const layout = await computeElkLayout(topology)
-    const edge = topology.displayEdges.find((candidate) => candidate.source === 'api' && candidate.target === 'order-service')
+    const edge = topology.displayEdges.find(
+      (candidate) => candidate.source === 'api' && candidate.target === 'order-service'
+    )
     const route = edge ? layout.routes.get(edge.id) : null
     const blocker = layout.positions.get('rate-limit')
 
@@ -128,18 +130,25 @@ describe('computeElkLayout', () => {
 describe('buildReactFlowGraph', () => {
   it('splits same-side fanout edges across different handles after layout positions are known', () => {
     const topology = buildFlowTopology(orderFlow)
-    const graph = buildReactFlowGraph(topology, new Map([
-      ['user', { x: 0, y: 0 }],
-      ['api', { x: 220, y: 0 }],
-      ['order-service', { x: 440, y: 0 }],
-      ['db', { x: 700, y: -140 }],
-      ['cache', { x: 700, y: 140 }],
-      ['payment', { x: 920, y: 0 }],
-      ['audit', { x: 700, y: 300 }],
-    ]))
+    const graph = buildReactFlowGraph(
+      topology,
+      new Map([
+        ['user', { x: 0, y: 0 }],
+        ['api', { x: 220, y: 0 }],
+        ['order-service', { x: 440, y: 0 }],
+        ['db', { x: 700, y: -140 }],
+        ['cache', { x: 700, y: 140 }],
+        ['payment', { x: 920, y: 0 }],
+        ['audit', { x: 700, y: 300 }],
+      ])
+    )
 
-    const dbEdge = graph.edges.find((edge) => edge.source === 'order-service' && edge.target === 'db')
-    const cacheEdge = graph.edges.find((edge) => edge.source === 'order-service' && edge.target === 'cache')
+    const dbEdge = graph.edges.find(
+      (edge) => edge.source === 'order-service' && edge.target === 'db'
+    )
+    const cacheEdge = graph.edges.find(
+      (edge) => edge.source === 'order-service' && edge.target === 'cache'
+    )
 
     expect(dbEdge?.sourceHandle).toBe('top')
     expect(cacheEdge?.sourceHandle).toBe('bottom')
@@ -160,13 +169,16 @@ describe('buildReactFlowGraph', () => {
         ['audit', { x: 700, y: 300 }],
       ]),
       new Map([
-        ['e-5', [
-          { x: 512, y: 72 },
-          { x: 512, y: 420 },
-          { x: 620, y: 420 },
-          { x: 620, y: 612 },
-        ]],
-      ]),
+        [
+          'e-5',
+          [
+            { x: 512, y: 72 },
+            { x: 512, y: 420 },
+            { x: 620, y: 420 },
+            { x: 620, y: 612 },
+          ],
+        ],
+      ])
     )
 
     const auditEdge = graph.edges.find((edge) => edge.id === 'e-5')
@@ -179,12 +191,14 @@ describe('buildReactFlowGraph', () => {
 
 describe('buildOrthogonalPath', () => {
   it('converts orthogonal route points into an SVG line path', () => {
-    expect(buildOrthogonalPath([
-      { x: 100, y: 200 },
-      { x: 180, y: 200 },
-      { x: 180, y: 320 },
-      { x: 300, y: 320 },
-    ])).toBe('M 100 200 L 180 200 L 180 320 L 300 320')
+    expect(
+      buildOrthogonalPath([
+        { x: 100, y: 200 },
+        { x: 180, y: 200 },
+        { x: 180, y: 320 },
+        { x: 300, y: 320 },
+      ])
+    ).toBe('M 100 200 L 180 200 L 180 320 L 300 320')
   })
 })
 
@@ -194,18 +208,24 @@ describe('inferPortAssignmentsFromRoutes', () => {
       buildFlowTopology(orderFlow),
       new Map(),
       new Map([
-        ['e-2', [
-          { x: 600, y: 30 },
-          { x: 700, y: 30 },
-          { x: 700, y: -110 },
-        ]],
-        ['e-3', [
-          { x: 520, y: 60 },
-          { x: 520, y: 220 },
-          { x: 700, y: 220 },
-          { x: 700, y: 170 },
-        ]],
-      ]),
+        [
+          'e-2',
+          [
+            { x: 600, y: 30 },
+            { x: 700, y: 30 },
+            { x: 700, y: -110 },
+          ],
+        ],
+        [
+          'e-3',
+          [
+            { x: 520, y: 60 },
+            { x: 520, y: 220 },
+            { x: 700, y: 220 },
+            { x: 700, y: 170 },
+          ],
+        ],
+      ])
     )
 
     expect(assignments.get('e-2')).toMatchObject({ source: 'right', target: 'bottom' })
@@ -221,21 +241,27 @@ describe('bundleSharedSourcePrefixes', () => {
   it.skip('merges the first orthogonal leg for routes that leave the same node side', () => {
     const routes = bundleSharedSourcePrefixes(
       new Map([
-        ['e-a', [
-          { x: 520, y: 60 },
-          { x: 520, y: 220 },
-          { x: 700, y: 220 },
-        ]],
-        ['e-b', [
-          { x: 520, y: 60 },
-          { x: 520, y: 360 },
-          { x: 780, y: 360 },
-        ]],
+        [
+          'e-a',
+          [
+            { x: 520, y: 60 },
+            { x: 520, y: 220 },
+            { x: 700, y: 220 },
+          ],
+        ],
+        [
+          'e-b',
+          [
+            { x: 520, y: 60 },
+            { x: 520, y: 360 },
+            { x: 780, y: 360 },
+          ],
+        ],
       ]),
       new Map([
         ['e-a', { source: 'bottom', target: 'left' }],
         ['e-b', { source: 'bottom', target: 'left' }],
-      ]),
+      ])
     )
 
     expect(routes.get('e-a')).toEqual([

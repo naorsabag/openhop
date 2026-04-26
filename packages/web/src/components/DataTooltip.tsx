@@ -9,9 +9,11 @@ interface DataTooltipProps {
 
 export function DataTooltip({ step, color, x, y }: DataTooltipProps) {
   const data: FlowData =
-    typeof step.data === 'string' ? { label: step.data } :
-    Array.isArray(step.data) ? { label: step.data.map(d => d.label).join(', ') } :
-    step.data ?? { label: '' }
+    typeof step.data === 'string'
+      ? { label: step.data }
+      : Array.isArray(step.data)
+        ? { label: step.data.map((d) => d.label).join(', ') }
+        : (step.data ?? { label: '' })
 
   return (
     <div
@@ -34,22 +36,26 @@ export function DataTooltip({ step, color, x, y }: DataTooltipProps) {
       }}
     >
       {/* Colored header with square indicator */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        marginBottom: data.fields && data.fields.length > 0 ? 6 : 0,
-        paddingBottom: data.fields && data.fields.length > 0 ? 6 : 0,
-        borderBottom: data.fields && data.fields.length > 0 ? '1px solid #2a2a4a' : 'none',
-      }}>
-        <span style={{
-          display: 'inline-block',
-          width: 8,
-          height: 8,
-          background: color,
-          borderRadius: 1,
-          flexShrink: 0,
-        }} />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          marginBottom: data.fields && data.fields.length > 0 ? 6 : 0,
+          paddingBottom: data.fields && data.fields.length > 0 ? 6 : 0,
+          borderBottom: data.fields && data.fields.length > 0 ? '1px solid #2a2a4a' : 'none',
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-block',
+            width: 8,
+            height: 8,
+            background: color,
+            borderRadius: 1,
+            flexShrink: 0,
+          }}
+        />
         <span>{data.label}</span>
       </div>
       {data.fields && data.fields.length > 0 && (
@@ -75,7 +81,11 @@ export function DataTooltip({ step, color, x, y }: DataTooltipProps) {
               <div key={field.name} style={{ color: fieldColor, textDecoration }}>
                 <span style={{ opacity: 0.7 }}>{prefix}</span>
                 {field.name}
-                {field.type ? <span style={{ opacity: 0.6, marginLeft: 8 }}>{field.type}</span> : ''}
+                {field.type ? (
+                  <span style={{ opacity: 0.6, marginLeft: 8 }}>{field.type}</span>
+                ) : (
+                  ''
+                )}
               </div>
             )
           })}

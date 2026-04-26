@@ -19,12 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # gitleaks needs full history
+          fetch-depth: 0 # gitleaks needs full history
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm run build --workspaces --if-present
       - run: npm test --workspaces --if-present
 

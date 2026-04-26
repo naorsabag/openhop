@@ -11,6 +11,7 @@
 ## Verification Protocol
 
 After each phase:
+
 1. Build the project
 2. Start the server
 3. Use agent-browser batch commands to verify functionality
@@ -51,6 +52,7 @@ This ensures every test step can use `snapshot -i` to find refs, then `click @re
 6. **Dark layout shell** — Header with "OpenHop" title, dark sidebar placeholder, canvas fills remaining space
 
 ### Verify with agent-browser:
+
 ```
 open http://localhost:8788
 wait 3000
@@ -76,6 +78,7 @@ screenshot /tmp/phase1.png
 6. **Looping** — flow restarts when all pixels reach their destinations.
 
 ### Verify with agent-browser:
+
 ```
 open http://localhost:8788
 wait 3000
@@ -104,6 +107,7 @@ screenshot /tmp/phase2-detail.png
 3. **Combined behavior** — manual pixels coexist with automatic ones during play.
 
 ### Verify with agent-browser:
+
 ```
 open http://localhost:8788
 wait 3000
@@ -136,6 +140,7 @@ screenshot /tmp/phase3-manual.png
 5. **UI polls version** — every 500ms, re-fetch on change
 
 ### Verify with agent-browser:
+
 ```
 # POST a flow via curl
 curl -X POST http://localhost:8787/api/flows -H 'Content-Type: text/yaml' -d '...'
@@ -162,6 +167,7 @@ screenshot /tmp/phase4-api.png
 3. **UI auto-update** — polls detect new version, re-fetches and re-renders
 
 ### Verify with agent-browser:
+
 ```
 # POST initial flow
 curl -X POST ...
@@ -196,6 +202,7 @@ screenshot /tmp/phase5-after.png
 4. **`drilldown: true`** on steps → auto-zoom during playback
 
 ### Verify with agent-browser:
+
 ```
 open http://localhost:8787
 wait 3000
@@ -222,6 +229,7 @@ screenshot /tmp/phase6-drilldown.png
 4. **Routing** — `/` = home, `/flow/:id` = viewer
 
 ### Verify with agent-browser:
+
 ```
 # Push 3 flows
 curl -X POST ... (order flow)
@@ -255,6 +263,7 @@ screenshot /tmp/phase7-viewer.png
 3. **Error formatting** — validation errors show path, message, suggestion in terminal
 
 ### Verify:
+
 ```bash
 echo "bad yaml" | openhop validate -
 → Error with path and suggestion
@@ -280,6 +289,7 @@ openhop list
 4. **README** — installation, quick start, schema overview
 
 ### Verify:
+
 ```bash
 docker build -t openhop .
 docker run -p 8787:8787 openhop
@@ -290,14 +300,14 @@ docker run -p 8787:8787 openhop
 
 ## Phase Summary
 
-| Phase | Delivers | Testable With |
-|-------|----------|---------------|
-| 1 | Static pixel-art canvas with nodes/edges | agent-browser screenshot |
-| 2 | Animated data pixels + play/pause | agent-browser click + screenshot |
-| 3 | Click-to-fire + progress bars | agent-browser click + screenshot |
-| 4 | Server API + live data | curl + agent-browser |
-| 5 | PATCH operations + auto-update | curl + agent-browser before/after |
-| 6 | Hierarchical drill-down | agent-browser click + screenshot |
-| 7 | Flow library + sidebar | agent-browser navigate + screenshot |
-| 8 | CLI + validation errors | terminal commands |
-| 9 | Skill + examples + Docker | docker run + full test |
+| Phase | Delivers                                 | Testable With                       |
+| ----- | ---------------------------------------- | ----------------------------------- |
+| 1     | Static pixel-art canvas with nodes/edges | agent-browser screenshot            |
+| 2     | Animated data pixels + play/pause        | agent-browser click + screenshot    |
+| 3     | Click-to-fire + progress bars            | agent-browser click + screenshot    |
+| 4     | Server API + live data                   | curl + agent-browser                |
+| 5     | PATCH operations + auto-update           | curl + agent-browser before/after   |
+| 6     | Hierarchical drill-down                  | agent-browser click + screenshot    |
+| 7     | Flow library + sidebar                   | agent-browser navigate + screenshot |
+| 8     | CLI + validation errors                  | terminal commands                   |
+| 9     | Skill + examples + Docker                | docker run + full test              |

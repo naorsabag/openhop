@@ -1,7 +1,4 @@
-import {
-  getSmoothStepPath,
-  type EdgeProps,
-} from '@xyflow/react'
+import { getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 
 const STROKE_WIDTH = 4
 const CORNER_RADIUS = 12
@@ -21,12 +18,17 @@ function roundCorners(d: string, radius: number): string {
     const prev = pts[i - 1]
     const curr = pts[i]
     const next = pts[i + 1]
-    const dx1 = curr.x - prev.x, dy1 = curr.y - prev.y
-    const dx2 = next.x - curr.x, dy2 = next.y - curr.y
+    const dx1 = curr.x - prev.x,
+      dy1 = curr.y - prev.y
+    const dx2 = next.x - curr.x,
+      dy2 = next.y - curr.y
     const len1 = Math.hypot(dx1, dy1)
     const len2 = Math.hypot(dx2, dy2)
     const r = Math.min(radius, len1 / 2, len2 / 2)
-    if (r <= 0.5) { cmds.push(`L ${curr.x} ${curr.y}`); continue }
+    if (r <= 0.5) {
+      cmds.push(`L ${curr.x} ${curr.y}`)
+      continue
+    }
     const enter = { x: curr.x - (dx1 / len1) * r, y: curr.y - (dy1 / len1) * r }
     const exit = { x: curr.x + (dx2 / len2) * r, y: curr.y + (dy2 / len2) * r }
     cmds.push(`L ${enter.x} ${enter.y}`)
@@ -39,13 +41,21 @@ function roundCorners(d: string, radius: number): string {
 
 export function RoadEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props
-  const d = data as { active?: boolean; hiddenRoad?: boolean; visible?: boolean; elkPath?: string } | undefined
+  const d = data as
+    | { active?: boolean; hiddenRoad?: boolean; visible?: boolean; elkPath?: string }
+    | undefined
   const active = !!d?.active
   const hiddenRoad = !!d?.hiddenRoad
   const visible = d?.visible ?? true
 
   const [fallbackPath] = getSmoothStepPath({
-    sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 0,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition,
+    borderRadius: 0,
   })
   const path = roundCorners(d?.elkPath ?? fallbackPath, CORNER_RADIUS)
 
