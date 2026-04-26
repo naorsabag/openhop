@@ -10,33 +10,11 @@ import {
 import {
   storedFlowJsonSchema,
   flowSummaryJsonSchema,
-  rootJsonSchema,
   patchOperationsJsonSchema,
 } from '@openhop/shared'
 import { FlowStore } from './store.js'
 
 const store = new FlowStore()
-
-const EXAMPLE_YAML = `meta:
-  title: Simple Flow
-  description: A minimal example
-  tags: [example]
-
-flow:
-  nodes:
-    - id: user
-      label: User
-      type: actor
-    - id: api
-      label: API
-      type: endpoint
-  steps:
-    - from: user
-      to: api
-      data: HTTP Request
-    - from: api
-      to: user
-      data: Response`
 
 const VALIDATION_ERROR_EXAMPLE = {
   error: 'validation_error',

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import type { FlowListItem } from '../hooks/useFlowPolling'
 
 interface TreeNode {
@@ -153,24 +153,26 @@ export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: Sideba
 
   const tree = useMemo(() => buildTree(flows), [flows])
 
-  // Auto-expand all folders on first load
-  useMemo(() => {
-    if (flows.length > 0 && expandedFolders.size === 0) {
-      const allPaths = new Set<string>()
-      function collectPaths(nodes: TreeNode[]) {
-        for (const n of nodes) {
-          if (n.type === 'folder') {
-            allPaths.add(n.path)
-            collectPaths(n.children)
-          }
+  // Auto-expand all folders the first time flows arrive.
+  const hasAutoExpanded = useRef(false)
+  useEffect(() => {
+    if (hasAutoExpanded.current) return
+    if (flows.length === 0) return
+    const allPaths = new Set<string>()
+    const collectPaths = (nodes: TreeNode[]) => {
+      for (const n of nodes) {
+        if (n.type === 'folder') {
+          allPaths.add(n.path)
+          collectPaths(n.children)
         }
       }
-      collectPaths(tree)
-      if (allPaths.size > 0) {
-        setExpandedFolders(allPaths)
-      }
     }
-  }, [flows, tree, expandedFolders.size])
+    collectPaths(tree)
+    if (allPaths.size > 0) {
+      setExpandedFolders(allPaths)
+      hasAutoExpanded.current = true
+    }
+  }, [flows, tree])
 
   const displayTree = useMemo(() => {
     if (!search.trim()) return tree

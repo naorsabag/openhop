@@ -77,7 +77,9 @@ function App() {
   const currentStepRef = useRef(0)
   const [inspectedStep, setInspectedStep] = useState<FlowStep | null>(null)
   const displayFlowRef = useRef(displayFlow)
-  displayFlowRef.current = displayFlow
+  useEffect(() => {
+    displayFlowRef.current = displayFlow
+  }, [displayFlow])
   const handleStepChange = useCallback((stepIndex: number) => {
     currentStepRef.current = stepIndex
     const steps = displayFlowRef.current?.flow.steps ?? []
@@ -151,7 +153,9 @@ function App() {
 
   // Auto-drilldown during playback — triggered by FlowCanvas when a drilldown step completes
   const playingRef = useRef(playing)
-  playingRef.current = playing
+  useEffect(() => {
+    playingRef.current = playing
+  }, [playing])
   const handleAutoDrilldown = useCallback(
     (nodeId: string, atStepIndex: number) => {
       if (!playingRef.current) return
@@ -163,7 +167,9 @@ function App() {
   // When sub-flow cycle completes during playback, navigate back to parent
   const isInSubFlow = flowStack.length > 1
   const isInSubFlowRef = useRef(isInSubFlow)
-  isInSubFlowRef.current = isInSubFlow
+  useEffect(() => {
+    isInSubFlowRef.current = isInSubFlow
+  }, [isInSubFlow])
   const handleCycleComplete = useCallback(() => {
     if (!playingRef.current || !isInSubFlowRef.current) return
     setTimeout(() => {

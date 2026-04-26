@@ -14,10 +14,8 @@ export default [
       globals: { ...globals.node, ...globals.browser },
     },
     rules: {
-      // Pre-existing — see #44 for the plan to tighten back to "error".
-      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
     },

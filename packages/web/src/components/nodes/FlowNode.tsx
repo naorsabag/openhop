@@ -1,7 +1,8 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
-import { NODE_TYPE_SPRITE, SpriteBuilding } from './NodeBuilding'
+import { NODE_TYPE_SPRITE } from './node-sprites'
+import { SpriteBuilding } from './NodeBuilding'
 
 /** Node type color config */
 const NODE_STYLES: Record<string, { bg: string; border: string }> = {

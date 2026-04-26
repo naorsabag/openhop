@@ -2,6 +2,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
+  BackgroundVariant,
   Controls,
   useReactFlow,
   type NodeTypes,
@@ -9,6 +10,7 @@ import {
   type Node,
   type Edge,
 } from '@xyflow/react'
+import type React from 'react'
 import '@xyflow/react/dist/style.css'
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
@@ -259,7 +261,9 @@ function FlowCanvasInner({
 
   // Report step changes to parent
   const onStepChangeRef = useRef(onStepChange)
-  onStepChangeRef.current = onStepChange
+  useEffect(() => {
+    onStepChangeRef.current = onStepChange
+  }, [onStepChange])
   useEffect(() => {
     if (onStepChangeRef.current && animState.currentStepIndex >= 0) {
       onStepChangeRef.current(animState.currentStepIndex)
@@ -365,7 +369,7 @@ function FlowCanvasInner({
         onDrilldownStep(targetId, capturedStepIndex)
         drilldownTimerRef.current = null
       },
-      1500 / ((window as any).__flowSpeed ?? 1)
+      1500 / (window.__flowSpeed ?? 1)
     )
   }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep])
 
@@ -510,7 +514,7 @@ function FlowCanvasInner({
           style: {
             ...edge.style,
             opacity: 1,
-            pointerEvents: 'auto' as any,
+            pointerEvents: 'auto' as React.CSSProperties['pointerEvents'],
             transition: 'opacity 0.4s ease',
           },
           data: {
@@ -581,7 +585,7 @@ function FlowCanvasInner({
         minZoom={0.1}
         maxZoom={6}
       >
-        <Background variant={'lines' as any} gap={32} size={1} color="#1F3E2F" />
+        <Background variant={BackgroundVariant.Lines} gap={32} size={1} color="#1F3E2F" />
         <Controls
           showInteractive={false}
           style={{ background: '#0d2612', borderColor: '#1a4a22' }}

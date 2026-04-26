@@ -65,7 +65,9 @@ export function useFlowData(flowId: string | null) {
           setFlow({ meta: data.meta, flow: data.flow })
           versionRef.current = data.version
         }
-      } catch {}
+      } catch {
+        // Network or JSON parse failure — keep last-good state, retry on next tick.
+      }
     }, 2000)
     return () => clearInterval(interval)
   }, [flowId])

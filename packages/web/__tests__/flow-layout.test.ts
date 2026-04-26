@@ -234,11 +234,7 @@ describe('inferPortAssignmentsFromRoutes', () => {
 })
 
 describe('bundleSharedSourcePrefixes', () => {
-  // Stale: implementation changed in ce0f221 ("enforce minimum stub length for
-  // bundled road edges") which moved the bundling y-coordinate. Tracked in
-  // a follow-up issue — needs a human eyeball on the algorithm intent before
-  // re-asserting coordinates.
-  it.skip('merges the first orthogonal leg for routes that leave the same node side', () => {
+  it('merges the first orthogonal leg for routes that leave the same node side', () => {
     const routes = bundleSharedSourcePrefixes(
       new Map([
         [
@@ -264,15 +260,22 @@ describe('bundleSharedSourcePrefixes', () => {
       ])
     )
 
+    // ce0f221 introduced MIN_SHARED_STUB_LENGTH=120: when the natural trunk
+    // would land within 120px of the source or the nearest target, the trunk
+    // is pulled to the midpoint between them. Here start.y=60 and the nearest
+    // target.y=220 are 160px apart, so the clamp range collapses (lo>hi) and
+    // the trunk goes to (60 + 220) / 2 = 140.
     expect(routes.get('e-a')).toEqual([
       { x: 520, y: 60 },
-      { x: 520, y: 220 },
-      { x: 700, y: 220 },
+      { x: 520, y: 140 },
+      { x: 700, y: 140 },
     ])
+    // e-b's first rest-element (520, 360) is overwritten with the trunk point
+    // (520, 140); the (780, 360) target is then reached via an orthogonal
+    // segment added downstream. So this function's output is only 3 points.
     expect(routes.get('e-b')).toEqual([
       { x: 520, y: 60 },
-      { x: 520, y: 220 },
-      { x: 520, y: 360 },
+      { x: 520, y: 140 },
       { x: 780, y: 360 },
     ])
   })

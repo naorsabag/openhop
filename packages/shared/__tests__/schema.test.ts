@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateFlow } from '../src/validator'
 import { parseFlowYaml, parseFlowJson } from '../src/parser'
-import { RootSchema } from '../src/schema'
 
 // --- Helpers ---
 const minimalFlow = {

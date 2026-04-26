@@ -8,10 +8,11 @@ export function parseFlowYaml(yamlString: string): ValidationResult {
   let parsed: unknown
   try {
     parsed = YAML.parse(yamlString)
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
     return {
       success: false,
-      errors: [{ path: '', message: `YAML parse error: ${err.message}` }],
+      errors: [{ path: '', message: `YAML parse error: ${message}` }],
     }
   }
   return validateFlow(parsed)
@@ -24,10 +25,11 @@ export function parseFlowJson(jsonString: string): ValidationResult {
   let parsed: unknown
   try {
     parsed = JSON.parse(jsonString)
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
     return {
       success: false,
-      errors: [{ path: '', message: `JSON parse error: ${err.message}` }],
+      errors: [{ path: '', message: `JSON parse error: ${message}` }],
     }
   }
   return validateFlow(parsed)

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Root } from './schema.js'
+import type { Root, NodeShape, Step } from './schema.js'
 import { validateFlow } from './validator.js'
 
 // --- Operation schemas (all support multiple items) ---
@@ -109,17 +109,20 @@ function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj))
 }
 
-function findNode(nodes: any[], nodeId: string): any | undefined {
-  return nodes.find((n: any) => n.id === nodeId)
+function findNode(nodes: NodeShape[], nodeId: string): NodeShape | undefined {
+  return nodes.find((n) => n.id === nodeId)
 }
 
-function stepReferencesNode(step: any, nodeId: string): boolean {
+function stepReferencesNode(step: Step, nodeId: string): boolean {
   if ('parallel' in step) {
-    return step.parallel.some((s: any) => stepReferencesNode(s, nodeId))
+    return step.parallel.some((s) => stepReferencesNode(s, nodeId))
   }
-  if (step.from === nodeId) return true
-  if (Array.isArray(step.to)) return step.to.includes(nodeId)
-  return step.to === nodeId
+  if ('from' in step && step.from === nodeId) return true
+  if ('to' in step) {
+    if (Array.isArray(step.to)) return step.to.includes(nodeId)
+    return step.to === nodeId
+  }
+  return false
 }
 
 export function applyPatch(root: Root, patch: PatchOperations): PatchResult {
@@ -133,7 +136,7 @@ export function applyPatch(root: Root, patch: PatchOperations): PatchResult {
           if (findNode(result.flow.nodes, node.id)) {
             errors.push({ path: 'flow.nodes', message: `Node "${node.id}" already exists` })
           } else {
-            result.flow.nodes.push({ ...node } as any)
+            result.flow.nodes.push({ ...node } as NodeShape)
           }
         }
         break
@@ -141,15 +144,13 @@ export function applyPatch(root: Root, patch: PatchOperations): PatchResult {
 
       case 'remove-nodes': {
         for (const nodeId of op.nodes) {
-          const idx = result.flow.nodes.findIndex((n: any) => n.id === nodeId)
+          const idx = result.flow.nodes.findIndex((n) => n.id === nodeId)
           if (idx === -1) {
             errors.push({ path: 'flow.nodes', message: `Node "${nodeId}" not found` })
           } else {
             result.flow.nodes.splice(idx, 1)
             if (result.flow.steps) {
-              result.flow.steps = result.flow.steps.filter(
-                (s: any) => !stepReferencesNode(s, nodeId)
-              )
+              result.flow.steps = result.flow.steps.filter((s) => !stepReferencesNode(s, nodeId))
             }
           }
         }
@@ -174,7 +175,9 @@ export function applyPatch(root: Root, patch: PatchOperations): PatchResult {
           if (!node) {
             errors.push({ path: 'flow.nodes', message: `Node "${update.id}" not found` })
           } else {
-            if (update.type !== undefined) node.type = update.type
+            // Patch schema accepts type as a free string; the post-patch
+            // validateFlow() pass enforces the enum below.
+            if (update.type !== undefined) node.type = update.type as NodeShape['type']
             if (update.icon !== undefined) node.icon = update.icon
             if (update.color !== undefined) node.color = update.color
           }

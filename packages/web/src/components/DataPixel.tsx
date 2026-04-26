@@ -30,7 +30,7 @@ interface DataPixelProps {
 }
 
 const PIXEL_SIZE = 28
-const getSpeed = () => (window as any).__flowSpeed ?? 1
+const getSpeed = () => window.__flowSpeed ?? 1
 const ANIMATION_DURATION_BASE = 1800
 
 export function DataPixel({
@@ -51,7 +51,9 @@ export function DataPixel({
   const rafRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
   const onCompleteRef = useRef(onAnimationComplete)
-  onCompleteRef.current = onAnimationComplete
+  useEffect(() => {
+    onCompleteRef.current = onAnimationComplete
+  }, [onAnimationComplete])
   const [hovered, setHovered] = useState(false)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
   // Determine pixel color from source node type

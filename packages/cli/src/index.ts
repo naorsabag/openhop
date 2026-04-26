@@ -22,6 +22,10 @@ const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`
 
 const DEFAULT_SERVER = 'http://localhost:8787'
 
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
 function padRight(str: string, len: number): string {
   return str.length >= len ? str.slice(0, len) : str + ' '.repeat(len - str.length)
 }
@@ -43,7 +47,7 @@ program
       env: { ...process.env, PORT: opts.port },
     })
     child.on('error', (err) => {
-      console.error(red(`Failed to start server: ${err.message}`))
+      console.error(red(`Failed to start server: ${errorMessage(err)}`))
       process.exit(1)
     })
     child.on('exit', (code) => {
@@ -89,8 +93,8 @@ program
       console.log(`  ${bold('ID:')}    ${data.id}`)
       console.log(`  ${bold('Title:')} ${data.title}`)
       console.log(`  ${bold('URL:')}   ${cyan(`${webUrl}/flow/${data.id}`)}`)
-    } catch (err: any) {
-      console.error(red(`✗ Connection failed: ${err.message}`))
+    } catch (err) {
+      console.error(red(`✗ Connection failed: ${errorMessage(err)}`))
       process.exit(1)
     }
   })
@@ -144,8 +148,8 @@ program
         ].join('')
         console.log(row)
       }
-    } catch (err: any) {
-      console.error(red(`✗ Connection failed: ${err.message}`))
+    } catch (err) {
+      console.error(red(`✗ Connection failed: ${errorMessage(err)}`))
       process.exit(1)
     }
   })
@@ -162,8 +166,8 @@ program
     let operations: unknown
     try {
       operations = YAML.parse(content)
-    } catch (err: any) {
-      console.error(red(`✗ Parse error: ${err.message}`))
+    } catch (err) {
+      console.error(red(`✗ Parse error: ${errorMessage(err)}`))
       process.exit(1)
     }
 
@@ -196,8 +200,8 @@ program
       console.log(`  ${bold('ID:')}      ${data.id}`)
       console.log(`  ${bold('Title:')}   ${data.title}`)
       console.log(`  ${bold('Version:')} v${data.version}`)
-    } catch (err: any) {
-      console.error(red(`✗ Connection failed: ${err.message}`))
+    } catch (err) {
+      console.error(red(`✗ Connection failed: ${errorMessage(err)}`))
       process.exit(1)
     }
   })
@@ -224,8 +228,8 @@ program
         console.error(red(`✗ Server error (${res.status}): ${body}`))
         process.exit(1)
       }
-    } catch (err: any) {
-      console.error(red(`✗ Connection failed: ${err.message}`))
+    } catch (err) {
+      console.error(red(`✗ Connection failed: ${errorMessage(err)}`))
       process.exit(1)
     }
   })

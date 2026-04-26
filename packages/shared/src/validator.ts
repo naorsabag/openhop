@@ -1,5 +1,5 @@
 import { ZodError } from 'zod'
-import { RootSchema, type Root, type Step } from './schema.js'
+import { RootSchema, type Root, type Step, type NodeShape } from './schema.js'
 
 export interface ValidationError {
   path: string
@@ -53,7 +53,7 @@ function findClosest(target: string, ids: string[]): string | undefined {
  * Collect all node IDs from a flow body, checking for duplicates.
  */
 function collectNodeIds(
-  nodes: { id: string; flow?: { nodes: { id: string; flow?: any }[]; steps?: Step[] } }[],
+  nodes: NodeShape[],
   path: string,
   errors: ValidationError[],
   allIds: Set<string>
@@ -161,7 +161,11 @@ function checkRef(
 /**
  * Recursively validate step refs for nested flows.
  */
-function validateNestedFlowSteps(nodes: any[], path: string, errors: ValidationError[]): void {
+function validateNestedFlowSteps(
+  nodes: NodeShape[],
+  path: string,
+  errors: ValidationError[]
+): void {
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
     if (node.flow) {
