@@ -12,7 +12,7 @@
     "url": "https://github.com/naorsabag/OpenHop/issues"
   },
   "license": "MIT",
-  "author": "Naor Sabag <naor.sg@gmail.com>",
+  "author": "Naor Sabag (https://github.com/naorsabag)",
   "workspaces": ["packages/*"],
   "scripts": {
     "serve": "npx tsx packages/server/src/index.ts",
