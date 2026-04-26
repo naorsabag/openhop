@@ -12,10 +12,10 @@ export default defineConfig({
       // locks in today's baseline (~19% lines via lib/flow-layout.ts coverage)
       // — raise it as more components/hooks get tested.
       thresholds: {
-        lines: 18,
-        statements: 18,
-        functions: 50,
-        branches: 60,
+        lines: 19,
+        statements: 19,
+        functions: 55,
+        branches: 70,
       },
     },
   },
