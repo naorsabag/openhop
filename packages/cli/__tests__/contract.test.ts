@@ -203,11 +203,12 @@ describe('--json on every data-emitting command', () => {
   })
 })
 
-describe('exit-code contract (failure modes without a server)', () => {
+describe('exit-code contract (per-command matrix)', () => {
+  const DOWN = ['--server', 'http://127.0.0.1:1']
+
   it('unknown subcommand → exit 1 (commander default), error on stderr', () => {
     const r = run(['no-such-command'])
     expect(r.status).not.toBe(0)
-    // commander writes to stderr; stdout stays empty
     expect(r.stdout).toBe('')
     expect(r.stderr.length).toBeGreaterThan(0)
   })
@@ -218,9 +219,126 @@ describe('exit-code contract (failure modes without a server)', () => {
     expect(r.stderr).toMatch(/unknown --client/)
   })
 
+  it('validate of missing file → exit 2 (usage)', () => {
+    const r = run(['validate', '/no/such/file.yaml', '--json'])
+    expect(r.status).toBe(2)
+    const doc = JSON.parse(r.stdout) as { valid: boolean; error: string }
+    expect(doc.valid).toBe(false)
+    expect(doc.error).toBe('read')
+  })
+
   it('validate of bad YAML → exit 3 (validation)', () => {
     const r = run(['validate', '-'], 'nodses: []\n')
     expect(r.status).toBe(3)
+  })
+
+  it('push with bad YAML → exit 3 (validation, before network)', () => {
+    // Validation runs locally first, so this never hits the network even
+    // though we point at a dead server.
+    const r = run(['push', '-', '--json', ...DOWN], 'nodses: []\n')
+    expect(r.status).toBe(3)
+    const doc = JSON.parse(r.stdout) as { ok: boolean; error: string }
+    expect(doc.error).toBe('validation')
+  })
+
+  it('push with valid YAML, dead server → exit 6 (network)', () => {
+    const r = run(['push', EXAMPLE_GOOD, '--json', ...DOWN])
+    expect(r.status).toBe(6)
+    const doc = JSON.parse(r.stdout) as { ok: boolean; error: string }
+    expect(doc.error).toBe('network')
+  })
+
+  it('patch with bad YAML → exit 3 (validation)', () => {
+    const r = run(['patch', 'abc', '-', '--json', ...DOWN], 'not: a: valid: patch\n')
+    expect(r.status).toBe(3)
+  })
+
+  it('patch on dead server (with valid patch payload) → exit 6 (network)', () => {
+    const validPatch =
+      'operations:\n  - op: rename-nodes\n    nodes:\n      - id: a\n        label: A\n'
+    const r = run(['patch', 'abc', '-', '--json', ...DOWN], validPatch)
+    expect(r.status).toBe(6)
+    const doc = JSON.parse(r.stdout) as { error: string }
+    expect(doc.error).toBe('network')
+  })
+
+  it('remove on dead server → exit 6 (network)', () => {
+    const r = run(['remove', 'abc', '--json', ...DOWN])
+    expect(r.status).toBe(6)
+    const doc = JSON.parse(r.stdout) as { error: string }
+    expect(doc.error).toBe('network')
+  })
+})
+
+describe('output discipline: human-mode stdout is empty across all commands', () => {
+  // For commands that fail before producing data, human mode must keep
+  // stdout completely empty — the failure messaging belongs on stderr.
+  // This locks the agent-vs-human boundary across the whole CLI surface.
+  const DOWN = ['--server', 'http://127.0.0.1:1']
+
+  it('push (validation failure)', () => {
+    const r = run(['push', '-', ...DOWN], 'nodses: []\n')
+    expect(r.stdout).toBe('')
+    expect(r.stderr.length).toBeGreaterThan(0)
+  })
+
+  it('push (network failure)', () => {
+    const r = run(['push', EXAMPLE_GOOD, ...DOWN])
+    expect(r.stdout).toBe('')
+    expect(r.stderr).toMatch(/Connection failed|Server error/)
+  })
+
+  it('list (network failure)', () => {
+    const r = run(['list', ...DOWN])
+    expect(r.stdout).toBe('')
+    expect(r.stderr).toMatch(/Connection failed|Server error/)
+  })
+
+  it('get (network failure)', () => {
+    const r = run(['get', 'abc', ...DOWN])
+    expect(r.stdout).toBe('')
+    expect(r.stderr).toMatch(/Connection failed|Server error/)
+  })
+
+  it('remove (network failure)', () => {
+    const r = run(['remove', 'abc', ...DOWN])
+    expect(r.stdout).toBe('')
+    expect(r.stderr).toMatch(/Connection failed|Server error/)
+  })
+
+  it('init dry-run (human mode)', () => {
+    const r = run(['init', '--dry-run'])
+    // init's table is informational status, not data — stays on stderr.
+    expect(r.stdout).toBe('')
+    expect(r.stderr).toMatch(/Client/)
+  })
+})
+
+describe('TTY-awareness via NO_COLOR + non-TTY pipes', () => {
+  // Positive case (ANSI when stdout/stderr is a real TTY) requires a pty
+  // harness — not tested here. Negative cases are the safety-critical ones
+  // because piped output is what agents and CI consume.
+  it('NO_COLOR env disables ANSI even if stderr were a TTY', () => {
+    // We can't trivially make the child's stderr a TTY in spawnSync, so this
+    // mainly asserts NO_COLOR is honored — the second guard in utils.ts.
+    const r = spawnSync('node', [CLI, 'validate', '-'], {
+      encoding: 'utf-8',
+      input: 'nodses: []\n',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, NO_COLOR: '1' },
+    })
+    expect(r.stderr).not.toMatch(ANSI)
+    expect(r.stdout).not.toMatch(ANSI)
+  })
+
+  it('TERM=dumb disables ANSI', () => {
+    const r = spawnSync('node', [CLI, 'validate', '-'], {
+      encoding: 'utf-8',
+      input: 'nodses: []\n',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, TERM: 'dumb' },
+    })
+    expect(r.stderr).not.toMatch(ANSI)
   })
 })
 
