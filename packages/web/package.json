@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@openhop/shared": "*",
-    "@tailwindcss/vite": "^4.2.2",
+    "@tailwindcss/vite": "^4.2.4",
     "@xyflow/react": "^12.10.2",
     "elkjs": "^0.11.1",
     "react": "^19.2.4",
