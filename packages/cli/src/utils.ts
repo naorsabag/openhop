@@ -22,9 +22,41 @@ export function padRight(str: string, len: number): string {
   return str.length >= len ? str.slice(0, len) : str + ' '.repeat(len - str.length)
 }
 
-// ANSI color helpers (no-ops in non-TTY environments — kept simple).
-export const green = (s: string) => `\x1b[32m${s}\x1b[0m`
-export const red = (s: string) => `\x1b[31m${s}\x1b[0m`
-export const bold = (s: string) => `\x1b[1m${s}\x1b[0m`
-export const dim = (s: string) => `\x1b[2m${s}\x1b[0m`
-export const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`
+// ---------------------------------------------------------------------------
+// ANSI color helpers — no-op when stdout/stderr is piped or NO_COLOR is set.
+// We check stderr for color decisions because that's where human messaging
+// goes; data on stdout must always be plain (especially in --json mode).
+// ---------------------------------------------------------------------------
+
+const noColor =
+  process.env.NO_COLOR !== undefined ||
+  process.env.TERM === 'dumb' ||
+  !process.stderr.isTTY
+
+const ansi = (open: number, close: number) => (s: string) =>
+  noColor ? s : `\x1b[${open}m${s}\x1b[${close}m`
+
+export const green = ansi(32, 39)
+export const red = ansi(31, 39)
+export const bold = ansi(1, 22)
+export const dim = ansi(2, 22)
+export const cyan = ansi(36, 39)
+
+// ---------------------------------------------------------------------------
+// Output discipline: data on stdout, logs/errors on stderr.
+// ---------------------------------------------------------------------------
+
+/** Emit a JSON document on stdout (machine-readable mode). */
+export function emitJson(value: unknown): void {
+  process.stdout.write(JSON.stringify(value) + '\n')
+}
+
+/** Emit a human-readable line on stderr (logs, status, progress). */
+export function logStderr(line: string): void {
+  process.stderr.write(line + '\n')
+}
+
+/** Emit an error line on stderr. */
+export function errStderr(line: string): void {
+  process.stderr.write(line + '\n')
+}
