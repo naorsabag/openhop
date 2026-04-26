@@ -115,9 +115,12 @@ program
       const data = (await res.json()) as { id: string; title: string; version: number }
       const webUrl = opts.server.replace(/:\d+$/, ':8788')
       const url = `${webUrl}/flow/${data.id}`
+      // Spec asks for nodeCount in the JSON output. We have it locally from
+      // the validated flow, no need to round-trip through the server.
+      const nodeCount = result.data?.flow?.nodes?.length ?? 0
 
       if (opts.json) {
-        emitJson({ id: data.id, title: data.title, version: data.version, url })
+        emitJson({ id: data.id, title: data.title, version: data.version, url, nodeCount })
       } else {
         logStderr(green('✓ Flow created'))
         logStderr(`  ${bold('ID:')}    ${data.id}`)

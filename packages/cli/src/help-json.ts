@@ -21,7 +21,12 @@ interface CommandSpec {
   description: string
   positional: PositionalSpec[]
   flags: FlagSpec[]
-  examples?: string[]
+  /** Exit codes this specific command can produce. Subset of the global
+   *  exitCodes map. Agents read this to know which failure modes to plan
+   *  for without trying every code. */
+  exitCodes: number[]
+  /** Realistic invocation examples for this command. */
+  examples: string[]
 }
 
 interface HelpDoc {
@@ -56,6 +61,75 @@ function positionalType(name: string): 'string' | 'path-or-dash' {
   return 'string'
 }
 
+/** Per-command metadata that isn't derivable from Commander introspection.
+ *  When a new command is added, append an entry here so `help --json` keeps
+ *  surfacing actionable information for agents. */
+const COMMAND_META: Record<string, { exitCodes: number[]; examples: string[] }> = {
+  serve: {
+    exitCodes: [ExitCode.SUCCESS, ExitCode.GENERIC],
+    examples: ['openhop serve', 'openhop serve --port 8800'],
+  },
+  push: {
+    exitCodes: [
+      ExitCode.SUCCESS,
+      ExitCode.USAGE,
+      ExitCode.VALIDATION,
+      ExitCode.CONFLICT,
+      ExitCode.NETWORK,
+    ],
+    examples: [
+      'openhop push flow.yaml',
+      'openhop push flow.yaml --json',
+      'cat flow.yaml | openhop push -',
+    ],
+  },
+  list: {
+    exitCodes: [ExitCode.SUCCESS, ExitCode.NETWORK],
+    examples: ['openhop list', 'openhop list --json'],
+  },
+  get: {
+    exitCodes: [ExitCode.SUCCESS, ExitCode.USAGE, ExitCode.NOT_FOUND, ExitCode.NETWORK],
+    examples: ['openhop get abc123', 'openhop get abc123 --json'],
+  },
+  patch: {
+    exitCodes: [
+      ExitCode.SUCCESS,
+      ExitCode.USAGE,
+      ExitCode.VALIDATION,
+      ExitCode.NOT_FOUND,
+      ExitCode.CONFLICT,
+      ExitCode.NETWORK,
+    ],
+    examples: ['openhop patch abc123 patch.yaml', 'cat patch.yaml | openhop patch abc123 -'],
+  },
+  remove: {
+    exitCodes: [ExitCode.SUCCESS, ExitCode.USAGE, ExitCode.NOT_FOUND, ExitCode.NETWORK],
+    examples: ['openhop remove abc123', 'openhop remove abc123 --json'],
+  },
+  validate: {
+    exitCodes: [ExitCode.SUCCESS, ExitCode.USAGE, ExitCode.VALIDATION],
+    examples: [
+      'openhop validate flow.yaml',
+      'openhop validate flow.yaml --json',
+      'cat flow.yaml | openhop validate -',
+    ],
+  },
+  init: {
+    exitCodes: [ExitCode.SUCCESS, ExitCode.GENERIC, ExitCode.USAGE],
+    examples: [
+      'openhop init',
+      'openhop init --dry-run --json',
+      'openhop init --client claude-code',
+      'openhop init --force',
+    ],
+  },
+}
+
+const HELP_META = {
+  exitCodes: [ExitCode.SUCCESS, ExitCode.NOT_FOUND],
+  examples: ['openhop help --json', 'openhop help push --json'],
+}
+
 function commandSpec(cmd: Command): CommandSpec {
   const positional: PositionalSpec[] = cmd.registeredArguments.map((arg) => ({
     name: arg.name(),
@@ -72,10 +146,14 @@ function commandSpec(cmd: Command): CommandSpec {
     ...(opt.required ? { required: true } : {}),
   }))
 
+  const meta = cmd.name() === 'help' ? HELP_META : COMMAND_META[cmd.name()]
+
   return {
     description: cmd.description(),
     positional,
     flags,
+    exitCodes: meta?.exitCodes ?? [ExitCode.SUCCESS, ExitCode.GENERIC],
+    examples: meta?.examples ?? [],
   }
 }
 

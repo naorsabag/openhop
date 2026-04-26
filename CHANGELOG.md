@@ -17,7 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI: new commands.
   - `openhop get <id>` — fetch a flow by id (JSON or piped YAML).
   - `openhop validate <file|->` — local schema validation, no server round-trip.
-  - `openhop init` — install the OpenHop skill into every detected AI client (Claude Code, Cursor; advisory output for Windsurf, Cline, Continue). `--dry-run`, `--force`, `--client <name>` supported.
+  - `openhop init` — install the OpenHop skill into every detected AI client (Claude Code, Cursor, Windsurf, Cline; advisory output for Continue.dev). `--dry-run`, `--force`, `--client <name>` supported.
+- CLI: `help --json` per-command `exitCodes` array and `examples` array — agents can plan invocations and know which failure modes to expect from each command.
+- CLI: `push --json` includes `nodeCount` field.
+- CLI: `npm run test:cli-contract` script alias targeting the end-to-end contract suite.
+
+### Notes
+
+- `get --json` returns the server's `storedFlow` shape (`{meta, flow, version, ...}`) rather than the spec example's `{id, yaml, svg, metadata}`. SVG rendering doesn't exist server-side in v0.1; YAML re-serialization on the client is lossy. Documented inline in `packages/cli/src/get.ts`.
   - `openhop help [command] --json` — emit the full command tree as JSON for agent introspection.
 - CLI: stdin input via `-` on `push`, `patch`, `validate`, `render`.
 

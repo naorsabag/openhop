@@ -33,6 +33,8 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:cli-contract": "vitest run __tests__/contract.test.ts",
     "build": "tsc --noEmit && esbuild src/index.ts --bundle --platform=node --format=esm --external:commander --external:yaml --external:zod --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
     "prepare": "npm run build"
   },

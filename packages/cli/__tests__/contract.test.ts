@@ -132,6 +132,44 @@ describe('help --json: agent introspection', () => {
       expect(Array.isArray(spec.flags), `${name}.flags`).toBe(true)
     }
   })
+
+  it('every command declares per-command exitCodes + examples', () => {
+    const r = run(['help', '--json'])
+    const doc = JSON.parse(r.stdout) as {
+      commands: Record<string, { exitCodes: unknown; examples: unknown }>
+    }
+    for (const [name, spec] of Object.entries(doc.commands)) {
+      expect(Array.isArray(spec.exitCodes), `${name}.exitCodes`).toBe(true)
+      expect(Array.isArray(spec.examples), `${name}.examples`).toBe(true)
+      expect((spec.exitCodes as number[]).length, `${name} has at least one exit code`)
+        .toBeGreaterThan(0)
+      expect((spec.examples as string[]).length, `${name} has at least one example`)
+        .toBeGreaterThan(0)
+    }
+  })
+
+  it('per-command exitCodes are a subset of the global exitCodes map', () => {
+    const r = run(['help', '--json'])
+    const doc = JSON.parse(r.stdout) as {
+      exitCodes: Record<string, number>
+      commands: Record<string, { exitCodes: number[] }>
+    }
+    const valid = new Set(Object.values(doc.exitCodes))
+    for (const [name, spec] of Object.entries(doc.commands)) {
+      for (const code of spec.exitCodes) {
+        expect(valid.has(code), `${name} declares unknown exit code ${code}`).toBe(true)
+      }
+    }
+  })
+
+  it('push declares VALIDATION + NETWORK as possible exit codes', () => {
+    const r = run(['help', 'push', '--json'])
+    const doc = JSON.parse(r.stdout) as {
+      commands: Record<string, { exitCodes: number[] }>
+    }
+    expect(doc.commands.push.exitCodes).toContain(3) // VALIDATION
+    expect(doc.commands.push.exitCodes).toContain(6) // NETWORK
+  })
 })
 
 describe('--json on every data-emitting command', () => {
