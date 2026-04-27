@@ -8,6 +8,49 @@ allowed-tools: Bash(openhop:*), Bash(npx tsx:*)
 
 OpenHop renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
 
+## Quickest valid flow (copy this, modify ids/labels)
+
+This is the **smallest known-valid flow**. Start from this and edit — do not invent the schema.
+
+```yaml
+meta:
+  title: Three-tier app
+flow:
+  nodes:
+    - id: browser
+      label: Browser
+      type: actor
+    - id: api
+      label: API
+      type: endpoint
+    - id: db
+      label: Postgres
+      type: database
+  steps:
+    - from: browser
+      to: api
+      data: request
+    - from: api
+      to: db
+      data: query
+    - from: db
+      to: api
+      data: rows
+    - from: api
+      to: browser
+      data: response
+```
+
+Push it with `openhop push <file>` (or `openhop push -` for stdin). On success you get a flow id and a URL.
+
+**Validation rules to lock in before you write your own:**
+
+- `type` must be one of the 12 enum values (see Schema Reference below). `transform`, `validation`, `redis`, `oauth`, etc. are **not** valid types.
+- `data` is a `string` or an object — never a list. `data: "request"` ✓, `data: { label: "request", fields: [...] }` ✓, `data: [{ name: "request" }]` ✗
+- `id` is alphanumeric + hyphens + underscores only.
+
+If the validator rejects your flow, **read the error path** — it tells you exactly which field is wrong.
+
 ## Before Creating Flows
 
 Verify the OpenHop API server is running:
@@ -144,15 +187,20 @@ openhop patch abc123 polish-patch.yaml
 Prefix all commands with the repo path:
 
 ```bash
-openhop serve                                     # Start server
-openhop serve                                       # Start server + frontend
-openhop push <file.yaml>                 # Push a flow → returns ID and URL
+openhop serve                            # Start API + web UI (:8787 + :8788)
+openhop validate <file.yaml>             # Local schema check, no server needed
+openhop validate -                       # Validate from stdin
+openhop push <file.yaml>                 # Push a flow → returns id + URL
 openhop push -                           # Push from stdin (pipe YAML)
+openhop get <flow-id>                    # Fetch a flow by id (full JSON)
+openhop list                             # List all flows
 openhop patch <flow-id> <patch.yaml>     # Apply patch operations
 openhop patch <flow-id> -                # Patch from stdin
-openhop list                             # List all flows
 openhop remove <flow-id>                 # Delete a flow
+openhop help --json                      # Full machine-readable command tree
 ```
+
+Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network. **Always `validate` before `push`** when iterating — it skips the server round-trip.
 
 Stdin is useful when generating YAML programmatically:
 
@@ -177,29 +225,34 @@ flow:
 ### Node
 
 - `id` (required): alphanumeric + hyphens + underscores
-- `label` (required): display name
-- `type`: actor | endpoint | transform | validation | auth | database | external | cache | queue | service | custom
-- `icon`: Iconify icon ID (e.g. "logos:postgresql") — overlays on top of the node's pixel art. Works on any `type`, not just `custom`. Browse: https://icon-sets.iconify.design/logos/
+- `label` (required): display name — **freeform**, anything human-readable (`"Stripe Payment Gateway"`, `"Customer #1"`, `"Order Service v2"`)
+- `type`: **closed enum, exactly one of**: `actor | endpoint | auth | database | external | cache | queue | service | docker | k8s | scheduler | custom`. Anything else fails validation. Default if omitted: `service`.
+- `icon`: Iconify icon ID (e.g. `"logos:postgresql"`) — overlays on top of the node's pixel art. Works on any `type`, not just `custom`. Browse: https://icon-sets.iconify.design/logos/
 - `color`: hex color
 - `flow`: nested sub-flow { nodes, steps } — makes node expandable with +
+
+> **Critical: types are categories, labels are names.** The 12 `type` values are how the renderer knows which sprite + color to draw (database = barrel, cache = lightning, etc.). The `label` is what the user reads on the node. **Never** put a variant name (like `redis`, `oauth`, `stripe`) into `type` — that's a label. Put it in `label`, and use the matching category in `type` (`cache`, `auth`, `external`).
+>
+> **When nothing fits**, use `type: custom` and set your own `icon` + `color`. Don't invent new type values — the schema is closed.
 
 ### Node Type Variants (pick the right type, then a concrete instance)
 
 Each node type has common real-world variants. Use them to choose an accurate `label` and, where applicable, a matching Iconify icon. First entry is the canonical/most common variant for that type.
 
-| Type       | Common variants                                                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------------------ |
-| actor      | user, admin, customer, operator, agent, bot, service-account, system                                         |
-| endpoint   | rest-api, graphql, grpc, webhook, websocket, sse, rpc                                                        |
-| transform  | parser, serializer, formatter, mapper, aggregator, filter, enricher                                          |
-| validation | schema-validator, input-validator, permission-check, rate-limiter, csrf, feature-flag                        |
-| auth       | oauth, jwt, session, api-key, saml, ldap, mfa                                                                |
-| database   | postgres, mysql, mongodb, sqlite, cassandra, dynamodb, cockroachdb, bigquery, snowflake, elasticsearch, disk |
-| external   | stripe, twilio, sendgrid, github, slack, openai, anthropic, firebase, s3, maps-api                           |
-| cache      | redis, memcached, ram, cdn, http-cache, local-cache                                                          |
-| queue      | kafka, rabbitmq, sqs, pubsub, nats, kinesis, celery                                                          |
-| service    | microservice, worker, scheduler, processor, orchestrator, gateway, proxy, loadbalancer                       |
-| custom     | (anything — also set `icon` and `color`)                                                                     |
+| Type      | Common variants (use as `label`, NOT `type`)                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------------ |
+| actor     | user, admin, customer, operator, agent, bot, service-account, system                                         |
+| endpoint  | rest-api, graphql, grpc, webhook, websocket, sse, rpc                                                        |
+| auth      | oauth, jwt, session, api-key, saml, ldap, mfa                                                                |
+| database  | postgres, mysql, mongodb, sqlite, cassandra, dynamodb, cockroachdb, bigquery, snowflake, elasticsearch, disk |
+| external  | stripe, twilio, sendgrid, github, slack, openai, anthropic, firebase, s3, maps-api                           |
+| cache     | redis, memcached, ram, cdn, http-cache, local-cache                                                          |
+| queue     | kafka, rabbitmq, sqs, pubsub, nats, kinesis, celery                                                          |
+| service   | microservice, worker, processor, orchestrator, gateway, proxy, loadbalancer                                  |
+| docker    | container, sidecar, init-container, compose-service                                                          |
+| k8s       | pod, deployment, statefulset, daemonset, job, cronjob, service, ingress                                      |
+| scheduler | cron, airflow, temporal, celery-beat, sidekiq, bullmq                                                        |
+| custom    | (anything — also set `icon` and `color`)                                                                     |
 
 ### Step
 
