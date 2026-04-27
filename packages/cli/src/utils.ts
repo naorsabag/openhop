@@ -29,9 +29,7 @@ export function padRight(str: string, len: number): string {
 // ---------------------------------------------------------------------------
 
 const noColor =
-  process.env.NO_COLOR !== undefined ||
-  process.env.TERM === 'dumb' ||
-  !process.stderr.isTTY
+  process.env.NO_COLOR !== undefined || process.env.TERM === 'dumb' || !process.stderr.isTTY
 
 const ansi = (open: number, close: number) => (s: string) =>
   noColor ? s : `\x1b[${open}m${s}\x1b[${close}m`

@@ -17,17 +17,16 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import YAML from 'yaml'
 
-import {
-  offsetToLineCol,
-  pathStringToSegments,
-  resolvePosition,
-} from '../src/validate.js'
+import { offsetToLineCol, pathStringToSegments, resolvePosition } from '../src/validate.js'
 
 const REPO_CLI = join(__dirname, '..')
 const ENTRY = join(REPO_CLI, 'src/index.ts')
 const TSX = join(REPO_CLI, '../../node_modules/.bin/tsx')
 
-function runCli(args: string[], input?: string): { stdout: string; stderr: string; status: number } {
+function runCli(
+  args: string[],
+  input?: string
+): { stdout: string; stderr: string; status: number } {
   const r = spawnSync(TSX, [ENTRY, ...args], {
     input,
     encoding: 'utf-8',
@@ -173,9 +172,7 @@ flow:
       expect(Array.isArray(out.errors)).toBe(true)
       expect(out.errors.length).toBeGreaterThan(0)
       // At least one error should land on the node-2 region (lines 7-8).
-      const positioned = out.errors.filter(
-        (e: { line?: number }) => typeof e.line === 'number'
-      )
+      const positioned = out.errors.filter((e: { line?: number }) => typeof e.line === 'number')
       expect(positioned.length).toBeGreaterThan(0)
       const lines = positioned.map((e: { line: number }) => e.line)
       expect(Math.min(...lines)).toBeGreaterThanOrEqual(5)
@@ -200,9 +197,7 @@ flow:
       const r = runCli(['validate', file, '--json'])
       expect(r.status).toBe(3)
       const out = JSON.parse(r.stdout)
-      const fromErr = out.errors.find((e: { path: string }) =>
-        e.path.includes('from')
-      )
+      const fromErr = out.errors.find((e: { path: string }) => e.path.includes('from'))
       expect(fromErr).toBeDefined()
       expect(fromErr.suggestion).toMatch(/Did you mean "client"/)
       // line/col should be set since the path resolves.

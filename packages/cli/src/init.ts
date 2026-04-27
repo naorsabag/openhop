@@ -167,7 +167,7 @@ const realFs: FsLike = {
 export function findSourceSkill(
   startUrl: string = import.meta.url,
   fs: FsLike = realFs,
-  cwd: string = process.cwd(),
+  cwd: string = process.cwd()
 ): string | null {
   const here = dirname(fileURLToPath(startUrl))
   const candidates = [
@@ -192,7 +192,7 @@ export function runInit(
   opts: InitOptions,
   clients: ClientSpec[],
   sourceSkill: string | null,
-  fs: FsLike = realFs,
+  fs: FsLike = realFs
 ): { results: InstallResult[]; sourceMissing: boolean } {
   if (!sourceSkill) {
     return { results: [], sourceMissing: true }
@@ -287,9 +287,7 @@ export function registerInit(program: Command): void {
       // Validate --client filter early so we can return exit 2 (usage error).
       if (opts.client && !clients.some((c) => c.id === opts.client)) {
         const known = clients.map((c) => c.id).join(', ')
-        process.stderr.write(
-          `error: unknown --client "${opts.client}". Known clients: ${known}\n`,
-        )
+        process.stderr.write(`error: unknown --client "${opts.client}". Known clients: ${known}\n`)
         process.exit(EXIT_USAGE)
       }
 
@@ -298,7 +296,7 @@ export function registerInit(program: Command): void {
 
       if (sourceMissing) {
         process.stderr.write(
-          'error: could not locate bundled skills/openhop/ — is this a damaged install?\n',
+          'error: could not locate bundled skills/openhop/ — is this a damaged install?\n'
         )
         process.exit(EXIT_GENERIC)
       }
