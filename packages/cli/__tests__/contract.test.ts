@@ -235,17 +235,43 @@ describe('--json on every data-emitting command', () => {
     const r = run(['list', '--json', '--server', 'http://127.0.0.1:1'])
     expect(r.status).toBe(6)
     expect(r.stdout).not.toMatch(ANSI)
-    const doc = JSON.parse(r.stdout) as { ok: boolean; error: string }
+    const doc = JSON.parse(r.stdout) as { ok: boolean; error: string; url: string }
     expect(doc.ok).toBe(false)
     expect(doc.error).toBe('network')
+    // Error must include the URL it tried, so agents see what failed.
+    expect(doc.url).toBe('http://127.0.0.1:1/api/flows')
   })
 
-  it('get with no server → exit 6, JSON error on stdout', () => {
+  it('get with no server → exit 6, JSON error on stdout, error includes URL', () => {
     const r = run(['get', 'abc', '--json', '--server', 'http://127.0.0.1:1'])
     expect(r.status).toBe(6)
-    const doc = JSON.parse(r.stdout) as { ok: boolean; error: string }
+    const doc = JSON.parse(r.stdout) as { ok: boolean; error: string; url: string }
     expect(doc.ok).toBe(false)
     expect(doc.error).toBe('network')
+    expect(doc.url).toBe('http://127.0.0.1:1/api/flows/abc')
+  })
+
+  it('every network-error JSON includes the URL that failed', () => {
+    // Lock the contract across all server-touching commands. push and patch
+    // need valid bodies first or they fail validation before reaching the
+    // network — for those we use real fixtures.
+    const cases = [
+      { args: ['list', '--json', '--server', 'http://127.0.0.1:1'] },
+      { args: ['get', 'x', '--json', '--server', 'http://127.0.0.1:1'] },
+      { args: ['remove', 'x', '--json', '--server', 'http://127.0.0.1:1'] },
+      {
+        args: ['push', EXAMPLE_GOOD, '--json', '--server', 'http://127.0.0.1:1'],
+      },
+    ]
+    for (const c of cases) {
+      const r = run(c.args)
+      expect(r.status, `${c.args[0]} should exit 6`).toBe(6)
+      const doc = JSON.parse(r.stdout) as { error: string; url?: string }
+      expect(doc.error, `${c.args[0]} should report network error`).toBe('network')
+      expect(doc.url, `${c.args[0]} should include url in network error`).toMatch(
+        /^http:\/\/127\.0\.0\.1:1\//
+      )
+    }
   })
 })
 

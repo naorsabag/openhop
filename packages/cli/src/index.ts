@@ -53,22 +53,62 @@ const program = new Command()
 program.name('openhop').description('OpenHop — Data Flow Visualization CLI').version('0.1.0')
 
 // --- serve ---
+//
+// Starts both the API server (Fastify on :8787) and the web UI dev server
+// (Vite on :8788). The URL printed by `push` points at the web UI port, so
+// without the web running the user lands on a 404 — that's what a fresh
+// agent's cold-start test surfaced. Use --no-web to opt out (CI, headless).
+//
+// Note: this command only works inside a from-source checkout of the
+// monorepo, because the server and web entries are looked up relative to
+// the CLI bundle's dirname. The published `npm i -g openhop` package
+// doesn't ship the server/web sources — for production deployments use
+// docker-compose or clone the repo. Tracked for v0.2 with a separate
+// `@openhop/server` package.
 program
   .command('serve')
-  .description('Start the OpenHop server')
-  .option('-p, --port <port>', 'Port to listen on', '8787')
+  .description('Start the OpenHop API server (:8787) and web UI (:8788)')
+  .option('-p, --port <port>', 'API port', '8787')
+  .option('--no-web', 'Start API only, skip the web UI dev server')
   .action((opts) => {
-    const serverEntry = resolve(import.meta.dirname, '../../server/src/index.ts')
-    logStderr(dim(`Starting OpenHop server on port ${opts.port}...`))
-    const child = spawn('npx', ['tsx', serverEntry], {
+    const cliDir = resolve(import.meta.dirname, '..', '..')
+    const serverEntry = resolve(cliDir, 'server', 'src', 'index.ts')
+    const webDir = resolve(cliDir, 'web')
+
+    logStderr(dim(`Starting OpenHop API on port ${opts.port}...`))
+    const api = spawn('npx', ['tsx', serverEntry], {
       stdio: 'inherit',
       env: { ...process.env, PORT: opts.port },
     })
-    child.on('error', (err) => {
-      errStderr(red(`Failed to start server: ${errorMessage(err)}`))
+
+    let web: ReturnType<typeof spawn> | null = null
+    if (opts.web !== false) {
+      logStderr(dim('Starting OpenHop web UI on port 8788...'))
+      web = spawn('npm', ['run', 'dev'], {
+        cwd: webDir,
+        stdio: 'inherit',
+        env: { ...process.env },
+      })
+      web.on('error', (err) => {
+        errStderr(red(`Failed to start web UI: ${errorMessage(err)}`))
+        // Web failure is non-fatal — API can still run for headless agents.
+      })
+    }
+
+    const shutdown = () => {
+      api.kill('SIGTERM')
+      web?.kill('SIGTERM')
+    }
+    process.on('SIGINT', shutdown)
+    process.on('SIGTERM', shutdown)
+
+    api.on('error', (err) => {
+      errStderr(red(`Failed to start API: ${errorMessage(err)}`))
+      web?.kill('SIGTERM')
       process.exit(ExitCode.GENERIC)
     })
-    child.on('exit', (code) => {
+    api.on('exit', (code) => {
+      web?.kill('SIGTERM')
       process.exit(code ?? ExitCode.SUCCESS)
     })
   })
@@ -105,8 +145,9 @@ program
       process.exit(ExitCode.VALIDATION)
     }
 
+    const url = `${opts.server}/api/flows`
     try {
-      const res = await fetch(`${opts.server}/api/flows`, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/yaml' },
         body: yamlContent,
@@ -115,33 +156,39 @@ program
       if (!res.ok) {
         const body = await res.text()
         if (opts.json) {
-          emitJson({ ok: false, error: 'server', status: res.status, body })
+          emitJson({ ok: false, error: 'server', status: res.status, body, url })
         } else {
-          errStderr(red(`✗ Server error (${res.status}): ${body}`))
+          errStderr(red(`✗ Server error (${res.status}) at ${url}: ${body}`))
         }
         process.exit(mapServerStatus(res.status))
       }
 
       const data = (await res.json()) as { id: string; title: string; version: number }
       const webUrl = opts.server.replace(/:\d+$/, ':8788')
-      const url = `${webUrl}/flow/${data.id}`
+      const flowUrl = `${webUrl}/flow/${data.id}`
       // Spec asks for nodeCount in the JSON output. We have it locally from
       // the validated flow, no need to round-trip through the server.
       const nodeCount = result.data?.flow?.nodes?.length ?? 0
 
       if (opts.json) {
-        emitJson({ id: data.id, title: data.title, version: data.version, url, nodeCount })
+        emitJson({
+          id: data.id,
+          title: data.title,
+          version: data.version,
+          url: flowUrl,
+          nodeCount,
+        })
       } else {
         logStderr(green('✓ Flow created'))
         logStderr(`  ${bold('ID:')}    ${data.id}`)
         logStderr(`  ${bold('Title:')} ${data.title}`)
-        logStderr(`  ${bold('URL:')}   ${cyan(url)}`)
+        logStderr(`  ${bold('URL:')}   ${cyan(flowUrl)}`)
       }
     } catch (err) {
       if (opts.json) {
-        emitJson({ ok: false, error: 'network', message: errorMessage(err) })
+        emitJson({ ok: false, error: 'network', message: errorMessage(err), url })
       } else {
-        errStderr(red(`✗ Connection failed: ${errorMessage(err)}`))
+        errStderr(red(`✗ Connection failed (${url}): ${errorMessage(err)}`))
       }
       process.exit(ExitCode.NETWORK)
     }
@@ -154,11 +201,12 @@ program
   .option('-s, --server <url>', 'Server URL', DEFAULT_SERVER)
   .option('--json', 'Emit JSON on stdout (machine-readable)')
   .action(async (opts) => {
+    const url = `${opts.server}/api/flows`
     try {
-      const res = await fetch(`${opts.server}/api/flows`)
+      const res = await fetch(url)
       if (!res.ok) {
-        if (opts.json) emitJson({ ok: false, error: 'server', status: res.status })
-        else errStderr(red(`✗ Server error (${res.status})`))
+        if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, url })
+        else errStderr(red(`✗ Server error (${res.status}) at ${url}`))
         process.exit(ExitCode.NETWORK)
       }
 
@@ -204,8 +252,11 @@ program
         process.stdout.write(row + '\n')
       }
     } catch (err) {
-      if (opts.json) emitJson({ ok: false, error: 'network', message: errorMessage(err) })
-      else errStderr(red(`✗ Connection failed: ${errorMessage(err)}`))
+      if (opts.json) {
+        emitJson({ ok: false, error: 'network', message: errorMessage(err), url })
+      } else {
+        errStderr(red(`✗ Connection failed (${url}): ${errorMessage(err)}`))
+      }
       process.exit(ExitCode.NETWORK)
     }
   })
@@ -249,8 +300,9 @@ program
       process.exit(ExitCode.VALIDATION)
     }
 
+    const url = `${opts.server}/api/flows/${flowId}`
     try {
-      const res = await fetch(`${opts.server}/api/flows/${flowId}`, {
+      const res = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(operations),
@@ -259,9 +311,9 @@ program
       if (!res.ok) {
         const body = await res.text()
         if (opts.json) {
-          emitJson({ ok: false, error: 'server', status: res.status, body })
+          emitJson({ ok: false, error: 'server', status: res.status, body, url })
         } else {
-          errStderr(red(`✗ Server error (${res.status}): ${body}`))
+          errStderr(red(`✗ Server error (${res.status}) at ${url}: ${body}`))
         }
         process.exit(mapServerStatus(res.status))
       }
@@ -276,8 +328,11 @@ program
         logStderr(`  ${bold('Version:')} v${data.version}`)
       }
     } catch (err) {
-      if (opts.json) emitJson({ ok: false, error: 'network', message: errorMessage(err) })
-      else errStderr(red(`✗ Connection failed: ${errorMessage(err)}`))
+      if (opts.json) {
+        emitJson({ ok: false, error: 'network', message: errorMessage(err), url })
+      } else {
+        errStderr(red(`✗ Connection failed (${url}): ${errorMessage(err)}`))
+      }
       process.exit(ExitCode.NETWORK)
     }
   })
@@ -289,8 +344,9 @@ program
   .option('-s, --server <url>', 'Server URL', DEFAULT_SERVER)
   .option('--json', 'Emit JSON on stdout (machine-readable)')
   .action(async (flowId: string, opts) => {
+    const url = `${opts.server}/api/flows/${flowId}`
     try {
-      const res = await fetch(`${opts.server}/api/flows/${flowId}`, { method: 'DELETE' })
+      const res = await fetch(url, { method: 'DELETE' })
 
       if (res.status === 204) {
         if (opts.json) emitJson({ id: flowId, deleted: true })
@@ -304,13 +360,16 @@ program
         process.exit(ExitCode.NOT_FOUND)
       } else {
         const body = await res.text()
-        if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, body })
-        else errStderr(red(`✗ Server error (${res.status}): ${body}`))
+        if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, body, url })
+        else errStderr(red(`✗ Server error (${res.status}) at ${url}: ${body}`))
         process.exit(ExitCode.NETWORK)
       }
     } catch (err) {
-      if (opts.json) emitJson({ ok: false, error: 'network', message: errorMessage(err) })
-      else errStderr(red(`✗ Connection failed: ${errorMessage(err)}`))
+      if (opts.json) {
+        emitJson({ ok: false, error: 'network', message: errorMessage(err), url })
+      } else {
+        errStderr(red(`✗ Connection failed (${url}): ${errorMessage(err)}`))
+      }
       process.exit(ExitCode.NETWORK)
     }
   })
