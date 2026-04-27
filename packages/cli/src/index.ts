@@ -28,6 +28,19 @@ const DEFAULT_SERVER = 'http://localhost:8787'
  *  Agents branch behavior on this, not on --version. */
 const API_VERSION = 1
 
+/** Map an HTTP response status to a semantic exit code.
+ *  - 400 → VALIDATION (server rejected the request body)
+ *  - 404 → NOT_FOUND
+ *  - 409 → CONFLICT
+ *  - everything else → NETWORK
+ *  Matches the contract in 16-cli-as-universal-api.md. */
+function mapServerStatus(status: number): number {
+  if (status === 400) return ExitCode.VALIDATION
+  if (status === 404) return ExitCode.NOT_FOUND
+  if (status === 409) return ExitCode.CONFLICT
+  return ExitCode.NETWORK
+}
+
 // Top-level --api-version is handled before Commander parses, so it works
 // with or without a subcommand and never interacts with subcommand options.
 if (process.argv.includes('--api-version')) {
@@ -109,7 +122,7 @@ program
         } else {
           errStderr(red(`✗ Server error (${res.status}): ${body}`))
         }
-        process.exit(res.status === 409 ? ExitCode.CONFLICT : ExitCode.NETWORK)
+        process.exit(mapServerStatus(res.status))
       }
 
       const data = (await res.json()) as { id: string; title: string; version: number }
@@ -253,13 +266,7 @@ program
         } else {
           errStderr(red(`✗ Server error (${res.status}): ${body}`))
         }
-        const code =
-          res.status === 404
-            ? ExitCode.NOT_FOUND
-            : res.status === 409
-              ? ExitCode.CONFLICT
-              : ExitCode.NETWORK
-        process.exit(code)
+        process.exit(mapServerStatus(res.status))
       }
 
       const data = (await res.json()) as { id: string; title: string; version: number }
