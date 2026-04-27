@@ -76,19 +76,27 @@ program
     const webDir = resolve(cliDir, 'web')
 
     logStderr(dim(`Starting OpenHop API on port ${opts.port}...`))
+    // Pipe child stdout/stderr to OUR stderr — the CLI contract says stdout
+    // is for data only. Without this, Fastify's pino logs and Vite's dev
+    // banner would pollute parent stdout and break agents that pipe
+    // `serve` output through jq.
     const api = spawn('npx', ['tsx', serverEntry], {
-      stdio: 'inherit',
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, PORT: opts.port },
     })
+    api.stdout?.pipe(process.stderr)
+    api.stderr?.pipe(process.stderr)
 
     let web: ReturnType<typeof spawn> | null = null
     if (opts.web !== false) {
       logStderr(dim('Starting OpenHop web UI on port 8788...'))
       web = spawn('npm', ['run', 'dev'], {
         cwd: webDir,
-        stdio: 'inherit',
+        stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env },
       })
+      web.stdout?.pipe(process.stderr)
+      web.stderr?.pipe(process.stderr)
       web.on('error', (err) => {
         errStderr(red(`Failed to start web UI: ${errorMessage(err)}`))
         // Web failure is non-fatal — API can still run for headless agents.
