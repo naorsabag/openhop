@@ -55,6 +55,10 @@ function run(args: string[], input?: string): RunResult {
   }
 }
 
+// Detects ANSI escape sequences. The regex literally needs the escape
+// control character (\x1b) — that's what we're trying to detect — so the
+// no-control-regex rule is intentionally disabled for this one line.
+// eslint-disable-next-line no-control-regex
 const ANSI = /\x1b\[[0-9;]*[A-Za-z]/
 
 beforeAll(() => {
@@ -67,9 +71,9 @@ beforeAll(() => {
 
 describe('top-level flags', () => {
   it('--version prints the package version', () => {
-    const pkg = JSON.parse(
-      readFileSync(resolve(here, '..', 'package.json'), 'utf-8'),
-    ) as { version: string }
+    const pkg = JSON.parse(readFileSync(resolve(here, '..', 'package.json'), 'utf-8')) as {
+      version: string
+    }
     const r = run(['--version'])
     expect(r.status).toBe(0)
     expect(r.stdout.trim()).toBe(pkg.version)
@@ -141,10 +145,14 @@ describe('help --json: agent introspection', () => {
     for (const [name, spec] of Object.entries(doc.commands)) {
       expect(Array.isArray(spec.exitCodes), `${name}.exitCodes`).toBe(true)
       expect(Array.isArray(spec.examples), `${name}.examples`).toBe(true)
-      expect((spec.exitCodes as number[]).length, `${name} has at least one exit code`)
-        .toBeGreaterThan(0)
-      expect((spec.examples as string[]).length, `${name} has at least one example`)
-        .toBeGreaterThan(0)
+      expect(
+        (spec.exitCodes as number[]).length,
+        `${name} has at least one exit code`
+      ).toBeGreaterThan(0)
+      expect(
+        (spec.examples as string[]).length,
+        `${name} has at least one example`
+      ).toBeGreaterThan(0)
     }
   })
 
@@ -202,7 +210,7 @@ describe('--json on every data-emitting command', () => {
     // At least one error has resolvable line+col. We don't pin exact numbers
     // because schema details may shift; the contract is that positions exist.
     const positioned = doc.errors.filter(
-      (e) => typeof e.line === 'number' && typeof e.col === 'number',
+      (e) => typeof e.line === 'number' && typeof e.col === 'number'
     )
     expect(positioned.length).toBeGreaterThan(0)
     expect(positioned[0].line).toBeGreaterThan(0)

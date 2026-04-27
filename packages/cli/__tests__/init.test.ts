@@ -10,13 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import {
-  buildClients,
-  runInit,
-  renderTable,
-  type ClientSpec,
-  type FsLike,
-} from '../src/init.js'
+import { buildClients, runInit, renderTable, type ClientSpec, type FsLike } from '../src/init.js'
 
 /** Build an in-memory fs-like surface for tests. */
 function makeFs(initial: { dirs?: string[]; files?: string[] } = {}): FsLike & {

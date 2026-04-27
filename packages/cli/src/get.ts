@@ -1,13 +1,5 @@
 import { Command } from 'commander'
-import {
-  errorMessage,
-  bold,
-  dim,
-  red,
-  emitJson,
-  errStderr,
-  logStderr,
-} from './utils.js'
+import { errorMessage, bold, dim, red, emitJson, errStderr, logStderr } from './utils.js'
 import { ExitCode } from './exit-codes.js'
 
 /** Register `openhop get <id>` — fetch a single flow by id.
