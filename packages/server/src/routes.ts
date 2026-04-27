@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { nanoid } from 'nanoid'
+import { customAlphabet } from 'nanoid'
 import {
   parseFlowYaml,
   parseFlowJson,
@@ -13,6 +13,13 @@ import {
   patchOperationsJsonSchema,
 } from '@openhop/shared'
 import { FlowStore } from './store.js'
+
+/** Flow-ID generator. Uses an alphanumeric-only alphabet (no `-` / `_`)
+ *  because the CLI passes IDs as positional arguments to commands like
+ *  `openhop get <id>`. Commander treats any token starting with `-` as a
+ *  flag and rejects unknown ones, so a leading-dash ID would crash the
+ *  command line. 62^12 = ~3.2e21 combinations, plenty of entropy. */
+const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 12)
 
 const store = new FlowStore()
 
@@ -169,7 +176,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
         })
       }
 
-      const id = nanoid(12)
+      const id = nanoid()
       const stored = await store.save(id, validationResult.data!)
 
       return reply.status(201).send({

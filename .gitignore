@@ -31,3 +31,6 @@ tmp/
 # into packages/cli/skills/ right before npm publish so the tarball ships
 # the skill). Canonical source is the workspace-root skills/.
 packages/cli/skills/
+
+# npm pack artifacts (regenerated each publish via cli's prepack script)
+*.tgz
