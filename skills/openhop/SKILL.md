@@ -320,17 +320,17 @@ data:
 
 All operations support multiple items. Apply with `openhop patch <id> <file.yaml>`.
 
-| Operation    | Fields                                     | Description                   |
-| ------------ | ------------------------------------------ | ----------------------------- |
-| add-nodes    | nodes: [{id, label, type?, icon?, color?}] | Add nodes                     |
-| remove-nodes | nodes: ["id1", "id2"]                      | Remove nodes + their steps    |
-| rename-nodes | nodes: [{id, label}]                       | Change labels                 |
-| update-nodes | nodes: [{id, type?, icon?, color?}]        | Update properties             |
-| set-flows    | nodes: [{id, flow: {nodes, steps}}]        | Add sub-flows                 |
-| clear-flows  | nodes: ["id1"]                             | Remove sub-flows              |
-| add-steps    | after: N, steps: [...]                     | Insert steps (-1 = beginning) |
-| remove-steps | indices: [0, 3]                            | Remove steps by index         |
-| update-step  | index: N, step: {...}                      | Replace a step                |
+| Operation    | Fields                                     | Description                                                                                 |
+| ------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| add-nodes    | nodes: [{id, label, type?, icon?, color?}] | Add nodes                                                                                   |
+| remove-nodes | nodes: ["id1", "id2"]                      | Remove nodes + their steps                                                                  |
+| rename-nodes | nodes: [{id, label}]                       | Change labels                                                                               |
+| update-nodes | nodes: [{id, type?, icon?, color?}]        | Update properties                                                                           |
+| set-flows    | nodes: [{id, flow: {nodes, steps}}]        | Add sub-flows                                                                               |
+| clear-flows  | nodes: ["id1"]                             | Remove sub-flows                                                                            |
+| add-steps    | index?: N, steps: [...]                    | Insert steps at 0-based `index` (same semantics as `Array.splice`). Omit `index` to append. |
+| remove-steps | indices: [0, 3]                            | Remove steps by index                                                                       |
+| update-step  | index: N, step: {...}                      | Replace a step                                                                              |
 
 ## Icons
 

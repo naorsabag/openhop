@@ -63,7 +63,12 @@ const clearFlowsOp = z.object({
 
 const addStepsOp = z.object({
   op: z.literal('add-steps'),
-  after: z.number().int().min(-1), // insert position
+  // 0-based position the new steps will occupy after insertion.
+  // Valid range [0, steps.length] inclusive. Same semantics as
+  // Array.prototype.splice: 0 prepends, steps.length appends.
+  // Omit to append — the most common case, and it doesn't require
+  // knowing the current steps.length.
+  index: z.number().int().min(0).optional(),
   steps: z.array(z.any()).min(1),
 })
 
@@ -211,11 +216,11 @@ export function applyPatch(root: Root, patch: PatchOperations): PatchResult {
 
       case 'add-steps': {
         if (!result.flow.steps) result.flow.steps = []
-        const insertIndex = op.after + 1
+        const insertIndex = op.index ?? result.flow.steps.length
         if (insertIndex > result.flow.steps.length) {
           errors.push({
             path: 'flow.steps',
-            message: `Insert position ${op.after} is out of range`,
+            message: `index ${op.index} is out of range (valid: 0..${result.flow.steps.length}; omit to append)`,
           })
         } else {
           result.flow.steps.splice(insertIndex, 0, ...op.steps)
