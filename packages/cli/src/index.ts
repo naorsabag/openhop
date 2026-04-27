@@ -70,7 +70,9 @@ program
   .description('Start the OpenHop API server (:8787) and web UI (:8788)')
   .option('-p, --port <port>', 'API port', '8787')
   .option('--no-web', 'Start API only, skip the web UI dev server')
-  .action((opts) => {
+  .option('--no-wait-ready', "Don't probe /health and don't print the ready line on stdout")
+  .option('--ready-timeout <seconds>', 'How long to wait for readiness before giving up', '60')
+  .action(async (opts) => {
     const cliDir = resolve(import.meta.dirname, '..', '..')
     const serverEntry = resolve(cliDir, 'server', 'src', 'index.ts')
     const webDir = resolve(cliDir, 'web')
@@ -119,6 +121,37 @@ program
       web?.kill('SIGTERM')
       process.exit(code ?? ExitCode.SUCCESS)
     })
+
+    // Readiness probe. Default-on: poll /health until it returns 200, then
+    // emit a stable, machine-parseable line on stdout. This is the only
+    // thing `serve` puts on stdout, so callers can do:
+    //   openhop serve & wait_for=$(grep -m1 '^openhop: ready ' fd 1)
+    // Without --no-wait-ready, downstream scripts have to poll /health
+    // themselves to know when they can push.
+    if (opts.waitReady !== false) {
+      const timeoutSec = Number.parseInt(opts.readyTimeout, 10) || 60
+      const apiUrl = `http://localhost:${opts.port}`
+      const webPart = opts.web !== false ? ` web=http://localhost:8788` : ''
+      const t0 = Date.now()
+      const deadline = t0 + timeoutSec * 1000
+      while (Date.now() < deadline) {
+        try {
+          const r = await fetch(`${apiUrl}/health`)
+          if (r.ok) {
+            const elapsed = Math.round((Date.now() - t0) / 100) / 10
+            process.stdout.write(`openhop: ready api=${apiUrl}${webPart} elapsed=${elapsed}s\n`)
+            break
+          }
+        } catch {
+          // Not ready yet — back off and retry.
+        }
+        await new Promise((r) => setTimeout(r, 500))
+      }
+      if (Date.now() >= deadline) {
+        errStderr(red(`✗ API did not become ready within ${timeoutSec}s. Check logs above.`))
+        // Don't exit — the children may still come up. Just warn.
+      }
+    }
   })
 
 // --- push ---

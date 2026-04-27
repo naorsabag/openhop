@@ -216,13 +216,13 @@ describe('applyPatch', () => {
   })
 
   describe('add-steps', () => {
-    it('inserts a step at the beginning (after=-1)', () => {
+    it('inserts at the beginning (index: 0)', () => {
       const root = makeRoot()
       const result = applyPatch(root, {
         operations: [
           {
             op: 'add-steps',
-            after: -1,
+            index: 0,
             steps: [{ from: 'b', to: 'a', data: 'response' }],
           },
         ],
@@ -236,13 +236,15 @@ describe('applyPatch', () => {
       })
     })
 
-    it('inserts a step after a given index', () => {
+    it('inserts at a middle index (existing step gets pushed right)', () => {
+      // makeRoot has 1 step (a→b). Insert at index 1 → becomes the 2nd step,
+      // existing step stays at index 0.
       const root = makeRoot()
       const result = applyPatch(root, {
         operations: [
           {
             op: 'add-steps',
-            after: 0,
+            index: 1,
             steps: [{ from: 'b', to: 'a', data: 'response' }],
           },
         ],
@@ -307,7 +309,7 @@ describe('applyPatch', () => {
           { op: 'remove-steps', indices: [0] },
           {
             op: 'add-steps',
-            after: -1,
+            index: 0,
             steps: [
               { from: 'a', to: 'c', data: 'new step' },
               { from: 'c', to: 'b', data: 'another' },
@@ -330,7 +332,7 @@ describe('applyPatch', () => {
         operations: [
           {
             op: 'add-steps',
-            after: 0,
+            index: 1,
             steps: [{ from: 'a', to: 'ghost', data: 'bad' }],
           },
         ],
@@ -351,18 +353,60 @@ describe('applyPatch', () => {
 
   describe('edge cases', () => {
     it('add-steps reports out-of-range insertion position', () => {
-      const root = makeRoot()
+      const root = makeRoot() // 1 step → valid range is 0..1
       const result = applyPatch(root, {
         operations: [
           {
             op: 'add-steps',
-            after: 99,
+            index: 99,
             steps: [{ from: 'a', to: 'b', data: 'x' }],
           },
         ],
       })
       expect(result.success).toBe(false)
       expect(result.errors[0].message).toContain('out of range')
+      // Error should teach the recovery: the valid range and the
+      // "omit to append" shortcut.
+      expect(result.errors[0].message).toContain('omit to append')
+    })
+
+    it('add-steps appends when index is omitted (no need to know steps.length)', () => {
+      const root = makeRoot()
+      const initialCount = root.flow.steps?.length ?? 0
+      const result = applyPatch(root, {
+        operations: [
+          {
+            op: 'add-steps',
+            steps: [
+              { from: 'a', to: 'b', data: 'appended-1' },
+              { from: 'b', to: 'a', data: 'appended-2' },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+      const steps = result.data!.flow.steps!
+      expect(steps).toHaveLength(initialCount + 2)
+      // The two new steps must be at the very end, in order.
+      expect(steps[steps.length - 2]).toMatchObject({ data: 'appended-1' })
+      expect(steps[steps.length - 1]).toMatchObject({ data: 'appended-2' })
+    })
+
+    it('add-steps with explicit index === steps.length also appends', () => {
+      const root = makeRoot()
+      const initialCount = root.flow.steps?.length ?? 0
+      const result = applyPatch(root, {
+        operations: [
+          {
+            op: 'add-steps',
+            index: initialCount,
+            steps: [{ from: 'a', to: 'b', data: 'appended' }],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+      const steps = result.data!.flow.steps!
+      expect(steps[steps.length - 1]).toMatchObject({ data: 'appended' })
     })
 
     it('add-steps initializes the steps array when absent', () => {
@@ -379,7 +423,7 @@ describe('applyPatch', () => {
         operations: [
           {
             op: 'add-steps',
-            after: -1,
+            // Omit index → append to a freshly-created empty array.
             steps: [{ from: 'a', to: 'b', data: 'first' }],
           },
         ],
@@ -467,7 +511,7 @@ describe('applyPatch', () => {
           // Now adds a step referencing the removed 'b'
           {
             op: 'add-steps',
-            after: -1,
+            index: 0,
             steps: [{ from: 'a', to: 'b', data: 'orphan' }],
           },
         ],
