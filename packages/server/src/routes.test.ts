@@ -77,6 +77,28 @@ flow:
       expect(body.version).toBe(1)
     })
 
+    it('generated IDs are alphanumeric-only (no leading dash / underscore)', async () => {
+      // Flow IDs are passed as positional CLI args (e.g. `openhop get <id>`).
+      // Commander rejects tokens that start with `-` as unknown options, so a
+      // leading-dash ID crashes the command line. Generate a batch and check
+      // the alphabet to lock in the fix.
+      const ids: string[] = []
+      for (let i = 0; i < 100; i++) {
+        const res = await app.inject({
+          method: 'POST',
+          url: '/api/flows',
+          headers: { 'content-type': 'text/yaml' },
+          payload: sampleYaml,
+        })
+        expect(res.statusCode).toBe(201)
+        ids.push((res.json() as { id: string }).id)
+      }
+      const alphanumeric = /^[0-9a-zA-Z]{12}$/
+      for (const id of ids) {
+        expect(id, `id "${id}" is not 12 alphanumeric chars`).toMatch(alphanumeric)
+      }
+    })
+
     it('creates a flow from JSON', async () => {
       const res = await app.inject({
         method: 'POST',
