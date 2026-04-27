@@ -20,8 +20,9 @@ export function registerGet(program: Command, defaultServer: string): void {
     .option('-s, --server <url>', 'Server URL', defaultServer)
     .option('--json', 'Emit JSON on stdout (machine-readable)')
     .action(async (flowId: string, opts) => {
+      const url = `${opts.server}/api/flows/${flowId}`
       try {
-        const res = await fetch(`${opts.server}/api/flows/${flowId}`)
+        const res = await fetch(url)
 
         if (res.status === 404) {
           if (opts.json) emitJson({ ok: false, error: 'not-found', id: flowId })
@@ -31,27 +32,37 @@ export function registerGet(program: Command, defaultServer: string): void {
 
         if (!res.ok) {
           const body = await res.text()
-          if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, body })
-          else errStderr(red(`✗ Server error (${res.status}): ${body}`))
+          if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, body, url })
+          else errStderr(red(`✗ Server error (${res.status}) at ${url}: ${body}`))
           process.exit(ExitCode.NETWORK)
         }
 
-        const flow = (await res.json()) as Record<string, unknown>
+        const flow = (await res.json()) as Record<string, unknown> & {
+          flow?: { nodes?: unknown[] }
+        }
 
         if (opts.json) {
-          emitJson(flow)
+          // Add a flat `nodeCount` so the JSON shape lines up with `push --json`.
+          // Saves agents from having to reach into `.flow.nodes.length`.
+          const nodeCount = Array.isArray(flow.flow?.nodes) ? flow.flow!.nodes!.length : 0
+          emitJson({ ...flow, nodeCount })
           return
         }
 
-        // Human mode: print a summary on stderr, the full YAML/JSON on stdout
-        // so it pipes cleanly to a file.
+        // Human mode: print a summary on stderr, the full JSON on stdout so
+        // it pipes cleanly to a file.
+        const meta = (flow as { meta?: { title?: unknown } }).meta
+        const title = typeof meta?.title === 'string' ? meta.title : undefined
         logStderr(dim(`# Flow ${flowId}`))
-        if (typeof flow.title === 'string') logStderr(`${bold('Title:')} ${flow.title}`)
+        if (title) logStderr(`${bold('Title:')} ${title}`)
         if (typeof flow.version === 'number') logStderr(`${bold('Version:')} v${flow.version}`)
         process.stdout.write(JSON.stringify(flow, null, 2) + '\n')
       } catch (err) {
-        if (opts.json) emitJson({ ok: false, error: 'network', message: errorMessage(err) })
-        else errStderr(red(`✗ Connection failed: ${errorMessage(err)}`))
+        if (opts.json) {
+          emitJson({ ok: false, error: 'network', message: errorMessage(err), url })
+        } else {
+          errStderr(red(`✗ Connection failed (${url}): ${errorMessage(err)}`))
+        }
         process.exit(ExitCode.NETWORK)
       }
     })
