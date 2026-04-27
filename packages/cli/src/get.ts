@@ -20,10 +20,9 @@ export function registerGet(program: Command, defaultServer: string): void {
     .option('-s, --server <url>', 'Server URL', defaultServer)
     .option('--json', 'Emit JSON on stdout (machine-readable)')
     .action(async (flowId: string, opts) => {
+      const url = `${opts.server}/api/flows/${flowId}`
       try {
-        const res = await fetch(`${opts.server}/api/flows/${flowId}`)
-
-        const fullUrl = `${opts.server}/api/flows/${flowId}`
+        const res = await fetch(url)
 
         if (res.status === 404) {
           if (opts.json) emitJson({ ok: false, error: 'not-found', id: flowId })
@@ -33,8 +32,8 @@ export function registerGet(program: Command, defaultServer: string): void {
 
         if (!res.ok) {
           const body = await res.text()
-          if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, body })
-          else errStderr(red(`✗ Server error (${res.status}): ${body}`))
+          if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, body, url })
+          else errStderr(red(`✗ Server error (${res.status}) at ${url}: ${body}`))
           process.exit(ExitCode.NETWORK)
         }
 
@@ -59,11 +58,10 @@ export function registerGet(program: Command, defaultServer: string): void {
         if (typeof flow.version === 'number') logStderr(`${bold('Version:')} v${flow.version}`)
         process.stdout.write(JSON.stringify(flow, null, 2) + '\n')
       } catch (err) {
-        const fullUrl = `${opts.server}/api/flows/${flowId}`
         if (opts.json) {
-          emitJson({ ok: false, error: 'network', message: errorMessage(err), url: fullUrl })
+          emitJson({ ok: false, error: 'network', message: errorMessage(err), url })
         } else {
-          errStderr(red(`✗ Connection failed (${fullUrl}): ${errorMessage(err)}`))
+          errStderr(red(`✗ Connection failed (${url}): ${errorMessage(err)}`))
         }
         process.exit(ExitCode.NETWORK)
       }
