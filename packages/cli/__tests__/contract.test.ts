@@ -55,6 +55,10 @@ function run(args: string[], input?: string): RunResult {
   }
 }
 
+// Detects ANSI escape sequences. The regex literally needs the escape
+// control character (\x1b) — that's what we're trying to detect — so the
+// no-control-regex rule is intentionally disabled for this one line.
+// eslint-disable-next-line no-control-regex
 const ANSI = /\x1b\[[0-9;]*[A-Za-z]/
 
 beforeAll(() => {
