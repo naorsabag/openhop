@@ -430,6 +430,29 @@ export function inferPortAssignmentsFromRoutes(
 }
 
 const MIN_SHARED_STUB_LENGTH = 120
+const SELF_LOOP_OFFSET = 32
+
+/**
+ * Build a self-loop "ear" route — exits the node's right port, hooks up and
+ * over the top-right corner, and re-enters via the top port. Returns the
+ * route in the same shape ELK would produce so it flows through the rest of
+ * the rendering pipeline (path extension, RoadEdge, pixel animation).
+ */
+function buildSelfLoopRoute(position: Position): {
+  route: RoutePoint[]
+  assignment: EdgePortAssignment
+} {
+  const sourceAnchor = anchorForHandle(position, 'right')
+  const targetAnchor = anchorForHandle(position, 'top')
+  const route: RoutePoint[] = [
+    sourceAnchor,
+    { x: sourceAnchor.x + SELF_LOOP_OFFSET, y: sourceAnchor.y },
+    { x: sourceAnchor.x + SELF_LOOP_OFFSET, y: targetAnchor.y - SELF_LOOP_OFFSET },
+    { x: targetAnchor.x, y: targetAnchor.y - SELF_LOOP_OFFSET },
+    targetAnchor,
+  ]
+  return { route, assignment: { source: 'right', target: 'top' } }
+}
 
 export function bundleSharedSourcePrefixes(
   routes: Map<string, RoutePoint[]>,
@@ -675,8 +698,10 @@ export function buildReactFlowGraph(
   const edges: Edge[] = topology.displayEdges.map((edge) => {
     const sourcePos = positionMap.get(edge.source) ?? defaultPosition()
     const targetPos = positionMap.get(edge.target) ?? defaultPosition()
-    const assignment = portAssignments?.get(edge.id)
-    const rawRoute = routes?.get(edge.id) ?? []
+    const isSelfLoop = edge.source === edge.target
+    const selfLoop = isSelfLoop ? buildSelfLoopRoute(sourcePos) : null
+    const assignment = selfLoop?.assignment ?? portAssignments?.get(edge.id)
+    const rawRoute = selfLoop?.route ?? routes?.get(edge.id) ?? []
     const extendedRoute = extendRouteToNodeCenters(rawRoute, assignment)
     const elkPath = buildOrthogonalPath(extendedRoute)
 
@@ -685,9 +710,11 @@ export function buildReactFlowGraph(
       source: edge.source,
       target: edge.target,
       sourceHandle:
+        selfLoop?.assignment.source ??
         portAssignments?.get(edge.id)?.source ??
         pickHandleWithPeers(sourcePos, targetPos, outgoingBySource.get(edge.source) ?? []),
       targetHandle:
+        selfLoop?.assignment.target ??
         portAssignments?.get(edge.id)?.target ??
         pickHandleWithPeers(targetPos, sourcePos, incomingByTarget.get(edge.target) ?? []),
       data: {

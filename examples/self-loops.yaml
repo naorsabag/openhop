@@ -1,0 +1,67 @@
+meta:
+  title: Self-loops
+  path: examples/self-loops
+  description: Demonstrates steps where from and to are the same node — internal work, retries, and recursive processing.
+
+flow:
+  nodes:
+    - id: client
+      label: Client
+      type: actor
+    - id: api
+      label: API Gateway
+      type: endpoint
+    - id: worker
+      label: Worker
+      type: service
+    - id: db
+      label: Database
+      type: database
+
+  steps:
+    - from: client
+      to: api
+      data: POST /jobs
+
+    # Self-loop: API runs internal validation before forwarding.
+    - from: api
+      to: api
+      data:
+        label: validate request
+        fields:
+          - name: schema_check
+            type: bool
+          - name: rate_limit
+            type: bool
+
+    - from: api
+      to: worker
+      data: enqueued job
+
+    # Self-loop: worker iterates internally (retry / batch processing).
+    - from: worker
+      to: worker
+      data:
+        label: process batch (retry x3)
+        fields:
+          - name: attempt
+            type: int
+            changed: true
+          - name: backoff_ms
+            type: int
+
+    - from: worker
+      to: db
+      data: write result
+
+    # Self-loop on the database: trigger fires a follow-up update.
+    - from: db
+      to: db
+      data: trigger update_audit_log
+
+    - from: worker
+      to: api
+      data: job complete
+    - from: api
+      to: client
+      data: "200 OK"
