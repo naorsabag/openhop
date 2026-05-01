@@ -165,7 +165,9 @@ describe('buildReactFlowGraph', () => {
     const topology = buildFlowTopology(selfLoopFlow)
     const graph = buildReactFlowGraph(topology, new Map([['worker', { x: 0, y: 0 }]]))
 
-    const loopEdge = graph.edges.find((edge) => edge.source === 'worker' && edge.target === 'worker')
+    const loopEdge = graph.edges.find(
+      (edge) => edge.source === 'worker' && edge.target === 'worker'
+    )
 
     expect(loopEdge).toBeTruthy()
     expect(loopEdge?.sourceHandle).toBe('right')
