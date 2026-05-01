@@ -155,6 +155,27 @@ describe('buildReactFlowGraph', () => {
     expect(dbEdge?.sourceHandle).not.toBe(cacheEdge?.sourceHandle)
   })
 
+  it('renders self-loop edges as an ear over the top-right with right→top ports', () => {
+    const selfLoopFlow = {
+      flow: {
+        nodes: [{ id: 'worker', label: 'Worker', type: 'service' }],
+        steps: [{ from: 'worker', to: 'worker', data: { label: 'retry' } }],
+      },
+    } as Flow
+    const topology = buildFlowTopology(selfLoopFlow)
+    const graph = buildReactFlowGraph(topology, new Map([['worker', { x: 0, y: 0 }]]))
+
+    const loopEdge = graph.edges.find((edge) => edge.source === 'worker' && edge.target === 'worker')
+
+    expect(loopEdge).toBeTruthy()
+    expect(loopEdge?.sourceHandle).toBe('right')
+    expect(loopEdge?.targetHandle).toBe('top')
+    // Ear extends above the node (negative y) and to the right of it (x > NODE_WIDTH).
+    const path = (loopEdge?.data as { elkPath?: string } | undefined)?.elkPath
+    expect(path).toBeDefined()
+    expect(path).toMatch(/-\d/) // contains a negative coordinate (route loops above y=0)
+  })
+
   it('keeps an explicit orthogonal path from layout routing data when provided', () => {
     const topology = buildFlowTopology(orderFlow)
     const graph = buildReactFlowGraph(
