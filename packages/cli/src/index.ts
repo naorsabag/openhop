@@ -297,6 +297,22 @@ program
   .action(async (opts) => {
     const isSearch = typeof opts.search === 'string' && opts.search.length > 0
     const isTree = !!opts.tree && !isSearch
+
+    // Validate --limit up-front (server caps at 200; reject earlier with a
+    // semantic exit code rather than waiting for the server's 400).
+    if (isSearch && (!Number.isInteger(opts.limit) || opts.limit < 1 || opts.limit > 200)) {
+      if (opts.json) {
+        emitJson({
+          ok: false,
+          error: 'validation',
+          message: '--limit must be an integer between 1 and 200',
+        })
+      } else {
+        errStderr(red('✗ --limit must be an integer between 1 and 200'))
+      }
+      process.exit(ExitCode.VALIDATION)
+    }
+
     const url = isSearch
       ? `${opts.server}/api/flows/search?q=${encodeURIComponent(opts.search)}&limit=${opts.limit}`
       : isTree
@@ -308,7 +324,9 @@ program
       if (!res.ok) {
         if (opts.json) emitJson({ ok: false, error: 'server', status: res.status, url })
         else errStderr(red(`✗ Server error (${res.status}) at ${url}`))
-        process.exit(ExitCode.NETWORK)
+        // Map 400 → VALIDATION, 404 → NOT_FOUND, etc. so machine callers can
+        // distinguish a bad query from a real network failure.
+        process.exit(mapServerStatus(res.status))
       }
 
       const body = await res.json()

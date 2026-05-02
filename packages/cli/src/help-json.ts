@@ -84,7 +84,7 @@ const COMMAND_META: Record<string, { exitCodes: number[]; examples: string[] }> 
     ],
   },
   list: {
-    exitCodes: [ExitCode.SUCCESS, ExitCode.NETWORK],
+    exitCodes: [ExitCode.SUCCESS, ExitCode.VALIDATION, ExitCode.NOT_FOUND, ExitCode.NETWORK],
     examples: [
       'openhop list',
       'openhop list --json',
