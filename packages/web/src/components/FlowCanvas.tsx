@@ -277,18 +277,22 @@ function FlowCanvasInner({
   // Build a map from node id to type and shadow color for animated pixels.
   // The shadow color comes from the topology's variant assignment so it
   // stays in lockstep with the sprite filter cycle in flow-layout — same
-  // sprite hue → same pixel shadow.
+  // sprite hue → same pixel shadow. Iterating topology.nodeSnapshots
+  // (rather than just flow.flow.nodes) also covers dynamic nodes spawned
+  // by `create:` steps so their pixels get a real variant color too.
   const nodeTypeMap = useMemo(() => {
     const topology = buildFlowTopology(flow)
-    const map = new Map<string, { type: string; color?: string }>()
+    const explicitColors = new Map<string, string>()
     for (const n of flow.flow.nodes) {
       // A `custom`-typed node with an explicit hex color keeps that color
-      // (it already drives the sprite tint via FlowNode). Other nodes use
-      // the variant accent color from the shared palette.
-      const explicit = n.type === 'custom' && n.color ? n.color : undefined
-      map.set(n.id, {
-        type: n.type ?? 'service',
-        color: explicit ?? topology.nodeVariants.get(n.id)?.color,
+      // (it already drives the sprite tint via FlowNode).
+      if (n.type === 'custom' && n.color) explicitColors.set(n.id, n.color)
+    }
+    const map = new Map<string, { type: string; color?: string }>()
+    for (const [id, snapshot] of topology.nodeSnapshots) {
+      map.set(id, {
+        type: snapshot.nodeType,
+        color: explicitColors.get(id) ?? topology.nodeVariants.get(id)?.color,
       })
     }
     return map
