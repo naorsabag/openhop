@@ -997,10 +997,17 @@ export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayou
   const firstPass = extractElkLayout(await elk.layout(buildElkGraph(topology)))
   const firstDeltas = snapPositionsToRowGrid(firstPass.positions)
   shiftRoutesAfterSnap(firstPass.routes, topology, firstDeltas)
+  // Normalize routes the same way buildOrthogonalPath does so port-side
+  // inference looks at corrected (orthogonal, deduped) endpoint segments
+  // rather than raw ELK polylines that may contain a diagonal nub.
+  const normalizedFirstRoutes = new Map<string, RoutePoint[]>()
+  for (const [edgeId, route] of firstPass.routes) {
+    normalizedFirstRoutes.set(edgeId, orthogonalizeRoutePoints(dedupeRoutePoints(route)))
+  }
   const inferredAssignments = inferPortAssignmentsFromRoutes(
     topology,
     firstPass.positions,
-    firstPass.routes
+    normalizedFirstRoutes
   )
   const secondPass = extractElkLayout(
     await elk.layout(buildElkGraph(topology, inferredAssignments))
