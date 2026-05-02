@@ -6,6 +6,8 @@ import {
   validateFlow,
   patchSchema,
   applyPatch,
+  searchFlows,
+  buildFlowTree,
 } from '@openhop/shared'
 import {
   storedFlowJsonSchema,
@@ -215,6 +217,87 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
         updatedAt: f.updatedAt,
       }))
       return reply.send(summaries)
+    }
+  )
+
+  // ── GET /api/flows/search — Fuzzy / substring / prefix search ──────
+  app.get(
+    '/api/flows/search',
+    {
+      schema: {
+        summary: 'Search flows',
+        description:
+          'Returns flow summaries that match the `q` query string by title, ' +
+          'path, description, or id. Results are ranked: exact > prefix > ' +
+          'substring > fuzzy (typo-tolerant). Empty `q` returns the full list.',
+        tags: ['flows'],
+        querystring: {
+          type: 'object',
+          properties: {
+            q: { type: 'string', description: 'Search query' },
+            limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
+          },
+        },
+        response: {
+          200: {
+            type: 'array',
+            description: 'Ranked search results',
+            items: {
+              type: 'object',
+              required: ['flow', 'score', 'matched'],
+              properties: {
+                flow: flowSummaryJsonSchema,
+                score: { type: 'number' },
+                matched: { type: 'string', enum: ['title', 'path', 'description', 'id'] },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (
+      req: FastifyRequest<{ Querystring: { q?: string; limit?: number } }>,
+      reply: FastifyReply
+    ) => {
+      const flows = await store.list()
+      const summaries = flows.map((f) => ({
+        id: f.id,
+        title: f.meta.title,
+        description: f.meta.description ?? null,
+        path: f.meta.path ?? null,
+        version: f.version,
+        updatedAt: f.updatedAt,
+      }))
+      const q = req.query.q ?? ''
+      const limit = req.query.limit ?? 50
+      return reply.send(searchFlows(summaries, q).slice(0, limit))
+    }
+  )
+
+  // ── GET /api/flows/tree — Path-based hierarchy ─────────────────────
+  app.get(
+    '/api/flows/tree',
+    {
+      schema: {
+        summary: 'Tree of flows by meta.path',
+        description:
+          "Returns flows grouped into a folder tree derived from each flow's " +
+          '`meta.path` segments. Flows without a path land under a synthetic ' +
+          '`(no path)` folder.',
+        tags: ['flows'],
+      },
+    },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const flows = await store.list()
+      const summaries = flows.map((f) => ({
+        id: f.id,
+        title: f.meta.title,
+        description: f.meta.description ?? null,
+        path: f.meta.path ?? null,
+        version: f.version,
+        updatedAt: f.updatedAt,
+      }))
+      return reply.send(buildFlowTree(summaries))
     }
   )
 

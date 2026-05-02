@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 import YAML from 'yaml'
 import { parseFlowYaml } from '@openhop/shared'
+import type { FlowTreeNode, FlowSummary } from '@openhop/shared'
 import {
   readInput,
   errorMessage,
@@ -236,13 +237,72 @@ program
   })
 
 // --- list ---
+type ListedFlow = FlowSummary & { version: number; updatedAt: string }
+type SearchHit = { flow: ListedFlow; score: number; matched: string }
+
+function printFlowTable(flows: ListedFlow[]): void {
+  const cols = [
+    { label: 'ID', width: 16 },
+    { label: 'Title', width: 16 },
+    { label: 'Path', width: 22 },
+    { label: 'Version', width: 9 },
+    { label: 'Updated', width: 12 },
+  ] as const
+  process.stdout.write(cols.map((c) => bold(padRight(c.label, c.width))).join('') + '\n')
+  for (const flow of flows) {
+    const date = flow.updatedAt ? new Date(flow.updatedAt).toISOString().slice(0, 10) : ''
+    process.stdout.write(
+      [
+        padRight(flow.id, 16),
+        padRight(flow.title || '', 16),
+        padRight(flow.path || '', 22),
+        padRight(`v${flow.version}`, 9),
+        padRight(date, 12),
+      ].join('') + '\n'
+    )
+  }
+}
+
+function printFlowTree(node: FlowTreeNode<ListedFlow>, indent = ''): void {
+  const childCount = node.folders.length + node.flows.length
+  let i = 0
+  for (const folder of node.folders) {
+    const last = i === childCount - 1
+    const branch = last ? '└─ ' : '├─ '
+    const childIndent = indent + (last ? '   ' : '│  ')
+    process.stdout.write(`${indent}${branch}${cyan(folder.name)}/\n`)
+    printFlowTree(folder, childIndent)
+    i++
+  }
+  for (const flow of node.flows) {
+    const last = i === childCount - 1
+    const branch = last ? '└─ ' : '├─ '
+    process.stdout.write(
+      `${indent}${branch}${flow.title} ${dim('(' + flow.id + ' v' + flow.version + ')')}\n`
+    )
+    i++
+  }
+}
+
 program
   .command('list')
-  .description('List all flows on the server')
+  .description(
+    'List all flows on the server. With --tree, group by meta.path; with --search, fuzzy-match.'
+  )
   .option('-s, --server <url>', 'Server URL', DEFAULT_SERVER)
   .option('--json', 'Emit JSON on stdout (machine-readable)')
+  .option('--tree', 'Print a path-based hierarchy instead of a flat table')
+  .option('--search <query>', 'Substring + fuzzy search across title, path, description, id')
+  .option('--limit <n>', 'Cap the number of search results', (v) => parseInt(v, 10), 50)
   .action(async (opts) => {
-    const url = `${opts.server}/api/flows`
+    const isSearch = typeof opts.search === 'string' && opts.search.length > 0
+    const isTree = !!opts.tree && !isSearch
+    const url = isSearch
+      ? `${opts.server}/api/flows/search?q=${encodeURIComponent(opts.search)}&limit=${opts.limit}`
+      : isTree
+        ? `${opts.server}/api/flows/tree`
+        : `${opts.server}/api/flows`
+
     try {
       const res = await fetch(url)
       if (!res.ok) {
@@ -251,47 +311,41 @@ program
         process.exit(ExitCode.NETWORK)
       }
 
-      const flows = (await res.json()) as Array<{
-        id: string
-        title: string
-        path?: string
-        version: number
-        updatedAt: string
-      }>
+      const body = await res.json()
 
       if (opts.json) {
-        emitJson({ flows })
+        if (isSearch) emitJson({ results: body })
+        else if (isTree) emitJson({ tree: body })
+        else emitJson({ flows: body })
         return
       }
 
+      if (isSearch) {
+        const hits = body as SearchHit[]
+        if (hits.length === 0) {
+          logStderr(dim(`No matches for "${opts.search}".`))
+          return
+        }
+        printFlowTable(hits.map((h) => h.flow))
+        return
+      }
+
+      if (isTree) {
+        const root = body as FlowTreeNode<ListedFlow>
+        if (root.folders.length === 0 && root.flows.length === 0) {
+          logStderr(dim('No flows found.'))
+          return
+        }
+        printFlowTree(root)
+        return
+      }
+
+      const flows = body as ListedFlow[]
       if (flows.length === 0) {
         logStderr(dim('No flows found.'))
         return
       }
-
-      const cols = [
-        { key: 'id', label: 'ID', width: 16 },
-        { key: 'title', label: 'Title', width: 16 },
-        { key: 'path', label: 'Path', width: 22 },
-        { key: 'version', label: 'Version', width: 9 },
-        { key: 'updatedAt', label: 'Updated', width: 12 },
-      ] as const
-
-      // Tabular output goes to stdout (data), no ANSI when piped.
-      const header = cols.map((c) => bold(padRight(c.label, c.width))).join('')
-      process.stdout.write(header + '\n')
-
-      for (const flow of flows) {
-        const date = flow.updatedAt ? new Date(flow.updatedAt).toISOString().slice(0, 10) : ''
-        const row = [
-          padRight(flow.id, 16),
-          padRight(flow.title || '', 16),
-          padRight(flow.path || '', 22),
-          padRight(`v${flow.version}`, 9),
-          padRight(date, 12),
-        ].join('')
-        process.stdout.write(row + '\n')
-      }
+      printFlowTable(flows)
     } catch (err) {
       if (opts.json) {
         emitJson({ ok: false, error: 'network', message: errorMessage(err), url })

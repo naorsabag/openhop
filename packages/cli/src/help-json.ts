@@ -85,7 +85,12 @@ const COMMAND_META: Record<string, { exitCodes: number[]; examples: string[] }> 
   },
   list: {
     exitCodes: [ExitCode.SUCCESS, ExitCode.NETWORK],
-    examples: ['openhop list', 'openhop list --json'],
+    examples: [
+      'openhop list',
+      'openhop list --json',
+      'openhop list --tree',
+      'openhop list --search order',
+    ],
   },
   get: {
     exitCodes: [ExitCode.SUCCESS, ExitCode.USAGE, ExitCode.NOT_FOUND, ExitCode.NETWORK],

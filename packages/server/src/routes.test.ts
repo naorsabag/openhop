@@ -162,6 +162,70 @@ flow:
     })
   })
 
+  describe('GET /api/flows/search', () => {
+    beforeEach(async () => {
+      const seeds = [
+        { meta: { title: 'Order Processing', path: 'e-commerce/orders' } },
+        { meta: { title: 'Order Refunds', path: 'e-commerce/orders' } },
+        { meta: { title: 'Auth Flow', path: 'platform/auth' } },
+      ]
+      for (const m of seeds) {
+        await app.inject({
+          method: 'POST',
+          url: '/api/flows',
+          headers: { 'content-type': 'application/json' },
+          payload: JSON.stringify({
+            ...m,
+            flow: { nodes: [{ id: 'a', label: 'A' }] },
+          }),
+        })
+      }
+    })
+
+    it('ranks exact-title matches first', async () => {
+      const res = await app.inject({ method: 'GET', url: '/api/flows/search?q=Auth%20Flow' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as Array<{ flow: { title: string }; score: number }>
+      expect(body[0].flow.title).toBe('Auth Flow')
+      expect(body[0].score).toBe(1000)
+    })
+
+    it('finds substring matches in path', async () => {
+      const res = await app.inject({ method: 'GET', url: '/api/flows/search?q=platform' })
+      const body = res.json() as Array<{ flow: { title: string }; matched: string }>
+      expect(body[0].flow.title).toBe('Auth Flow')
+      expect(body[0].matched).toBe('path')
+    })
+
+    it('honours the limit query param', async () => {
+      const res = await app.inject({ method: 'GET', url: '/api/flows/search?q=order&limit=1' })
+      const body = res.json() as Array<unknown>
+      expect(body.length).toBe(1)
+    })
+  })
+
+  describe('GET /api/flows/tree', () => {
+    it('groups flows by path segments under a single root', async () => {
+      await app.inject({
+        method: 'POST',
+        url: '/api/flows',
+        headers: { 'content-type': 'application/json' },
+        payload: JSON.stringify({
+          meta: { title: 'Treed', path: 'a/b' },
+          flow: { nodes: [{ id: 'n', label: 'N' }] },
+        }),
+      })
+      const res = await app.inject({ method: 'GET', url: '/api/flows/tree' })
+      expect(res.statusCode).toBe(200)
+      const root = res.json() as {
+        folders: Array<{ name: string; folders: Array<{ name: string }> }>
+      }
+      const a = root.folders.find((f) => f.name === 'a')
+      expect(a).toBeTruthy()
+      expect(a!.folders.find((f) => f.name === 'b')).toBeTruthy()
+    })
+  })
+
   describe('GET /api/flows/:id', () => {
     it('returns the full flow', async () => {
       const created = await app.inject({
