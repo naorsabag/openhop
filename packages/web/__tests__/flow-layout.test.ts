@@ -8,7 +8,10 @@ import {
   buildOrthogonalPath,
   bundleSharedSourcePrefixes,
   inferPortAssignmentsFromRoutes,
+  NODE_HEIGHT,
   NODE_WIDTH,
+  SELF_LOOP_HEIGHT,
+  SELF_LOOP_WIDTH,
 } from '../src/lib/flow-layout.ts'
 
 const orderFlow = {
@@ -80,6 +83,30 @@ describe('buildFlowTopology', () => {
 })
 
 describe('computeElkLayout', () => {
+  it('keeps a back-edge-only source in the layout and aligns it to a shared row grid', async () => {
+    const yaml = readFileSync(new URL('../../../examples/order-flow.yaml', import.meta.url), 'utf8')
+    const parsed = parseFlowYaml(yaml)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success || !parsed.data) return
+
+    const { computeElkLayout } = await import('../src/lib/flow-layout.ts')
+    const topology = buildFlowTopology(parsed.data as Flow)
+
+    // cron only has an outgoing edge to order-service, which already exists
+    // as a target of api->order-service. Without the orphan-recovery fix this
+    // edge was dropped entirely and ELK floated cron on its own row.
+    expect(topology.layoutEdges.some(([s, t]) => s === 'cron' && t === 'order-service')).toBe(true)
+
+    const layout = await computeElkLayout(topology)
+    const cron = layout.positions.get('cron')
+    const events = layout.positions.get('events')
+    expect(cron).toBeTruthy()
+    expect(events).toBeTruthy()
+    // After the row-grid snap, both back-edge-only and forward-edge-only nodes
+    // share the same row even though they're in different columns.
+    expect(cron!.y).toBe(events!.y)
+  })
+
   it('routes the api to order-service edge clear of the rate-limit node in the real example', async () => {
     const yaml = readFileSync(new URL('../../../examples/order-flow.yaml', import.meta.url), 'utf8')
     const parsed = parseFlowYaml(yaml)
@@ -181,9 +208,9 @@ describe('buildReactFlowGraph', () => {
     expect(points.length).toBeGreaterThanOrEqual(5)
     // Ear exits the right port: second point sits further right than the first.
     expect(points[1].x).toBeGreaterThan(points[0].x)
-    // Route extends past the node's right edge and rises above y=0.
-    expect(Math.max(...points.map((p) => p.x))).toBeGreaterThan(NODE_WIDTH)
-    expect(Math.min(...points.map((p) => p.y))).toBeLessThan(0)
+    expect(Math.max(...points.map((p) => p.x))).toBe(NODE_WIDTH + SELF_LOOP_WIDTH)
+    expect(Math.min(...points.map((p) => p.y))).toBe(-SELF_LOOP_HEIGHT)
+    expect(points.at(-1)).toEqual({ x: NODE_WIDTH / 2, y: NODE_HEIGHT * 0.42 })
   })
 
   it('keeps an explicit orthogonal path from layout routing data when provided', () => {
