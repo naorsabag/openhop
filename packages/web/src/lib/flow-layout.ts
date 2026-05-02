@@ -189,11 +189,18 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
 
   const layoutEdges: Array<[string, string]> = []
   const layoutSeen = new Set<string>()
+  // Back-edges (target already seen) are deferred; we add them later for any
+  // node that would otherwise be orphan in the layered layout, so ELK places
+  // it on a row instead of floating it on its own.
+  const deferredBackEdges: Array<[string, string]> = []
 
   const pushLayoutEdge = (source?: string, target?: string) => {
     if (!source || !target) return
     layoutSeen.add(source)
-    if (layoutSeen.has(target)) return
+    if (layoutSeen.has(target)) {
+      deferredBackEdges.push([source, target])
+      return
+    }
     layoutSeen.add(target)
     layoutEdges.push([source, target])
   }
@@ -221,6 +228,22 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
       pushDisplayEdge(step.from, target)
       pushLayoutEdge(step.from, target)
     }
+  }
+
+  // Promote deferred back-edges for nodes that are otherwise floating — i.e.
+  // the source has no other layout edge in or out. Without this, a node like
+  // a periodic scheduler that only feeds a previously-seen target gets
+  // dropped and ELK places it on its own row.
+  const layoutNodeIds = new Set<string>()
+  for (const [s, t] of layoutEdges) {
+    layoutNodeIds.add(s)
+    layoutNodeIds.add(t)
+  }
+  for (const [source, target] of deferredBackEdges) {
+    if (layoutNodeIds.has(source)) continue
+    if (source === target) continue
+    layoutEdges.push([source, target])
+    layoutNodeIds.add(source)
   }
 
   return {
@@ -332,7 +355,12 @@ function orthogonalizeRoutePoints(points: RoutePoint[]): RoutePoint[] {
     }
 
     if (current.x !== point.x && current.y !== point.y) {
-      const corner = chooseOrthogonalCorner(route[route.length - 2], current, point, points[index + 1])
+      const corner = chooseOrthogonalCorner(
+        route[route.length - 2],
+        current,
+        point,
+        points[index + 1]
+      )
       route.push(corner)
     }
 
@@ -472,7 +500,8 @@ export function inferPortAssignmentsFromRoutes(
 }
 
 const MIN_SHARED_STUB_LENGTH = 120
-const SELF_LOOP_OFFSET = 32
+export const SELF_LOOP_WIDTH = 48
+export const SELF_LOOP_HEIGHT = 40
 
 /**
  * Build a self-loop "ear" route — exits the node's right port, hooks up and
@@ -488,9 +517,9 @@ function buildSelfLoopRoute(position: Position): {
   const targetAnchor = anchorForHandle(position, 'top')
   const route: RoutePoint[] = [
     sourceAnchor,
-    { x: sourceAnchor.x + SELF_LOOP_OFFSET, y: sourceAnchor.y },
-    { x: sourceAnchor.x + SELF_LOOP_OFFSET, y: targetAnchor.y - SELF_LOOP_OFFSET },
-    { x: targetAnchor.x, y: targetAnchor.y - SELF_LOOP_OFFSET },
+    { x: sourceAnchor.x + SELF_LOOP_WIDTH, y: sourceAnchor.y },
+    { x: sourceAnchor.x + SELF_LOOP_WIDTH, y: targetAnchor.y - SELF_LOOP_HEIGHT },
+    { x: targetAnchor.x, y: targetAnchor.y - SELF_LOOP_HEIGHT },
     targetAnchor,
   ]
   return { route, assignment: { source: 'right', target: 'top' } }
@@ -886,6 +915,26 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
   }
 }
 
+/**
+ * Snap each node's y to the nearest row of a shared grid so off-grid nodes
+ * (e.g. an outlier introduced by a back-edge connection like a cron source)
+ * line up with the rest of the layout. Uses NODE_HEIGHT + spacing as the
+ * row pitch and infers the grid origin from the median first-row y so the
+ * snap doesn't shift the overall layout.
+ */
+function snapPositionsToRowGrid(positions: Map<string, Position>): void {
+  if (positions.size === 0) return
+  const ROW_PITCH = NODE_HEIGHT + 80
+  // Group y-values into clusters within ROW_PITCH/2, then use the smallest
+  // cluster mean as the grid origin.
+  const ys = [...positions.values()].map((p) => p.y).sort((a, b) => a - b)
+  const baseY = ys[0]
+  for (const [id, pos] of positions) {
+    const k = Math.round((pos.y - baseY) / ROW_PITCH)
+    positions.set(id, { x: pos.x, y: baseY + k * ROW_PITCH })
+  }
+}
+
 function extractElkLayout(graph: Awaited<ReturnType<typeof elk.layout>>) {
   const positions = new Map<string, Position>()
   for (const child of graph.children ?? []) {
@@ -913,6 +962,7 @@ function extractElkLayout(graph: Awaited<ReturnType<typeof elk.layout>>) {
 
 export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayoutResult> {
   const firstPass = extractElkLayout(await elk.layout(buildElkGraph(topology)))
+  snapPositionsToRowGrid(firstPass.positions)
   const inferredAssignments = inferPortAssignmentsFromRoutes(
     topology,
     firstPass.positions,
@@ -921,6 +971,7 @@ export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayou
   const secondPass = extractElkLayout(
     await elk.layout(buildElkGraph(topology, inferredAssignments))
   )
+  snapPositionsToRowGrid(secondPass.positions)
   const bundledRoutes = bundleSharedSourcePrefixes(secondPass.routes, inferredAssignments)
 
   return {
