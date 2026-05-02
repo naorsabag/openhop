@@ -8,6 +8,7 @@ import {
   buildOrthogonalPath,
   bundleSharedSourcePrefixes,
   inferPortAssignmentsFromRoutes,
+  NODE_WIDTH,
 } from '../src/lib/flow-layout.ts'
 
 const orderFlow = {
@@ -172,10 +173,17 @@ describe('buildReactFlowGraph', () => {
     expect(loopEdge).toBeTruthy()
     expect(loopEdge?.sourceHandle).toBe('right')
     expect(loopEdge?.targetHandle).toBe('top')
-    // Ear extends above the node (negative y) and to the right of it (x > NODE_WIDTH).
     const path = (loopEdge?.data as { elkPath?: string } | undefined)?.elkPath
     expect(path).toBeDefined()
-    expect(path).toMatch(/-\d/) // contains a negative coordinate (route loops above y=0)
+    const points = [...path!.matchAll(/[ML]\s*(-?\d+(?:\.\d+)?)\s*(-?\d+(?:\.\d+)?)/g)].map(
+      ([, x, y]) => ({ x: Number(x), y: Number(y) })
+    )
+    expect(points.length).toBeGreaterThanOrEqual(5)
+    // Ear exits the right port: second point sits further right than the first.
+    expect(points[1].x).toBeGreaterThan(points[0].x)
+    // Route extends past the node's right edge and rises above y=0.
+    expect(Math.max(...points.map((p) => p.x))).toBeGreaterThan(NODE_WIDTH)
+    expect(Math.min(...points.map((p) => p.y))).toBeLessThan(0)
   })
 
   it('keeps an explicit orthogonal path from layout routing data when provided', () => {
