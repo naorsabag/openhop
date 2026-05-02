@@ -80,6 +80,20 @@ describe('buildFlowTopology', () => {
       ['order-service', 'audit'],
     ])
   })
+
+  it('assigns the same variant color to first nodes of different sprite pools (matching sprite hue)', () => {
+    // api is `endpoint`, order-service is `service`. Both are the first node
+    // in their respective sprite pools, so both render with the original
+    // (orange) sprite — and both get the same VARIANT_ACCENT[0] accent so
+    // their animated pixel drop-shadows match the visible sprite hue.
+    const topology = buildFlowTopology(orderFlow)
+    const apiVariant = topology.nodeVariants.get('api')
+    const svcVariant = topology.nodeVariants.get('order-service')
+    expect(apiVariant?.color).toBeDefined()
+    expect(svcVariant?.color).toBe(apiVariant?.color)
+    expect(apiVariant?.filter).toBeUndefined()
+    expect(svcVariant?.filter).toBeUndefined()
+  })
 })
 
 describe('computeElkLayout', () => {

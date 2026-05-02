@@ -1,25 +1,23 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { FlowStep, FlowData } from '../types'
 import { DataTooltip } from './DataTooltip'
-const CARROT_SPRITE = '/sprites/carrot_pixels.svg'
 
-/** Node type colors — must match FlowNode.tsx NODE_STYLES */
-const NODE_COLORS: Record<string, string> = {
-  actor: '#4a9eff',
-  endpoint: '#4a9eff',
-  transform: '#b47aff',
-  database: '#4aff7a',
-  external: '#ff8a4a',
-  cache: '#4affee',
-  queue: '#4aeeff',
-  service: '#888',
-}
+const CARROT_SPRITE = '/sprites/carrot_pixels.svg'
+const DEFAULT_PIXEL_COLOR = '#ff8a4a' // VARIANT_ACCENT[0] — sprite's original orange.
 
 interface DataPixelProps {
   edgeId: string
   reverse?: boolean
-  sourceNodeType: string
+  /** Source node's variant color from topology — drives the pixel
+   *  drop-shadow when pixelColor isn't set. */
   sourceNodeColor?: string
+  /** Per-pixel color override (palette cycling, or explicit data.color).
+   *  Wins over sourceNodeColor. */
+  pixelColor?: string
+  /** Optional CSS hue-rotate applied to the carrot sprite so its body
+   *  recolors to match pixelColor — without it, the orange sprite
+   *  visually dominates the colored drop-shadow. */
+  pixelFilter?: string
   step: FlowStep
   containerRef: React.RefObject<HTMLDivElement | null>
   isManual?: boolean
@@ -36,8 +34,9 @@ const ANIMATION_DURATION_BASE = 1800
 export function DataPixel({
   edgeId,
   reverse = false,
-  sourceNodeType,
   sourceNodeColor,
+  pixelColor,
+  pixelFilter,
   step,
   containerRef,
   isManual,
@@ -56,11 +55,9 @@ export function DataPixel({
   }, [onAnimationComplete])
   const [hovered, setHovered] = useState(false)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
-  // Determine pixel color from source node type
-  const color =
-    sourceNodeType === 'custom' && sourceNodeColor
-      ? sourceNodeColor
-      : (NODE_COLORS[sourceNodeType] ?? '#888')
+  // pixelColor (palette cycling / data.color) > sourceNodeColor (variant
+  // color from topology, keeps shadow in lockstep with sprite hue) > orange.
+  const color = pixelColor ?? sourceNodeColor ?? DEFAULT_PIXEL_COLOR
 
   const dataLabel = dataOverride
     ? dataOverride.label
@@ -196,6 +193,10 @@ export function DataPixel({
               height: '100%',
               imageRendering: 'pixelated',
               display: 'block',
+              // Hue-rotate is applied directly to the <img> so the carrot's
+              // own pixel colors shift (the wrapper's drop-shadow then reads
+              // from the rotated alpha, keeping the glow in sync).
+              filter: pixelFilter,
             }}
           />
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { FlowStep } from '../types'
+import type { FlowStep, FlowData } from '../types'
 
 export interface EdgeFlowRef {
   edgeId: string
@@ -16,8 +16,18 @@ export interface ManualPixel {
   step: FlowStep
   sourceNodeId: string
   sourceStepIndex: number
-  sourceNodeType: string
   sourceNodeColor?: string
+  /** Per-pixel color override (used when expanding a multi-data step into
+   *  one pixel per data entry, so each click-to-fire carrot gets a distinct
+   *  hue from the variant palette). */
+  pixelColor?: string
+  /** CSS filter to stack on the sprite <img>, paired with pixelColor. */
+  pixelFilter?: string
+  /** Single data object to render this pixel for (set when expanding a
+   *  multi-data step). */
+  dataOverride?: FlowData
+  /** Render delay in ms — used to stagger multi-data carrots. */
+  delayMs?: number
 }
 
 export interface AnimationState {
