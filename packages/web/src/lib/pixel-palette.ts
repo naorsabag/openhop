@@ -63,3 +63,13 @@ export function assignNodeVariants(
 export function multiDataPixelColor(index: number): string {
   return VARIANT_ACCENT[index % VARIANT_ACCENT.length]
 }
+
+/**
+ * Sprite-hue filter that pairs with `multiDataPixelColor(index)`. Apply
+ * this to the carrot <img> so the visible sprite tint matches its
+ * drop-shadow — without it, all multi-data carrots stay orange (the
+ * sprite's original hue) and only the surrounding glow cycles.
+ */
+export function multiDataPixelFilter(index: number): string | undefined {
+  return VARIANT_FILTER[index % VARIANT_FILTER.length] || undefined
+}

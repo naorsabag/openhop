@@ -20,7 +20,7 @@ import { useFlowGraphLayout } from '../hooks/useFlowGraphLayout'
 import { DataPixel } from './DataPixel'
 import { DataPopup } from './DataPopup'
 import { buildFlowTopology } from '../lib/flow-layout'
-import { multiDataPixelColor } from '../lib/pixel-palette'
+import { multiDataPixelColor, multiDataPixelFilter } from '../lib/pixel-palette'
 import type { Flow, FlowStep } from '../types'
 
 const nodeTypes: NodeTypes = {
@@ -625,6 +625,7 @@ function FlowCanvasInner({
                 sourceNodeType={sourceInfo.type}
                 sourceNodeColor={sourceInfo.color}
                 pixelColor={dataObj.color ?? multiDataPixelColor(dataIndex)}
+                pixelFilter={dataObj.color ? undefined : multiDataPixelFilter(dataIndex)}
                 step={edgeStep}
                 containerRef={containerRef}
                 onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}

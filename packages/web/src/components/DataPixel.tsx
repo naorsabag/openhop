@@ -25,6 +25,10 @@ interface DataPixelProps {
   /** Per-pixel override (multi-data palette cycling, or explicit
    *  data.color). Wins over sourceNodeColor and the type fallback. */
   pixelColor?: string
+  /** Optional CSS filter applied to the carrot sprite itself (e.g.
+   *  hue-rotate) so the visible carrot color matches its drop-shadow.
+   *  Used for multi-data palette cycling. */
+  pixelFilter?: string
   step: FlowStep
   containerRef: React.RefObject<HTMLDivElement | null>
   isManual?: boolean
@@ -44,6 +48,7 @@ export function DataPixel({
   sourceNodeType,
   sourceNodeColor,
   pixelColor,
+  pixelFilter,
   step,
   containerRef,
   isManual,
@@ -192,7 +197,10 @@ export function DataPixel({
         <div
           className="data-pixel-sprite"
           style={{
-            filter: `drop-shadow(0 0 6px ${color})`,
+            // Stack the optional hue-rotate sprite filter (multi-data palette
+            // cycling) with the drop-shadow so the carrot itself takes on the
+            // pixel's hue, not just its glow.
+            filter: [pixelFilter, `drop-shadow(0 0 6px ${color})`].filter(Boolean).join(' '),
           }}
         >
           <img
