@@ -189,11 +189,18 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
 
   const layoutEdges: Array<[string, string]> = []
   const layoutSeen = new Set<string>()
+  // Back-edges (target already seen) are deferred; we add them later for any
+  // node that would otherwise be orphan in the layered layout, so ELK places
+  // it on a row instead of floating it on its own.
+  const deferredBackEdges: Array<[string, string]> = []
 
   const pushLayoutEdge = (source?: string, target?: string) => {
     if (!source || !target) return
     layoutSeen.add(source)
-    if (layoutSeen.has(target)) return
+    if (layoutSeen.has(target)) {
+      deferredBackEdges.push([source, target])
+      return
+    }
     layoutSeen.add(target)
     layoutEdges.push([source, target])
   }
@@ -221,6 +228,22 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
       pushDisplayEdge(step.from, target)
       pushLayoutEdge(step.from, target)
     }
+  }
+
+  // Promote deferred back-edges for nodes that are otherwise floating — i.e.
+  // the source has no other layout edge in or out. Without this, a node like
+  // a periodic scheduler that only feeds a previously-seen target gets
+  // dropped and ELK places it on its own row.
+  const layoutNodeIds = new Set<string>()
+  for (const [s, t] of layoutEdges) {
+    layoutNodeIds.add(s)
+    layoutNodeIds.add(t)
+  }
+  for (const [source, target] of deferredBackEdges) {
+    if (layoutNodeIds.has(source)) continue
+    if (source === target) continue
+    layoutEdges.push([source, target])
+    layoutNodeIds.add(source)
   }
 
   return {
@@ -300,8 +323,55 @@ function dedupeRoutePoints(points: RoutePoint[]): RoutePoint[] {
   })
 }
 
+function chooseOrthogonalCorner(
+  previous: RoutePoint | undefined,
+  current: RoutePoint,
+  next: RoutePoint,
+  following: RoutePoint | undefined
+): RoutePoint {
+  if (previous) {
+    if (previous.x === current.x && previous.y !== current.y) return { x: next.x, y: current.y }
+    if (previous.y === current.y && previous.x !== current.x) return { x: current.x, y: next.y }
+  }
+
+  if (following) {
+    if (following.x === next.x && following.y !== next.y) return { x: next.x, y: current.y }
+    if (following.y === next.y && following.x !== next.x) return { x: current.x, y: next.y }
+  }
+
+  return { x: next.x, y: current.y }
+}
+
+function orthogonalizeRoutePoints(points: RoutePoint[]): RoutePoint[] {
+  const route: RoutePoint[] = []
+
+  for (let index = 0; index < points.length; index++) {
+    const point = points[index]
+    const current = route[route.length - 1]
+
+    if (!current) {
+      route.push(point)
+      continue
+    }
+
+    if (current.x !== point.x && current.y !== point.y) {
+      const corner = chooseOrthogonalCorner(
+        route[route.length - 2],
+        current,
+        point,
+        points[index + 1]
+      )
+      route.push(corner)
+    }
+
+    route.push(point)
+  }
+
+  return dedupeRoutePoints(route)
+}
+
 export function buildOrthogonalPath(points: RoutePoint[]): string | null {
-  const deduped = dedupeRoutePoints(points)
+  const deduped = orthogonalizeRoutePoints(dedupeRoutePoints(points))
   if (deduped.length < 2) return null
 
   return deduped.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
@@ -430,7 +500,8 @@ export function inferPortAssignmentsFromRoutes(
 }
 
 const MIN_SHARED_STUB_LENGTH = 120
-const SELF_LOOP_OFFSET = 32
+export const SELF_LOOP_WIDTH = 48
+export const SELF_LOOP_HEIGHT = 40
 
 /**
  * Build a self-loop "ear" route — exits the node's right port, hooks up and
@@ -446,9 +517,9 @@ function buildSelfLoopRoute(position: Position): {
   const targetAnchor = anchorForHandle(position, 'top')
   const route: RoutePoint[] = [
     sourceAnchor,
-    { x: sourceAnchor.x + SELF_LOOP_OFFSET, y: sourceAnchor.y },
-    { x: sourceAnchor.x + SELF_LOOP_OFFSET, y: targetAnchor.y - SELF_LOOP_OFFSET },
-    { x: targetAnchor.x, y: targetAnchor.y - SELF_LOOP_OFFSET },
+    { x: sourceAnchor.x + SELF_LOOP_WIDTH, y: sourceAnchor.y },
+    { x: sourceAnchor.x + SELF_LOOP_WIDTH, y: targetAnchor.y - SELF_LOOP_HEIGHT },
+    { x: targetAnchor.x, y: targetAnchor.y - SELF_LOOP_HEIGHT },
     targetAnchor,
   ]
   return { route, assignment: { source: 'right', target: 'top' } }
@@ -470,7 +541,7 @@ export function bundleSharedSourcePrefixes(
 
   for (const [edgeId, route] of bundled) {
     const assignment = assignments.get(edgeId)
-    if (!assignment || route.length < 3) continue
+    if (!assignment || route.length < 2) continue
     const key = `${route[0].x},${route[0].y}:${assignment.source}`
     const group = groups.get(key) ?? []
     group.push({ edgeId, route, side: assignment.source })
@@ -483,10 +554,12 @@ export function bundleSharedSourcePrefixes(
     const side = group[0].side
     const start = group[0].route[0]
     if (side === 'right' || side === 'left') {
+      const bent = group.filter(({ route }) => route.length >= 3)
+      if (bent.length === 0) continue
       const naturalTrunkX =
         side === 'right'
-          ? Math.min(...group.map(({ route }) => route[1].x))
-          : Math.max(...group.map(({ route }) => route[1].x))
+          ? Math.min(...bent.map(({ route }) => route[1].x))
+          : Math.max(...bent.map(({ route }) => route[1].x))
       const nearestTargetX =
         side === 'right'
           ? Math.min(...group.map(({ route }) => route[route.length - 1].x))
@@ -502,7 +575,7 @@ export function bundleSharedSourcePrefixes(
       const trunkX =
         lo > hi ? (start.x + nearestTargetX) / 2 : Math.min(hi, Math.max(lo, naturalTrunkX))
 
-      for (const item of group) {
+      for (const item of bent) {
         const [edgeStart, ...rest] = item.route
         const shifted = rest.map((p) => (p.x === naturalTrunkX ? { x: trunkX, y: p.y } : p))
         shifted[0] = { x: trunkX, y: edgeStart.y }
@@ -512,10 +585,12 @@ export function bundleSharedSourcePrefixes(
     }
 
     if (side === 'bottom' || side === 'top') {
+      const bent = group.filter(({ route }) => route.length >= 3)
+      if (bent.length === 0) continue
       const naturalTrunkY =
         side === 'bottom'
-          ? Math.min(...group.map(({ route }) => route[1].y))
-          : Math.max(...group.map(({ route }) => route[1].y))
+          ? Math.min(...bent.map(({ route }) => route[1].y))
+          : Math.max(...bent.map(({ route }) => route[1].y))
       const nearestTargetY =
         side === 'bottom'
           ? Math.min(...group.map(({ route }) => route[route.length - 1].y))
@@ -531,7 +606,7 @@ export function bundleSharedSourcePrefixes(
       const trunkY =
         lo > hi ? (start.y + nearestTargetY) / 2 : Math.min(hi, Math.max(lo, naturalTrunkY))
 
-      for (const item of group) {
+      for (const item of bent) {
         const [edgeStart, ...rest] = item.route
         const shifted = rest.map((p) => (p.y === naturalTrunkY ? { x: p.x, y: trunkY } : p))
         shifted[0] = { x: edgeStart.x, y: trunkY }
@@ -840,6 +915,59 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
   }
 }
 
+/**
+ * Snap each node's y to the nearest row of a shared grid so off-grid nodes
+ * (e.g. an outlier introduced by a back-edge connection like a cron source)
+ * line up with the rest of the layout. Returns the per-node y-deltas so
+ * routes can be shifted in lockstep — without that, routes that ELK
+ * computed against pre-snap positions drift from the snapped nodes.
+ */
+function snapPositionsToRowGrid(positions: Map<string, Position>): Map<string, number> {
+  const deltas = new Map<string, number>()
+  if (positions.size === 0) return deltas
+  const ROW_PITCH = NODE_HEIGHT + 80
+  const ys = [...positions.values()].map((p) => p.y).sort((a, b) => a - b)
+  const baseY = ys[0]
+  for (const [id, pos] of positions) {
+    const k = Math.round((pos.y - baseY) / ROW_PITCH)
+    const newY = baseY + k * ROW_PITCH
+    deltas.set(id, newY - pos.y)
+    positions.set(id, { x: pos.x, y: newY })
+  }
+  return deltas
+}
+
+/**
+ * Shift each route in lockstep with the y-snap applied to its source and
+ * target nodes. Source-side points (y == route[0].y) move by Δsource;
+ * target-side points (y == route[last].y) move by Δtarget. Intermediate
+ * vertical-bend points (y matching neither port-y) keep their value since
+ * the orthogonal turn logically belongs to whichever side it connects to;
+ * here we leave them alone, which is correct for the H-V-H routes ELK
+ * produces in this layout.
+ */
+function shiftRoutesAfterSnap(
+  routes: Map<string, RoutePoint[]>,
+  topology: FlowTopology,
+  deltas: Map<string, number>
+): void {
+  for (const edge of topology.displayEdges) {
+    const route = routes.get(edge.id)
+    if (!route || route.length < 2) continue
+    const dSource = deltas.get(edge.source) ?? 0
+    const dTarget = deltas.get(edge.target) ?? 0
+    if (dSource === 0 && dTarget === 0) continue
+    const sourceY = route[0].y
+    const targetY = route[route.length - 1].y
+    const shifted = route.map((p) => {
+      if (Math.abs(p.y - sourceY) < 0.5) return { x: p.x, y: p.y + dSource }
+      if (Math.abs(p.y - targetY) < 0.5) return { x: p.x, y: p.y + dTarget }
+      return p
+    })
+    routes.set(edge.id, shifted)
+  }
+}
+
 function extractElkLayout(graph: Awaited<ReturnType<typeof elk.layout>>) {
   const positions = new Map<string, Position>()
   for (const child of graph.children ?? []) {
@@ -867,14 +995,25 @@ function extractElkLayout(graph: Awaited<ReturnType<typeof elk.layout>>) {
 
 export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayoutResult> {
   const firstPass = extractElkLayout(await elk.layout(buildElkGraph(topology)))
+  const firstDeltas = snapPositionsToRowGrid(firstPass.positions)
+  shiftRoutesAfterSnap(firstPass.routes, topology, firstDeltas)
+  // Normalize routes the same way buildOrthogonalPath does so port-side
+  // inference looks at corrected (orthogonal, deduped) endpoint segments
+  // rather than raw ELK polylines that may contain a diagonal nub.
+  const normalizedFirstRoutes = new Map<string, RoutePoint[]>()
+  for (const [edgeId, route] of firstPass.routes) {
+    normalizedFirstRoutes.set(edgeId, orthogonalizeRoutePoints(dedupeRoutePoints(route)))
+  }
   const inferredAssignments = inferPortAssignmentsFromRoutes(
     topology,
     firstPass.positions,
-    firstPass.routes
+    normalizedFirstRoutes
   )
   const secondPass = extractElkLayout(
     await elk.layout(buildElkGraph(topology, inferredAssignments))
   )
+  const secondDeltas = snapPositionsToRowGrid(secondPass.positions)
+  shiftRoutesAfterSnap(secondPass.routes, topology, secondDeltas)
   const bundledRoutes = bundleSharedSourcePrefixes(secondPass.routes, inferredAssignments)
 
   return {
