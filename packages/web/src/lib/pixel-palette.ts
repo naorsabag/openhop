@@ -56,20 +56,27 @@ export function assignNodeVariants(
 }
 
 /**
- * Default color for the index-th pixel in a multi-data step. Each pixel
- * cycles through VARIANT_ACCENT so multi-payload steps render with
- * distinguishable shadows.
+ * Default color for the index-th pixel when a step emits multiple carrots
+ * (multi-data, broadcast, or parallel). Each pixel cycles through
+ * VARIANT_ACCENT so they render with distinguishable shadows.
  */
-export function multiDataPixelColor(index: number): string {
+export function stepPixelColor(index: number): string {
   return VARIANT_ACCENT[index % VARIANT_ACCENT.length]
 }
 
 /**
- * Sprite-hue filter that pairs with `multiDataPixelColor(index)`. Apply
- * this to the carrot <img> so the visible sprite tint matches its
- * drop-shadow — without it, all multi-data carrots stay orange (the
- * sprite's original hue) and only the surrounding glow cycles.
+ * Sprite-hue filter that pairs with `stepPixelColor(index)`. Apply this to
+ * the carrot <img> so the visible sprite tint matches its drop-shadow —
+ * without it, all carrots stay orange (the sprite's original hue) and only
+ * the surrounding glow cycles.
  */
-export function multiDataPixelFilter(index: number): string | undefined {
+export function stepPixelFilter(index: number): string | undefined {
   return VARIANT_FILTER[index % VARIANT_FILTER.length] || undefined
 }
+
+/**
+ * Back-compat aliases. The original API was named after multi-data steps,
+ * but the same cycling now applies to broadcast and parallel pixels too.
+ */
+export const multiDataPixelColor = stepPixelColor
+export const multiDataPixelFilter = stepPixelFilter

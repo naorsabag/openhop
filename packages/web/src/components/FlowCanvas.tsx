@@ -20,7 +20,7 @@ import { useFlowGraphLayout } from '../hooks/useFlowGraphLayout'
 import { DataPixel } from './DataPixel'
 import { DataPopup } from './DataPopup'
 import { buildFlowTopology } from '../lib/flow-layout'
-import { multiDataPixelColor, multiDataPixelFilter } from '../lib/pixel-palette'
+import { stepPixelColor, stepPixelFilter } from '../lib/pixel-palette'
 import type { Flow, FlowStep } from '../types'
 
 const nodeTypes: NodeTypes = {
@@ -422,17 +422,55 @@ function FlowCanvasInner({
         return // no pixel to fire
       }
 
-      // Fire a pixel for EACH edge flow in this logical step (broadcast = multiple edges)
+      // Fire a pixel for EACH edge flow in this logical step. A multi-data
+      // step expands one edgeFlow into N pixels (one per data entry). The
+      // total pixel count drives whether colors cycle through the variant
+      // palette: 2+ → cycle so each carrot is visually distinct; 1 → keep
+      // the source node's variant color.
+      const totalPixels = entry.edgeFlows.reduce((sum, ef) => {
+        const s = ef.step ?? entry.step
+        return sum + (Array.isArray(s.data) ? s.data.length : 1)
+      }, 0)
+      const cycle = totalPixels >= 2
+      let pixelIdx = 0
       for (const edgeFlow of entry.edgeFlows) {
-        fireManualPixel({
-          edgeId: edgeFlow.edgeId,
-          reverse: edgeFlow.reverse,
-          step: edgeFlow.step,
-          sourceNodeId: nodeId,
-          sourceStepIndex: currentProg,
-          sourceNodeType: sourceInfo.type,
-          sourceNodeColor: sourceInfo.color,
-        })
+        const stepData = (edgeFlow.step ?? entry.step).data
+        if (Array.isArray(stepData)) {
+          for (let i = 0; i < stepData.length; i++) {
+            const dataObj = stepData[i]
+            const idx = pixelIdx++
+            fireManualPixel({
+              edgeId: edgeFlow.edgeId,
+              reverse: edgeFlow.reverse,
+              step: edgeFlow.step,
+              sourceNodeId: nodeId,
+              sourceStepIndex: currentProg,
+              sourceNodeType: sourceInfo.type,
+              sourceNodeColor: sourceInfo.color,
+              pixelColor: dataObj.color ?? (cycle ? stepPixelColor(idx) : undefined),
+              pixelFilter: dataObj.color || !cycle ? undefined : stepPixelFilter(idx),
+              dataOverride: dataObj,
+              delayMs: i * 280,
+            })
+          }
+        } else {
+          const singleColor =
+            stepData && typeof stepData === 'object' && !Array.isArray(stepData)
+              ? stepData.color
+              : undefined
+          const idx = pixelIdx++
+          fireManualPixel({
+            edgeId: edgeFlow.edgeId,
+            reverse: edgeFlow.reverse,
+            step: edgeFlow.step,
+            sourceNodeId: nodeId,
+            sourceStepIndex: currentProg,
+            sourceNodeType: sourceInfo.type,
+            sourceNodeColor: sourceInfo.color,
+            pixelColor: singleColor ?? (cycle ? stepPixelColor(idx) : undefined),
+            pixelFilter: singleColor || !cycle ? undefined : stepPixelFilter(idx),
+          })
+        }
       }
     },
     [
@@ -605,60 +643,66 @@ function FlowCanvasInner({
         />
       </ReactFlow>
 
-      {/* Data pixel overlay — automatic */}
+      {/* Data pixel overlay — automatic. When a step emits 2+ pixels (multi-
+          data on one edge, a broadcast across several edges, or a parallel
+          step combining both), every carrot gets a distinct hue from the
+          variant palette indexed across the WHOLE step. Single-pixel steps
+          keep the source node's variant color. */}
       {animState.activeStep &&
-        activeEdgeFlows.flatMap((edgeFlow, edgeFlowIndex) => {
-          const sourceInfo = nodeTypeMap.get(edgeFlow.fromId) ?? {
-            type: 'service',
-          }
-          const edgeStep = edgeFlow.step ?? animState.activeStep!
+        (() => {
+          const totalPixels = activeEdgeFlows.reduce((sum, ef) => {
+            const s = ef.step ?? animState.activeStep!
+            return sum + (Array.isArray(s.data) ? s.data.length : 1)
+          }, 0)
+          const cycle = totalPixels >= 2
+          let pixelIdx = 0
+          return activeEdgeFlows.flatMap((edgeFlow, edgeFlowIndex) => {
+            const sourceInfo = nodeTypeMap.get(edgeFlow.fromId) ?? { type: 'service' }
+            const edgeStep = edgeFlow.step ?? animState.activeStep!
 
-          // Multi-data: render one pixel per data object with stagger AND a
-          // distinct shadow hue cycling through the variant palette. An
-          // explicit `data[i].color` always wins.
-          if (Array.isArray(edgeStep.data)) {
-            return edgeStep.data.map((dataObj, dataIndex) => (
+            if (Array.isArray(edgeStep.data)) {
+              return edgeStep.data.map((dataObj, dataIndex) => {
+                const idx = pixelIdx++
+                return (
+                  <DataPixel
+                    key={`${edgeFlow.edgeId}-${edgeFlow.reverse ? 'r' : 'f'}-${edgeFlowIndex}-${dataIndex}`}
+                    edgeId={edgeFlow.edgeId}
+                    reverse={edgeFlow.reverse}
+                    sourceNodeType={sourceInfo.type}
+                    sourceNodeColor={sourceInfo.color}
+                    pixelColor={dataObj.color ?? (cycle ? stepPixelColor(idx) : undefined)}
+                    pixelFilter={dataObj.color || !cycle ? undefined : stepPixelFilter(idx)}
+                    step={edgeStep}
+                    containerRef={containerRef}
+                    onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
+                    delayMs={dataIndex * 280}
+                    dataOverride={dataObj}
+                  />
+                )
+              })
+            }
+
+            const singleColor =
+              edgeStep.data && typeof edgeStep.data === 'object' && !Array.isArray(edgeStep.data)
+                ? edgeStep.data.color
+                : undefined
+            const idx = pixelIdx++
+            return (
               <DataPixel
-                key={`${edgeFlow.edgeId}-${edgeFlow.reverse ? 'r' : 'f'}-${edgeFlowIndex}-${dataIndex}`}
+                key={`${edgeFlow.edgeId}-${edgeFlow.reverse ? 'r' : 'f'}-${edgeFlowIndex}`}
                 edgeId={edgeFlow.edgeId}
                 reverse={edgeFlow.reverse}
                 sourceNodeType={sourceInfo.type}
                 sourceNodeColor={sourceInfo.color}
-                pixelColor={dataObj.color ?? multiDataPixelColor(dataIndex)}
-                pixelFilter={dataObj.color ? undefined : multiDataPixelFilter(dataIndex)}
+                pixelColor={singleColor ?? (cycle ? stepPixelColor(idx) : undefined)}
+                pixelFilter={singleColor || !cycle ? undefined : stepPixelFilter(idx)}
                 step={edgeStep}
                 containerRef={containerRef}
                 onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
-                // 280ms stagger keeps successive pixels far enough apart on
-                // the path that distinct hues are visible even on short
-                // self-loop ears (~100px); shorter stagger overlapped them.
-                delayMs={dataIndex * 280}
-                dataOverride={dataObj}
               />
-            ))
-          }
-
-          // Single-object data: respect explicit `data.color`; otherwise the
-          // pixel falls back to the source node's variant color via the
-          // sourceNodeColor pipe.
-          const singleColor =
-            edgeStep.data && typeof edgeStep.data === 'object' && !Array.isArray(edgeStep.data)
-              ? edgeStep.data.color
-              : undefined
-          return (
-            <DataPixel
-              key={`${edgeFlow.edgeId}-${edgeFlow.reverse ? 'r' : 'f'}-${edgeFlowIndex}`}
-              edgeId={edgeFlow.edgeId}
-              reverse={edgeFlow.reverse}
-              sourceNodeType={sourceInfo.type}
-              sourceNodeColor={sourceInfo.color}
-              pixelColor={singleColor}
-              step={edgeStep}
-              containerRef={containerRef}
-              onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
-            />
-          )
-        })}
+            )
+          })
+        })()}
 
       {/* Data pixel overlay — manual (click-to-fire) */}
       {manualPixels.map((mp) => (
@@ -668,6 +712,10 @@ function FlowCanvasInner({
           reverse={mp.reverse}
           sourceNodeType={mp.sourceNodeType}
           sourceNodeColor={mp.sourceNodeColor}
+          pixelColor={mp.pixelColor}
+          pixelFilter={mp.pixelFilter}
+          dataOverride={mp.dataOverride}
+          delayMs={mp.delayMs}
           step={mp.step}
           containerRef={containerRef}
           isManual

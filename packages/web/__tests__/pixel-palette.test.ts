@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   VARIANT_ACCENT,
   assignNodeVariants,
-  multiDataPixelColor,
-  multiDataPixelFilter,
+  stepPixelColor,
+  stepPixelFilter,
 } from '../src/lib/pixel-palette'
 
 describe('assignNodeVariants', () => {
@@ -46,21 +46,21 @@ describe('assignNodeVariants', () => {
   })
 })
 
-describe('multiDataPixelColor', () => {
+describe('stepPixelColor', () => {
   it('returns palette[index] and wraps around at the end', () => {
-    expect(multiDataPixelColor(0)).toBe(VARIANT_ACCENT[0])
-    expect(multiDataPixelColor(1)).toBe(VARIANT_ACCENT[1])
-    expect(multiDataPixelColor(VARIANT_ACCENT.length)).toBe(VARIANT_ACCENT[0])
+    expect(stepPixelColor(0)).toBe(VARIANT_ACCENT[0])
+    expect(stepPixelColor(1)).toBe(VARIANT_ACCENT[1])
+    expect(stepPixelColor(VARIANT_ACCENT.length)).toBe(VARIANT_ACCENT[0])
   })
 })
 
-describe('multiDataPixelFilter', () => {
+describe('stepPixelFilter', () => {
   it('returns undefined for index 0 (the original orange sprite, no filter)', () => {
-    expect(multiDataPixelFilter(0)).toBeUndefined()
+    expect(stepPixelFilter(0)).toBeUndefined()
   })
 
   it('returns a hue-rotate filter for subsequent indices', () => {
-    expect(multiDataPixelFilter(1)).toMatch(/hue-rotate/)
-    expect(multiDataPixelFilter(2)).toMatch(/hue-rotate/)
+    expect(stepPixelFilter(1)).toMatch(/hue-rotate/)
+    expect(stepPixelFilter(2)).toMatch(/hue-rotate/)
   })
 })
