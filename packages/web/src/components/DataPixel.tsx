@@ -197,10 +197,7 @@ export function DataPixel({
         <div
           className="data-pixel-sprite"
           style={{
-            // Stack the optional hue-rotate sprite filter (multi-data palette
-            // cycling) with the drop-shadow so the carrot itself takes on the
-            // pixel's hue, not just its glow.
-            filter: [pixelFilter, `drop-shadow(0 0 6px ${color})`].filter(Boolean).join(' '),
+            filter: `drop-shadow(0 0 6px ${color})`,
           }}
         >
           <img
@@ -211,6 +208,10 @@ export function DataPixel({
               height: '100%',
               imageRendering: 'pixelated',
               display: 'block',
+              // Hue-rotate is applied directly to the <img> so the carrot's
+              // own pixel colors shift (the wrapper's drop-shadow then reads
+              // from the rotated alpha, keeping the glow in sync).
+              filter: pixelFilter,
             }}
           />
         </div>
