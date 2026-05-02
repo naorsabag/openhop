@@ -12,7 +12,6 @@ export const VARIANT_FILTER: readonly string[] = [
   'hue-rotate(90deg)', // green
   'hue-rotate(140deg)', // blue
   'hue-rotate(320deg)', // red
-  'hue-rotate(60deg) saturate(1.2)', // yellow
 ]
 
 export const VARIANT_ACCENT: readonly string[] = [
@@ -21,7 +20,6 @@ export const VARIANT_ACCENT: readonly string[] = [
   '#4aff7a', // green
   '#4a9eff', // blue
   '#ff6b6b', // red
-  '#ffd84a', // yellow
 ]
 
 const FALLBACK_SPRITE_KEY = 'service'
