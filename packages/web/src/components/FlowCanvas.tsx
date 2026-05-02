@@ -629,7 +629,10 @@ function FlowCanvasInner({
                 step={edgeStep}
                 containerRef={containerRef}
                 onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
-                delayMs={dataIndex * 120}
+                // 280ms stagger keeps successive pixels far enough apart on
+                // the path that distinct hues are visible even on short
+                // self-loop ears (~100px); shorter stagger overlapped them.
+                delayMs={dataIndex * 280}
                 dataOverride={dataObj}
               />
             ))
