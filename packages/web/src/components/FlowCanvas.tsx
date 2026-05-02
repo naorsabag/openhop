@@ -19,6 +19,7 @@ import { useFlowAnimation, type EdgeFlowRef, type StepEdgeMapping } from '../hoo
 import { useFlowGraphLayout } from '../hooks/useFlowGraphLayout'
 import { DataPixel } from './DataPixel'
 import { DataPopup } from './DataPopup'
+import { assignNodeVariants, multiDataPixelColor } from '../lib/pixel-palette'
 import type { Flow, FlowStep } from '../types'
 
 const nodeTypes: NodeTypes = {
@@ -226,11 +227,24 @@ function FlowCanvasInner({
     [pinnedEdge, edgeStepsById]
   )
 
-  // Build a map from node id to node type for pixel coloring
+  // Build a map from node id to node type and variant color for pixel coloring.
+  // Variant colors mirror the sprite-filter cycle in flow-layout so a node's
+  // animated pixels match the visible hue of its sprite, even when several
+  // nodes of the same type share the fallback service sprite.
   const nodeTypeMap = useMemo(() => {
+    const variants = assignNodeVariants(
+      flow.flow.nodes.map((n) => ({ id: n.id, type: n.type ?? 'service' }))
+    )
     const map = new Map<string, { type: string; color?: string }>()
     for (const n of flow.flow.nodes) {
-      map.set(n.id, { type: n.type ?? 'service', color: n.color })
+      // Custom-typed nodes with an explicit hex color keep that color (it
+      // already drives the sprite tint). Other nodes use their variant color
+      // so the pixel matches the cycled sprite hue.
+      const explicit = n.type === 'custom' && n.color ? n.color : undefined
+      map.set(n.id, {
+        type: n.type ?? 'service',
+        color: explicit ?? variants.get(n.id)?.color,
+      })
     }
     return map
   }, [flow])
@@ -600,7 +614,9 @@ function FlowCanvasInner({
           }
           const edgeStep = edgeFlow.step ?? animState.activeStep!
 
-          // If the step has array data, render one pixel per data object with stagger
+          // If the step has array data, render one pixel per data object with
+          // stagger. Each pixel gets a distinct color cycling through the
+          // variant palette unless the data entry has its own `color`.
           if (Array.isArray(edgeStep.data)) {
             return edgeStep.data.map((dataObj, dataIndex) => (
               <DataPixel
@@ -609,6 +625,7 @@ function FlowCanvasInner({
                 reverse={edgeFlow.reverse}
                 sourceNodeType={sourceInfo.type}
                 sourceNodeColor={sourceInfo.color}
+                pixelColor={dataObj.color ?? multiDataPixelColor(dataIndex)}
                 step={edgeStep}
                 containerRef={containerRef}
                 onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
@@ -618,6 +635,12 @@ function FlowCanvasInner({
             ))
           }
 
+          // Single-object data: respect an explicit `data.color` if set, else
+          // fall back to the source node's variant color via sourceNodeColor.
+          const singleColor =
+            edgeStep.data && typeof edgeStep.data === 'object' && !Array.isArray(edgeStep.data)
+              ? edgeStep.data.color
+              : undefined
           return (
             <DataPixel
               key={`${edgeFlow.edgeId}-${edgeFlow.reverse ? 'r' : 'f'}-${edgeFlowIndex}`}
@@ -625,6 +648,7 @@ function FlowCanvasInner({
               reverse={edgeFlow.reverse}
               sourceNodeType={sourceInfo.type}
               sourceNodeColor={sourceInfo.color}
+              pixelColor={singleColor}
               step={edgeStep}
               containerRef={containerRef}
               onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
