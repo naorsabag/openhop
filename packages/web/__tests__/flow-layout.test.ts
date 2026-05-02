@@ -8,6 +8,7 @@ import {
   buildOrthogonalPath,
   bundleSharedSourcePrefixes,
   inferPortAssignmentsFromRoutes,
+  NODE_WIDTH,
 } from '../src/lib/flow-layout.ts'
 
 const orderFlow = {
@@ -153,6 +154,36 @@ describe('buildReactFlowGraph', () => {
     expect(dbEdge?.sourceHandle).toBe('top')
     expect(cacheEdge?.sourceHandle).toBe('bottom')
     expect(dbEdge?.sourceHandle).not.toBe(cacheEdge?.sourceHandle)
+  })
+
+  it('renders self-loop edges as an ear over the top-right with right→top ports', () => {
+    const selfLoopFlow = {
+      flow: {
+        nodes: [{ id: 'worker', label: 'Worker', type: 'service' }],
+        steps: [{ from: 'worker', to: 'worker', data: { label: 'retry' } }],
+      },
+    } as Flow
+    const topology = buildFlowTopology(selfLoopFlow)
+    const graph = buildReactFlowGraph(topology, new Map([['worker', { x: 0, y: 0 }]]))
+
+    const loopEdge = graph.edges.find(
+      (edge) => edge.source === 'worker' && edge.target === 'worker'
+    )
+
+    expect(loopEdge).toBeTruthy()
+    expect(loopEdge?.sourceHandle).toBe('right')
+    expect(loopEdge?.targetHandle).toBe('top')
+    const path = (loopEdge?.data as { elkPath?: string } | undefined)?.elkPath
+    expect(path).toBeDefined()
+    const points = [...path!.matchAll(/[ML]\s*(-?\d+(?:\.\d+)?)\s*(-?\d+(?:\.\d+)?)/g)].map(
+      ([, x, y]) => ({ x: Number(x), y: Number(y) })
+    )
+    expect(points.length).toBeGreaterThanOrEqual(5)
+    // Ear exits the right port: second point sits further right than the first.
+    expect(points[1].x).toBeGreaterThan(points[0].x)
+    // Route extends past the node's right edge and rises above y=0.
+    expect(Math.max(...points.map((p) => p.x))).toBeGreaterThan(NODE_WIDTH)
+    expect(Math.min(...points.map((p) => p.y))).toBeLessThan(0)
   })
 
   it('keeps an explicit orthogonal path from layout routing data when provided', () => {

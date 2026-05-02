@@ -1,0 +1,101 @@
+meta:
+  title: Self-loops
+  path: examples/self-loops
+  description: Demonstrates steps where from and to are the same node — internal work, retries, recursive processing — plus broadcasts and multi-data steps.
+
+flow:
+  nodes:
+    - id: client
+      label: Client
+      type: actor
+    - id: api
+      label: API Gateway
+      type: endpoint
+    - id: worker
+      label: Worker
+      type: service
+    - id: cache
+      label: Cache
+      type: cache
+    - id: db
+      label: Database
+      type: database
+
+  steps:
+    - from: client
+      to: api
+      data: POST /jobs
+
+    # Self-loop with multiple data payloads sent at once — three independent
+    # checks fire on the same internal step.
+    - from: api
+      to: api
+      data:
+        - label: schema validation
+          fields:
+            - name: body
+              type: JSON
+        - label: auth check
+          fields:
+            - name: token
+              type: JWT
+        - label: rate limit
+          fields:
+            - name: bucket
+              type: string
+
+    # Broadcast: API fans out to both worker and cache in a single step.
+    - from: api
+      to: [worker, cache]
+      data: enqueued job
+
+    # Self-loop with multi-data: worker reports retry + metric in parallel.
+    - from: worker
+      to: worker
+      data:
+        - label: process batch (retry x3)
+          fields:
+            - name: attempt
+              type: int
+              changed: true
+            - name: backoff_ms
+              type: int
+        - label: emit metrics
+          fields:
+            - name: latency_ms
+              type: float
+            - name: throughput
+              type: int
+
+    # Broadcast write: worker writes to db and invalidates cache at once.
+    - from: worker
+      to: [db, cache]
+      data: write result
+
+    # Self-loop on the database: trigger fires a follow-up update.
+    - from: db
+      to: db
+      data: trigger update_audit_log
+
+    # Multiple sources delivering to the same node at once — worker reports
+    # completion while cache confirms invalidation; api receives both in parallel.
+    - parallel:
+        - from: worker
+          to: api
+          data:
+            label: job complete
+            fields:
+              - name: job_id
+                type: uuid
+              - name: duration_ms
+                type: int
+        - from: cache
+          to: api
+          data:
+            label: cache invalidated
+            fields:
+              - name: keys_evicted
+                type: int
+    - from: api
+      to: client
+      data: "200 OK"
