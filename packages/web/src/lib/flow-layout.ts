@@ -2,6 +2,7 @@ import ELK from 'elkjs'
 import type { Edge, Node } from '@xyflow/react'
 import type { Flow } from '../types'
 import type { FlowNodeData } from '../components/nodes/FlowNode'
+import { assignNodeVariants, type NodeVariant } from './pixel-palette'
 
 const elk = new ELK()
 
@@ -37,6 +38,9 @@ export type FlowTopology = {
   nodeSnapshots: Map<string, NodeSnapshot>
   displayEdges: DisplayEdgeSpec[]
   layoutEdges: Array<[string, string]>
+  /** Per-node sprite + accent variant. Computed once over orderedIds so any
+   *  consumer (sprite filter, animated pixel shadow) lands on the same hue. */
+  nodeVariants: Map<string, NodeVariant>
 }
 
 export type ElKLayoutResult = {
@@ -246,11 +250,16 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
     layoutNodeIds.add(source)
   }
 
+  const nodeVariants = assignNodeVariants(
+    ordered.map((id) => ({ id, type: nodeSnapshots.get(id)?.nodeType ?? 'service' }))
+  )
+
   return {
     orderedIds: ordered,
     nodeSnapshots,
     displayEdges,
     layoutEdges,
+    nodeVariants,
   }
 }
 
@@ -710,44 +719,16 @@ export function buildReactFlowGraph(
     incomingByTarget.set(edge.target, incoming)
   }
 
-  // Color-variant cycle: when several nodes share the same sprite and have no
-  // custom icon, each successive one gets a different CSS filter so viewers
-  // can tell them apart at a glance. The accent palette parallels the sprite
-  // filter so the label, drop-shadow, and progress bar match the sprite's
-  // visible hue.
-  const VARIANT_CYCLE: string[] = [
-    '', // original (orange)
-    'hue-rotate(210deg)', // purple
-    'hue-rotate(90deg)', // green
-    'hue-rotate(140deg)', // blue
-    'hue-rotate(320deg)', // red
-    'hue-rotate(60deg) saturate(1.2)', // yellow (was grey)
-  ]
-  const VARIANT_ACCENT: string[] = [
-    '#ff8a4a', // orange
-    '#b47aff', // purple
-    '#4aff7a', // green
-    '#4a9eff', // blue
-    '#ff6b6b', // red
-    '#ffd84a', // yellow
-  ]
-  const spriteVariantCounters = new Map<string, number>()
-
-  // Nodes that fall back to the service sprite (e.g. `custom`) share the same
-  // variant counter, so five `custom` + five `service` nodes cycle through
-  // the six colors as a single pool instead of restarting per type.
-  const FALLBACK_SPRITE_KEY = 'service'
-  const TYPES_SHARING_SERVICE_SPRITE = new Set(['service', 'custom'])
-
+  // Per-node variant: precomputed once on the topology so the sprite filter
+  // here and the data-pixel drop-shadow in FlowCanvas read from the same
+  // palette index.
   const nodes: Node<FlowNodeData>[] = topology.orderedIds.map((id) => {
     const snapshot = topology.nodeSnapshots.get(id)
     const position = positionMap.get(id) ?? defaultPosition()
     const nodeType = snapshot?.nodeType ?? 'service'
-    const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(nodeType) ? FALLBACK_SPRITE_KEY : nodeType
-    const n = spriteVariantCounters.get(counterKey) ?? 0
-    const variantFilter = VARIANT_CYCLE[n % VARIANT_CYCLE.length] || undefined
-    const variantColor = VARIANT_ACCENT[n % VARIANT_ACCENT.length]
-    spriteVariantCounters.set(counterKey, n + 1)
+    const variant = topology.nodeVariants.get(id)
+    const variantFilter = variant?.filter
+    const variantColor = variant?.color ?? '#ff8a4a'
 
     return {
       id,

@@ -19,7 +19,12 @@ interface DataPixelProps {
   edgeId: string
   reverse?: boolean
   sourceNodeType: string
+  /** Source node's variant color — drives the pixel drop-shadow when
+   *  pixelColor is not set. */
   sourceNodeColor?: string
+  /** Per-pixel override (multi-data palette cycling, or explicit
+   *  data.color). Wins over sourceNodeColor and the type fallback. */
+  pixelColor?: string
   step: FlowStep
   containerRef: React.RefObject<HTMLDivElement | null>
   isManual?: boolean
@@ -38,6 +43,7 @@ export function DataPixel({
   reverse = false,
   sourceNodeType,
   sourceNodeColor,
+  pixelColor,
   step,
   containerRef,
   isManual,
@@ -56,11 +62,12 @@ export function DataPixel({
   }, [onAnimationComplete])
   const [hovered, setHovered] = useState(false)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
-  // Determine pixel color from source node type
-  const color =
-    sourceNodeType === 'custom' && sourceNodeColor
-      ? sourceNodeColor
-      : (NODE_COLORS[sourceNodeType] ?? '#888')
+  // Pixel drop-shadow color resolution order:
+  //   1. explicit pixelColor (multi-data palette cycling, or data.color)
+  //   2. sourceNodeColor (variant color computed from topology — keeps the
+  //      shadow in lockstep with the sprite hue)
+  //   3. legacy NODE_COLORS by type, kept as a fallback
+  const color = pixelColor ?? sourceNodeColor ?? NODE_COLORS[sourceNodeType] ?? '#888'
 
   const dataLabel = dataOverride
     ? dataOverride.label
