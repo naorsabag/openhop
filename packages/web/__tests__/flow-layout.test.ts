@@ -231,6 +231,16 @@ describe('buildOrthogonalPath', () => {
       ])
     ).toBe('M 100 200 L 180 200 L 180 320 L 300 320')
   })
+
+  it('inserts a 90-degree bend when route points would otherwise form a diagonal segment', () => {
+    expect(
+      buildOrthogonalPath([
+        { x: 520, y: 60 },
+        { x: 520, y: 140 },
+        { x: 780, y: 360 },
+      ])
+    ).toBe('M 520 60 L 520 140 L 780 140 L 780 360')
+  })
 })
 
 describe('inferPortAssignmentsFromRoutes', () => {
@@ -308,6 +318,44 @@ describe('bundleSharedSourcePrefixes', () => {
       { x: 520, y: 60 },
       { x: 520, y: 140 },
       { x: 780, y: 360 },
+    ])
+  })
+
+  it('uses a straight sibling route to delay the first branch point from a shared source', () => {
+    const routes = bundleSharedSourcePrefixes(
+      new Map([
+        [
+          'straight',
+          [
+            { x: 410, y: 370 },
+            { x: 700, y: 370 },
+          ],
+        ],
+        [
+          'bent',
+          [
+            { x: 410, y: 370 },
+            { x: 460, y: 370 },
+            { x: 460, y: 120 },
+            { x: 1010, y: 120 },
+          ],
+        ],
+      ]),
+      new Map([
+        ['straight', { source: 'right', target: 'left' }],
+        ['bent', { source: 'right', target: 'left' }],
+      ])
+    )
+
+    expect(routes.get('straight')).toEqual([
+      { x: 410, y: 370 },
+      { x: 700, y: 370 },
+    ])
+    expect(routes.get('bent')).toEqual([
+      { x: 410, y: 370 },
+      { x: 530, y: 370 },
+      { x: 530, y: 120 },
+      { x: 1010, y: 120 },
     ])
   })
 })

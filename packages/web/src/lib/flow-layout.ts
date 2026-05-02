@@ -300,8 +300,50 @@ function dedupeRoutePoints(points: RoutePoint[]): RoutePoint[] {
   })
 }
 
+function chooseOrthogonalCorner(
+  previous: RoutePoint | undefined,
+  current: RoutePoint,
+  next: RoutePoint,
+  following: RoutePoint | undefined
+): RoutePoint {
+  if (previous) {
+    if (previous.x === current.x && previous.y !== current.y) return { x: next.x, y: current.y }
+    if (previous.y === current.y && previous.x !== current.x) return { x: current.x, y: next.y }
+  }
+
+  if (following) {
+    if (following.x === next.x && following.y !== next.y) return { x: next.x, y: current.y }
+    if (following.y === next.y && following.x !== next.x) return { x: current.x, y: next.y }
+  }
+
+  return { x: next.x, y: current.y }
+}
+
+function orthogonalizeRoutePoints(points: RoutePoint[]): RoutePoint[] {
+  const route: RoutePoint[] = []
+
+  for (let index = 0; index < points.length; index++) {
+    const point = points[index]
+    const current = route[route.length - 1]
+
+    if (!current) {
+      route.push(point)
+      continue
+    }
+
+    if (current.x !== point.x && current.y !== point.y) {
+      const corner = chooseOrthogonalCorner(route[route.length - 2], current, point, points[index + 1])
+      route.push(corner)
+    }
+
+    route.push(point)
+  }
+
+  return dedupeRoutePoints(route)
+}
+
 export function buildOrthogonalPath(points: RoutePoint[]): string | null {
-  const deduped = dedupeRoutePoints(points)
+  const deduped = orthogonalizeRoutePoints(dedupeRoutePoints(points))
   if (deduped.length < 2) return null
 
   return deduped.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
@@ -470,7 +512,7 @@ export function bundleSharedSourcePrefixes(
 
   for (const [edgeId, route] of bundled) {
     const assignment = assignments.get(edgeId)
-    if (!assignment || route.length < 3) continue
+    if (!assignment || route.length < 2) continue
     const key = `${route[0].x},${route[0].y}:${assignment.source}`
     const group = groups.get(key) ?? []
     group.push({ edgeId, route, side: assignment.source })
@@ -483,10 +525,12 @@ export function bundleSharedSourcePrefixes(
     const side = group[0].side
     const start = group[0].route[0]
     if (side === 'right' || side === 'left') {
+      const bent = group.filter(({ route }) => route.length >= 3)
+      if (bent.length === 0) continue
       const naturalTrunkX =
         side === 'right'
-          ? Math.min(...group.map(({ route }) => route[1].x))
-          : Math.max(...group.map(({ route }) => route[1].x))
+          ? Math.min(...bent.map(({ route }) => route[1].x))
+          : Math.max(...bent.map(({ route }) => route[1].x))
       const nearestTargetX =
         side === 'right'
           ? Math.min(...group.map(({ route }) => route[route.length - 1].x))
@@ -502,7 +546,7 @@ export function bundleSharedSourcePrefixes(
       const trunkX =
         lo > hi ? (start.x + nearestTargetX) / 2 : Math.min(hi, Math.max(lo, naturalTrunkX))
 
-      for (const item of group) {
+      for (const item of bent) {
         const [edgeStart, ...rest] = item.route
         const shifted = rest.map((p) => (p.x === naturalTrunkX ? { x: trunkX, y: p.y } : p))
         shifted[0] = { x: trunkX, y: edgeStart.y }
@@ -512,10 +556,12 @@ export function bundleSharedSourcePrefixes(
     }
 
     if (side === 'bottom' || side === 'top') {
+      const bent = group.filter(({ route }) => route.length >= 3)
+      if (bent.length === 0) continue
       const naturalTrunkY =
         side === 'bottom'
-          ? Math.min(...group.map(({ route }) => route[1].y))
-          : Math.max(...group.map(({ route }) => route[1].y))
+          ? Math.min(...bent.map(({ route }) => route[1].y))
+          : Math.max(...bent.map(({ route }) => route[1].y))
       const nearestTargetY =
         side === 'bottom'
           ? Math.min(...group.map(({ route }) => route[route.length - 1].y))
@@ -531,7 +577,7 @@ export function bundleSharedSourcePrefixes(
       const trunkY =
         lo > hi ? (start.y + nearestTargetY) / 2 : Math.min(hi, Math.max(lo, naturalTrunkY))
 
-      for (const item of group) {
+      for (const item of bent) {
         const [edgeStart, ...rest] = item.route
         const shifted = rest.map((p) => (p.y === naturalTrunkY ? { x: p.x, y: trunkY } : p))
         shifted[0] = { x: edgeStart.x, y: trunkY }
