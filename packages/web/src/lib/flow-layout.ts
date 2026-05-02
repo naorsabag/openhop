@@ -918,20 +918,53 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
 /**
  * Snap each node's y to the nearest row of a shared grid so off-grid nodes
  * (e.g. an outlier introduced by a back-edge connection like a cron source)
- * line up with the rest of the layout. Uses NODE_HEIGHT + spacing as the
- * row pitch and infers the grid origin from the median first-row y so the
- * snap doesn't shift the overall layout.
+ * line up with the rest of the layout. Returns the per-node y-deltas so
+ * routes can be shifted in lockstep — without that, routes that ELK
+ * computed against pre-snap positions drift from the snapped nodes.
  */
-function snapPositionsToRowGrid(positions: Map<string, Position>): void {
-  if (positions.size === 0) return
+function snapPositionsToRowGrid(positions: Map<string, Position>): Map<string, number> {
+  const deltas = new Map<string, number>()
+  if (positions.size === 0) return deltas
   const ROW_PITCH = NODE_HEIGHT + 80
-  // Group y-values into clusters within ROW_PITCH/2, then use the smallest
-  // cluster mean as the grid origin.
   const ys = [...positions.values()].map((p) => p.y).sort((a, b) => a - b)
   const baseY = ys[0]
   for (const [id, pos] of positions) {
     const k = Math.round((pos.y - baseY) / ROW_PITCH)
-    positions.set(id, { x: pos.x, y: baseY + k * ROW_PITCH })
+    const newY = baseY + k * ROW_PITCH
+    deltas.set(id, newY - pos.y)
+    positions.set(id, { x: pos.x, y: newY })
+  }
+  return deltas
+}
+
+/**
+ * Shift each route in lockstep with the y-snap applied to its source and
+ * target nodes. Source-side points (y == route[0].y) move by Δsource;
+ * target-side points (y == route[last].y) move by Δtarget. Intermediate
+ * vertical-bend points (y matching neither port-y) keep their value since
+ * the orthogonal turn logically belongs to whichever side it connects to;
+ * here we leave them alone, which is correct for the H-V-H routes ELK
+ * produces in this layout.
+ */
+function shiftRoutesAfterSnap(
+  routes: Map<string, RoutePoint[]>,
+  topology: FlowTopology,
+  deltas: Map<string, number>
+): void {
+  for (const edge of topology.displayEdges) {
+    const route = routes.get(edge.id)
+    if (!route || route.length < 2) continue
+    const dSource = deltas.get(edge.source) ?? 0
+    const dTarget = deltas.get(edge.target) ?? 0
+    if (dSource === 0 && dTarget === 0) continue
+    const sourceY = route[0].y
+    const targetY = route[route.length - 1].y
+    const shifted = route.map((p) => {
+      if (Math.abs(p.y - sourceY) < 0.5) return { x: p.x, y: p.y + dSource }
+      if (Math.abs(p.y - targetY) < 0.5) return { x: p.x, y: p.y + dTarget }
+      return p
+    })
+    routes.set(edge.id, shifted)
   }
 }
 
@@ -962,7 +995,8 @@ function extractElkLayout(graph: Awaited<ReturnType<typeof elk.layout>>) {
 
 export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayoutResult> {
   const firstPass = extractElkLayout(await elk.layout(buildElkGraph(topology)))
-  snapPositionsToRowGrid(firstPass.positions)
+  const firstDeltas = snapPositionsToRowGrid(firstPass.positions)
+  shiftRoutesAfterSnap(firstPass.routes, topology, firstDeltas)
   const inferredAssignments = inferPortAssignmentsFromRoutes(
     topology,
     firstPass.positions,
@@ -971,7 +1005,8 @@ export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayou
   const secondPass = extractElkLayout(
     await elk.layout(buildElkGraph(topology, inferredAssignments))
   )
-  snapPositionsToRowGrid(secondPass.positions)
+  const secondDeltas = snapPositionsToRowGrid(secondPass.positions)
+  shiftRoutesAfterSnap(secondPass.routes, topology, secondDeltas)
   const bundledRoutes = bundleSharedSourcePrefixes(secondPass.routes, inferredAssignments)
 
   return {
