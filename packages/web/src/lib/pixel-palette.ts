@@ -73,8 +73,35 @@ export function stepPixelFilter(index: number): string | undefined {
 }
 
 /**
- * Back-compat aliases. The original API was named after multi-data steps,
- * but the same cycling now applies to broadcast and parallel pixels too.
+ * Resolved per-carrot styling for one pixel within a step.
+ * `pixelColor`/`pixelFilter` are undefined when the step emits a single
+ * carrot (the source node's variant color is used instead) or when the
+ * data entry has its own explicit `color` (the filter is suppressed so
+ * the user's color isn't tinted further).
  */
-export const multiDataPixelColor = stepPixelColor
-export const multiDataPixelFilter = stepPixelFilter
+export interface ResolvedStepPixel {
+  pixelColor: string | undefined
+  pixelFilter: string | undefined
+}
+
+/**
+ * Resolve the carrot styling for one pixel given its global index in the
+ * step and the data entry it represents (if any).
+ *
+ * - When `cycle` is true (the step emits 2+ carrots) and the data entry
+ *   has no explicit color, both pixelColor and pixelFilter come from the
+ *   variant palette so each carrot in the step looks distinct.
+ * - An explicit `data.color` always wins; the sprite filter is dropped
+ *   so we don't tint over the user-chosen color.
+ * - When `cycle` is false (single-carrot step) we leave both undefined,
+ *   so DataPixel falls back to the source node's variant color.
+ */
+export function resolvePixelStyle(
+  cycle: boolean,
+  index: number,
+  dataColor?: string
+): ResolvedStepPixel {
+  if (dataColor) return { pixelColor: dataColor, pixelFilter: undefined }
+  if (!cycle) return { pixelColor: undefined, pixelFilter: undefined }
+  return { pixelColor: stepPixelColor(index), pixelFilter: stepPixelFilter(index) }
+}

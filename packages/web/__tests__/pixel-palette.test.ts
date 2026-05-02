@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   VARIANT_ACCENT,
   assignNodeVariants,
+  resolvePixelStyle,
   stepPixelColor,
   stepPixelFilter,
 } from '../src/lib/pixel-palette'
@@ -62,5 +63,30 @@ describe('stepPixelFilter', () => {
   it('returns a hue-rotate filter for subsequent indices', () => {
     expect(stepPixelFilter(1)).toMatch(/hue-rotate/)
     expect(stepPixelFilter(2)).toMatch(/hue-rotate/)
+  })
+})
+
+describe('resolvePixelStyle', () => {
+  it('cycles palette per pixel when the step has 2+ carrots and no explicit data color', () => {
+    expect(resolvePixelStyle(true, 0)).toEqual({
+      pixelColor: VARIANT_ACCENT[0],
+      pixelFilter: undefined,
+    })
+    expect(resolvePixelStyle(true, 1).pixelColor).toBe(VARIANT_ACCENT[1])
+    expect(resolvePixelStyle(true, 1).pixelFilter).toMatch(/hue-rotate/)
+  })
+
+  it('returns no overrides for single-carrot steps so DataPixel falls back to the variant color', () => {
+    expect(resolvePixelStyle(false, 0)).toEqual({
+      pixelColor: undefined,
+      pixelFilter: undefined,
+    })
+  })
+
+  it('respects an explicit data.color and suppresses the sprite filter', () => {
+    expect(resolvePixelStyle(true, 1, '#123456')).toEqual({
+      pixelColor: '#123456',
+      pixelFilter: undefined,
+    })
   })
 })

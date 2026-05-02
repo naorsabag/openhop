@@ -16,7 +16,6 @@ export interface ManualPixel {
   step: FlowStep
   sourceNodeId: string
   sourceStepIndex: number
-  sourceNodeType: string
   sourceNodeColor?: string
   /** Per-pixel color override (used when expanding a multi-data step into
    *  one pixel per data entry, so each click-to-fire carrot gets a distinct
