@@ -63,7 +63,9 @@ function scoreField(query: string, haystack: string): number {
   // typo'd query ("oder" vs "order processing") still matches even when
   // the haystack is much longer than the query.
   if (q.length > 24 || q.length < 3) return 0
-  const tolerance = Math.max(1, Math.floor(q.length / 3))
+  // Tolerance ~1/3 of query length, with a floor of 2 so 4-char queries
+  // still tolerate a single transposition ("slef" → "self" is dist 2).
+  const tolerance = Math.max(2, Math.floor(q.length / 3))
   let minDist = Infinity
   if (h.length < q.length) {
     minDist = levenshtein(q, h)
