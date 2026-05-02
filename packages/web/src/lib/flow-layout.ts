@@ -578,9 +578,14 @@ function bundleSharedTargetSuffixes(
       for (const item of bent) {
         const route = item.route
         const tail = route[route.length - 1]
+        // Shift each route's own approach trunk (the x of its penultimate
+        // bend) — not the group-wide naturalApproachX — so any earlier bend
+        // that formed the orthogonal corner with the trunk moves with it.
+        // Otherwise the corner gets stranded and the route becomes diagonal.
+        const ownApproachX = route[route.length - 2].x
         const shifted = route
           .slice(0, -1)
-          .map((p) => (p.x === naturalApproachX ? { x: approachX, y: p.y } : p))
+          .map((p) => (p.x === ownApproachX ? { x: approachX, y: p.y } : p))
         shifted[shifted.length - 1] = { x: approachX, y: tail.y }
         routes.set(item.edgeId, dedupeRoutePoints([...shifted, tail]))
       }
@@ -600,9 +605,10 @@ function bundleSharedTargetSuffixes(
       for (const item of bent) {
         const route = item.route
         const tail = route[route.length - 1]
+        const ownApproachY = route[route.length - 2].y
         const shifted = route
           .slice(0, -1)
-          .map((p) => (p.y === naturalApproachY ? { x: p.x, y: approachY } : p))
+          .map((p) => (p.y === ownApproachY ? { x: p.x, y: approachY } : p))
         shifted[shifted.length - 1] = { x: tail.x, y: approachY }
         routes.set(item.edgeId, dedupeRoutePoints([...shifted, tail]))
       }
@@ -866,20 +872,17 @@ function extractElkLayout(graph: Awaited<ReturnType<typeof elk.layout>>) {
 }
 
 export async function computeElkLayout(topology: FlowTopology): Promise<ElKLayoutResult> {
-  const firstPass = extractElkLayout(await elk.layout(buildElkGraph(topology)))
-  const inferredAssignments = inferPortAssignmentsFromRoutes(
-    topology,
-    firstPass.positions,
-    firstPass.routes
-  )
-  const secondPass = extractElkLayout(
-    await elk.layout(buildElkGraph(topology, inferredAssignments))
-  )
-  const bundledRoutes = bundleSharedSourcePrefixes(secondPass.routes, inferredAssignments)
+  // Single pass without FIXED_SIDE port constraints. ELK's free-port routing
+  // exits each node at the position closest to the route's natural direction,
+  // which avoids edges getting forced through intermediate layers when an
+  // inferred side ('right') would place the port at the side's midpoint.
+  const layout = extractElkLayout(await elk.layout(buildElkGraph(topology)))
+  const portAssignments = inferPortAssignmentsFromRoutes(topology, layout.positions, layout.routes)
+  const bundledRoutes = bundleSharedSourcePrefixes(layout.routes, portAssignments)
 
   return {
-    positions: secondPass.positions,
+    positions: layout.positions,
     routes: bundledRoutes,
-    portAssignments: inferredAssignments,
+    portAssignments,
   }
 }

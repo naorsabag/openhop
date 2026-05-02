@@ -126,6 +126,53 @@ describe('computeElkLayout', () => {
 
     expect(intersects).toBe(false)
   })
+
+  it('routes api to cache around the worker node when both share the api source layer', async () => {
+    const yaml = readFileSync(new URL('../../../examples/self-loops.yaml', import.meta.url), 'utf8')
+    const parsed = parseFlowYaml(yaml)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success || !parsed.data) return
+
+    const { computeElkLayout, NODE_WIDTH, NODE_HEIGHT } = await import('../src/lib/flow-layout.ts')
+    const topology = buildFlowTopology(parsed.data as Flow)
+    const layout = await computeElkLayout(topology)
+    const edge = topology.displayEdges.find(
+      (candidate) => candidate.source === 'api' && candidate.target === 'cache'
+    )
+    const route = edge ? layout.routes.get(edge.id) : null
+    const worker = layout.positions.get('worker')
+
+    expect(edge).toBeTruthy()
+    expect(route).toBeTruthy()
+    expect(worker).toBeTruthy()
+
+    const workerBox = {
+      left: worker!.x,
+      right: worker!.x + NODE_WIDTH,
+      top: worker!.y,
+      bottom: worker!.y + NODE_HEIGHT,
+    }
+
+    const passesThroughWorker = (route ?? []).some((point, index, points) => {
+      if (index === 0) return false
+      const prev = points[index - 1]
+      if (prev.x === point.x) {
+        if (point.x < workerBox.left || point.x > workerBox.right) return false
+        const segTop = Math.min(prev.y, point.y)
+        const segBottom = Math.max(prev.y, point.y)
+        return segBottom > workerBox.top && segTop < workerBox.bottom
+      }
+      if (prev.y === point.y) {
+        if (point.y < workerBox.top || point.y > workerBox.bottom) return false
+        const segLeft = Math.min(prev.x, point.x)
+        const segRight = Math.max(prev.x, point.x)
+        return segRight > workerBox.left && segLeft < workerBox.right
+      }
+      return false
+    })
+
+    expect(passesThroughWorker).toBe(false)
+  })
 })
 
 describe('buildReactFlowGraph', () => {
@@ -309,5 +356,48 @@ describe('bundleSharedSourcePrefixes', () => {
       { x: 520, y: 140 },
       { x: 780, y: 360 },
     ])
+  })
+
+  it('keeps each route orthogonal when two edges share a target-side approach but have different trunks', () => {
+    // Two edges land on the same target's `left` port from different sources.
+    // The edges have *different* natural trunks (api's vertical leg at x=466
+    // vs worker's at x=774). Before the fix, bundleSharedTargetSuffixes only
+    // shifted the penultimate point of each route to the group-wide approachX,
+    // stranding the earlier bend that formed the L-corner on the route's own
+    // trunk and leaving a diagonal segment in the path.
+    const apiRoute = [
+      { x: 456, y: 370 },
+      { x: 466, y: 370 },
+      { x: 466, y: 120 },
+      { x: 964, y: 120 },
+    ]
+    const workerRoute = [
+      { x: 764, y: 370 },
+      { x: 774, y: 370 },
+      { x: 774, y: 120 },
+      { x: 964, y: 120 },
+    ]
+    const routes = bundleSharedSourcePrefixes(
+      new Map([
+        ['e-api-cache', apiRoute],
+        ['e-worker-cache', workerRoute],
+      ]),
+      new Map([
+        ['e-api-cache', { source: 'right', target: 'left' }],
+        ['e-worker-cache', { source: 'right', target: 'left' }],
+      ])
+    )
+
+    const isOrthogonal = (route: { x: number; y: number }[]) =>
+      route.every((point, index) => {
+        if (index === 0) return true
+        const prev = route[index - 1]
+        return prev.x === point.x || prev.y === point.y
+      })
+
+    const apiResult = routes.get('e-api-cache')!
+    const workerResult = routes.get('e-worker-cache')!
+    expect(isOrthogonal(apiResult)).toBe(true)
+    expect(isOrthogonal(workerResult)).toBe(true)
   })
 })
