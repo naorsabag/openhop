@@ -25,6 +25,8 @@ import { fileURLToPath } from 'node:url'
 const EXIT_OK = 0
 const EXIT_GENERIC = 1
 const EXIT_USAGE = 2
+const EXIT_NOT_FOUND = 4
+const EXIT_CONFLICT = 5
 
 /** A supported AI client and where it expects skills on this machine. */
 export interface ClientSpec {
@@ -305,9 +307,6 @@ export function registerInit(program: Command): void {
       const skipped = results.filter((r) => r.status === 'skipped' || r.status === 'advisory')
       const failed = results.filter((r) => r.status === 'failed')
       const wouldInstall = results.filter((r) => r.status === 'would-install')
-      const alreadyInstalled = results.filter(
-        (r) => r.status === 'skipped' && r.reason?.startsWith('already installed')
-      )
 
       if (opts.json) {
         const payload = {
@@ -327,14 +326,18 @@ export function registerInit(program: Command): void {
         }
       }
 
-      // Exit code policy: a converged machine — every detected client already
-      // has the skill — is success, not failure. Only fail when something
-      // actually went wrong (a `failed` result) or there was nothing to do
-      // at all (no detected clients).
-      if (failed.length > 0) process.exit(EXIT_GENERIC)
-      const anyOutcome =
-        installed.length > 0 || wouldInstall.length > 0 || alreadyInstalled.length > 0
-      if (!anyOutcome) process.exit(EXIT_GENERIC)
+      // Exit code policy:
+      //   CONFLICT (5)  — at least one install actually errored.
+      //   NOT_FOUND (4) — no clients were detected at all (every result is
+      //                   `skipped: not detected`); nothing to do.
+      //   SUCCESS (0)   — anything else, including a converged machine where
+      //                   every detected client is `already installed`, and
+      //                   advisory-only detections (e.g. Continue.dev).
+      if (failed.length > 0) process.exit(EXIT_CONFLICT)
+      const detectedCount = results.filter(
+        (r) => !(r.status === 'skipped' && r.reason === 'not detected')
+      ).length
+      if (detectedCount === 0) process.exit(EXIT_NOT_FOUND)
       process.exit(EXIT_OK)
     })
 }
