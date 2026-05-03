@@ -57,7 +57,7 @@ npx tsc --noEmit -p packages/cli
 npm run build -w @openhop/cli
 ```
 
-There is **no** CI lint or formatter enforced — don't try to run one.
+CI runs `npm run lint` and `npm run format:check` (see `.github/workflows/ci.yml`). Run them locally before pushing if you're touching a lot of files.
 
 ## Tests
 
@@ -66,7 +66,7 @@ npm test -w @openhop/shared     # vitest, fast
 npm test -w @openhop/server     # vitest, touches the in-memory store
 ```
 
-Known pre-existing failures in `packages/shared/__tests__/patch.test.ts` — it references old singular op names (`add-node`) that were renamed to plural (`add-nodes`). Don't waste time on those unless fixing them is your ticket.
+The shared test suite is fully passing. The previous `patch.test.ts` "old singular op names" caveat no longer applies — it has been updated to the plural ops.
 
 ## Authoring flows
 

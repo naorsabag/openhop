@@ -14,6 +14,10 @@ services:
       - openhop-flows:/root/.openhop
     environment:
       - CHOKIDAR_USEPOLLING=true
+      # Inside the container we need to bind every interface so the host
+      # port-mapping above can reach the server. Outside docker the server
+      # defaults to 127.0.0.1.
+      - HOST=0.0.0.0
     restart: unless-stopped
 
 volumes:

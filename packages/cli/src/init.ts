@@ -305,6 +305,9 @@ export function registerInit(program: Command): void {
       const skipped = results.filter((r) => r.status === 'skipped' || r.status === 'advisory')
       const failed = results.filter((r) => r.status === 'failed')
       const wouldInstall = results.filter((r) => r.status === 'would-install')
+      const alreadyInstalled = results.filter(
+        (r) => r.status === 'skipped' && r.reason?.startsWith('already installed')
+      )
 
       if (opts.json) {
         const payload = {
@@ -324,13 +327,14 @@ export function registerInit(program: Command): void {
         }
       }
 
-      // Exit code policy: success if anything was installed (or, in dry-run,
-      // would have been installed). Otherwise generic failure when nothing
-      // was actionable.
-      const anySuccess = installed.length > 0 || wouldInstall.length > 0
-      if (!anySuccess && installed.length === 0 && wouldInstall.length === 0) {
-        process.exit(EXIT_GENERIC)
-      }
+      // Exit code policy: a converged machine — every detected client already
+      // has the skill — is success, not failure. Only fail when something
+      // actually went wrong (a `failed` result) or there was nothing to do
+      // at all (no detected clients).
+      if (failed.length > 0) process.exit(EXIT_GENERIC)
+      const anyOutcome =
+        installed.length > 0 || wouldInstall.length > 0 || alreadyInstalled.length > 0
+      if (!anyOutcome) process.exit(EXIT_GENERIC)
       process.exit(EXIT_OK)
     })
 }

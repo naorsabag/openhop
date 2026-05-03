@@ -22,6 +22,15 @@
   <a href="https://github.com/naorsabag/OpenHop/stargazers"><img src="https://img.shields.io/github/stars/naorsabag/OpenHop?style=social" alt="GitHub stars" /></a>
 </p>
 
+<p align="center">
+  <sub>Works with</sub><br/>
+  <img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" />
+  <img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" />
+  <img src="https://img.shields.io/badge/Windsurf-✓-262626?style=flat-square" alt="Windsurf" />
+  <img src="https://img.shields.io/badge/Cline-✓-262626?style=flat-square" alt="Cline" />
+  <img src="https://img.shields.io/badge/Continue.dev-advisory-666?style=flat-square" alt="Continue.dev (advisory)" />
+</p>
+
 ---
 
 ## Why
@@ -37,7 +46,9 @@ between components on a pixel-art canvas. Click any node to drill into its sub-f
 - 🔍 **Multi-level drill-down.** Click a node to zoom into its sub-flow. Infinite depth.
 - ⚡ **Live re-render.** `openhop patch` applies incremental changes without a full reload.
 - 🧠 **Strict schema + fuzzy typo hints.** Invalid YAML fails loudly with helpful suggestions.
-- 🐚 **CLI + HTTP API + web UI.** Script it, hit it from tools, or browse at <http://localhost:8788>.
+- 🐚 **CLI + HTTP API + web UI.** Script it, hit it from tools, or browse at `http://localhost:8788`.
+- 🔒 **Local-first, no telemetry.** Runs entirely on your machine — no analytics, no phone-home, no account required.
+- ✂️ **Token-light.** A typical flow YAML is ~5–20× smaller than the equivalent prose explanation an agent would otherwise emit.
 
 ## Try it in 60 seconds
 
@@ -119,6 +130,7 @@ Pre-made flows under [`examples/`](examples/):
 - `order-flow.yaml` — e-commerce order pipeline
 - `simple-crud.yaml` — minimal CRUD example
 - `type-variants.yaml` — every node type in one flow
+- `self-loops.yaml` — same-node steps (internal work, retries) plus broadcasts and multi-data steps
 
 Push any of them:
 
