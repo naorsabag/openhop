@@ -50,7 +50,7 @@ jobs:
           path: packages/*/coverage/
 
   audit:
-    name: npm audit (high+critical)
+    name: npm audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -59,7 +59,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
+      # Production tree: stricter — anything moderate+ ships to end users.
+      - name: prod tree (moderate+)
+        run: npm audit --omit=dev --audit-level=moderate
+      # Full tree (incl. dev): looser — dev-only advisories don't reach
+      # users, so block only on high+critical to avoid noise.
+      - name: full tree (high+)
+        run: npm audit --audit-level=high
 
   gitleaks:
     name: gitleaks (secrets scan)
