@@ -77,7 +77,7 @@ flow:
       data: response
 ```
 
-Push it with `openhop push <file>` (or `openhop push -` for stdin). On success you get a flow id and a URL.
+Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin). Parse the JSON response and return the `url` field to the user.
 
 **Validation rules to lock in before you write your own:**
 
@@ -146,19 +146,16 @@ flow:
 Push it:
 
 ```bash
-openhop push flow.yaml
+openhop push flow.yaml --json
 ```
 
 Output:
 
-```
-✓ Flow created
-  ID:    abc123
-  Title: Order Processing
-  URL:   http://localhost:8788/flow/abc123
+```json
+{ "id": "abc123", "title": "Order Processing", "url": "http://localhost:8788/flow/abc123" }
 ```
 
-Tell the user to open the URL.
+Parse the response and return the `url` field to the user.
 
 ### Phase 2: DETAIL (iterate with PATCH)
 
@@ -228,8 +225,8 @@ openhop patch abc123 polish-patch.yaml
 openhop serve                            # Start API + web UI (:8787 + :8788)
 openhop validate <file.yaml>             # Local schema check, no server needed
 openhop validate -                       # Validate from stdin
-openhop push <file.yaml>                 # Push a flow → returns id + URL
-openhop push -                           # Push from stdin (pipe YAML)
+openhop push <file.yaml> --json          # Push a flow → parse `url` from JSON response
+openhop push - --json                    # Push from stdin (pipe YAML)
 openhop get <flow-id>                    # Fetch a flow by id (full JSON)
 openhop list                             # List all flows
 openhop patch <flow-id> <patch.yaml>     # Apply patch operations
@@ -250,7 +247,7 @@ flow:
     - {id: a, label: A}
     - {id: b, label: B}
   steps:
-    - {from: a, to: b, data: test}' | openhop push -
+    - {from: a, to: b, data: test}' | openhop push - --json
 ```
 
 ## Schema Reference
