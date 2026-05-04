@@ -41,7 +41,7 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@fastify/static": "^8.0.0",
+    "@fastify/static": "^9.1.3",
     "@openhop/server": "0.1.0",
     "@openhop/web": "0.1.0",
     "commander": "^12.0.0",
