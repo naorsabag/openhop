@@ -60,12 +60,12 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 
 ## Install
 
-| Scenario                           | Command                                                                         |
-| ---------------------------------- | ------------------------------------------------------------------------------- |
-| **One-shot demo**                  | `npx openhop demo` — boots everything and opens the browser                     |
-| **Long-lived local server**        | `npm install -g openhop && openhop serve` — API + web UI, no starter flow       |
-| **Install the agent skill**        | `npx openhop init` — copies `SKILL.md` into every detected AI client            |
-| **Run from source (contributors)** | `git clone … && npm install && npm run dev` — see [Contributing](#contributing) |
+| Scenario                           | Command                                                                                                                                  |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **One-shot demo**                  | `npx openhop demo` — boots everything and opens the browser                                                                              |
+| **Long-lived local server**        | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
+| **Install the agent skill**        | `npx openhop init` — copies `SKILL.md` into every detected AI client                                                                     |
+| **Run from source (contributors)** | `git clone … && npm install && npm run dev` — see [Contributing](#contributing)                                                          |
 
 ## Give your agent the skill
 

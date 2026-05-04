@@ -15,10 +15,10 @@
   "author": "Naor Sabag (https://github.com/naorsabag)",
   "type": "module",
   "main": "dist/server.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/server.js"
     }
   },
@@ -32,8 +32,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:fastify --external:@fastify/cors --external:@fastify/swagger --external:@fastify/swagger-ui --external:nanoid --external:yaml --external:zod --external:zod-to-json-schema",
-    "prepack": "npm run build"
+    "build": "tsc -p tsconfig.build.json --emitDeclarationOnly && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:fastify --external:@fastify/cors --external:@fastify/swagger --external:@fastify/swagger-ui --external:nanoid --external:yaml --external:zod --external:zod-to-json-schema",
+    "prepack": "npm run build",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
