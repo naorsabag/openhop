@@ -67,7 +67,11 @@ function positionalType(name: string): 'string' | 'path-or-dash' {
 const COMMAND_META: Record<string, { exitCodes: number[]; examples: string[] }> = {
   serve: {
     exitCodes: [ExitCode.SUCCESS, ExitCode.GENERIC],
-    examples: ['openhop serve', 'openhop serve --port 8800'],
+    examples: ['openhop serve', 'openhop serve --port 8800', 'openhop serve --no-web'],
+  },
+  demo: {
+    exitCodes: [ExitCode.SUCCESS, ExitCode.GENERIC, ExitCode.NETWORK],
+    examples: ['openhop demo', 'openhop demo --no-open', 'openhop demo --port 9000'],
   },
   push: {
     exitCodes: [

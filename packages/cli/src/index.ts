@@ -1,6 +1,4 @@
 import { Command } from 'commander'
-import { spawn } from 'node:child_process'
-import { resolve } from 'node:path'
 import YAML from 'yaml'
 import { parseFlowYaml } from '@openhop/shared'
 import type { FlowTreeNode, FlowSummary } from '@openhop/shared'
@@ -22,6 +20,7 @@ import { registerGet } from './get.js'
 import { registerValidate } from './validate.js'
 import { registerHelpJson } from './help-json.js'
 import { registerInit } from './init.js'
+import { registerDemo } from './demo.js'
 
 const DEFAULT_SERVER = 'http://localhost:8787'
 
@@ -55,105 +54,72 @@ program.name('openhop').description('OpenHop — Data Flow Visualization CLI').v
 
 // --- serve ---
 //
-// Starts both the API server (Fastify on :8787) and the web UI dev server
-// (Vite on :8788). The URL printed by `push` points at the web UI port, so
-// without the web running the user lands on a 404 — that's what a fresh
-// agent's cold-start test surfaced. Use --no-web to opt out (CI, headless).
-//
-// Note: this command only works inside a from-source checkout of the
-// monorepo, because the server and web entries are looked up relative to
-// the CLI bundle's dirname. The published `npm i -g openhop` package
-// doesn't ship the server/web sources — for production deployments use
-// docker-compose or clone the repo. Tracked for v0.2 with a separate
-// `@openhop/server` package.
+// Starts both the API server (Fastify on :8787) and the web UI server
+// (Fastify-static of @openhop/web's prebuilt assets on :8788). Both run
+// in-process; the server entry comes from `@openhop/server` and the web
+// assets come from `@openhop/web/dist/`, both resolved through the consumer's
+// node_modules. The URL printed by `push` points at the web UI port, so
+// without the web running the user lands on a 404 — use --no-web to opt out
+// (CI, headless).
 program
   .command('serve')
   .description('Start the OpenHop API server (:8787) and web UI (:8788)')
   .option('-p, --port <port>', 'API port', '8787')
-  .option('--no-web', 'Start API only, skip the web UI dev server')
-  .option('--no-wait-ready', "Don't probe /health and don't print the ready line on stdout")
-  .option('--ready-timeout <seconds>', 'How long to wait for readiness before giving up', '60')
+  .option('--web-port <port>', 'Web UI port', '8788')
+  .option('--no-web', 'Start API only, skip the web UI')
+  .option('--no-wait-ready', "Don't print the ready line on stdout")
   .action(async (opts) => {
-    const cliDir = resolve(import.meta.dirname, '..', '..')
-    const serverEntry = resolve(cliDir, 'server', 'src', 'index.ts')
-    const webDir = resolve(cliDir, 'web')
+    const apiPort = Number.parseInt(opts.port, 10)
+    const webPort = Number.parseInt(opts.webPort, 10)
 
-    logStderr(dim(`Starting OpenHop API on port ${opts.port}...`))
-    // Pipe child stdout/stderr to OUR stderr — the CLI contract says stdout
-    // is for data only. Without this, Fastify's pino logs and Vite's dev
-    // banner would pollute parent stdout and break agents that pipe
-    // `serve` output through jq.
-    const api = spawn('npx', ['tsx', serverEntry], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, PORT: opts.port },
-    })
-    api.stdout?.pipe(process.stderr)
-    api.stderr?.pipe(process.stderr)
+    logStderr(dim(`Starting OpenHop API on port ${apiPort}...`))
+    const { startServer } = await import('@openhop/server')
+    let api
+    try {
+      api = await startServer({ port: apiPort, logger: false })
+    } catch (err) {
+      errStderr(red(`✗ Failed to start API: ${errorMessage(err)}`))
+      process.exit(ExitCode.GENERIC)
+    }
 
-    let web: ReturnType<typeof spawn> | null = null
+    let web: { url: string; close: () => Promise<void> } | null = null
     if (opts.web !== false) {
-      logStderr(dim('Starting OpenHop web UI on port 8788...'))
-      web = spawn('npm', ['run', 'dev'], {
-        cwd: webDir,
-        stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env },
-      })
-      web.stdout?.pipe(process.stderr)
-      web.stderr?.pipe(process.stderr)
-      web.on('error', (err) => {
+      logStderr(dim(`Starting OpenHop web UI on port ${webPort}...`))
+      try {
+        const { startWebServer } = await import('./web-server.js')
+        web = await startWebServer({ port: webPort })
+      } catch (err) {
         errStderr(red(`Failed to start web UI: ${errorMessage(err)}`))
         // Web failure is non-fatal — API can still run for headless agents.
-      })
+      }
     }
 
-    const shutdown = () => {
-      api.kill('SIGTERM')
-      web?.kill('SIGTERM')
+    const shutdown = async (): Promise<never> => {
+      try {
+        await api.close()
+      } catch {
+        /* ignore */
+      }
+      try {
+        await web?.close()
+      } catch {
+        /* ignore */
+      }
+      process.exit(ExitCode.SUCCESS)
     }
-    process.on('SIGINT', shutdown)
-    process.on('SIGTERM', shutdown)
+    process.on('SIGINT', () => void shutdown())
+    process.on('SIGTERM', () => void shutdown())
 
-    api.on('error', (err) => {
-      errStderr(red(`Failed to start API: ${errorMessage(err)}`))
-      web?.kill('SIGTERM')
-      process.exit(ExitCode.GENERIC)
-    })
-    api.on('exit', (code) => {
-      web?.kill('SIGTERM')
-      process.exit(code ?? ExitCode.SUCCESS)
-    })
-
-    // Readiness probe. Default-on: poll /health until it returns 200, then
-    // emit a stable, machine-parseable line on stdout. This is the only
-    // thing `serve` puts on stdout, so callers can do:
-    //   openhop serve & wait_for=$(grep -m1 '^openhop: ready ' fd 1)
-    // Without --no-wait-ready, downstream scripts have to poll /health
-    // themselves to know when they can push.
+    // Stable, machine-parseable ready line on stdout. By the time startServer
+    // resolves, Fastify's listen() has bound the socket and all routes are
+    // registered, so /health is reachable — no need to poll.
     if (opts.waitReady !== false) {
-      const timeoutSec = Number.parseInt(opts.readyTimeout, 10) || 60
-      const apiUrl = `http://localhost:${opts.port}`
-      const webPart = opts.web !== false ? ` web=http://localhost:8788` : ''
-      const t0 = Date.now()
-      const deadline = t0 + timeoutSec * 1000
-      while (Date.now() < deadline) {
-        try {
-          const r = await fetch(`${apiUrl}/health`)
-          if (r.ok) {
-            const elapsed = Math.round((Date.now() - t0) / 100) / 10
-            process.stdout.write(`openhop: ready api=${apiUrl}${webPart} elapsed=${elapsed}s\n`)
-            break
-          }
-        } catch {
-          // Not ready yet — back off and retry.
-        }
-        await new Promise((r) => setTimeout(r, 500))
-      }
-      if (Date.now() >= deadline) {
-        errStderr(red(`✗ API did not become ready within ${timeoutSec}s. Check logs above.`))
-        // Don't exit — the children may still come up. Just warn.
-      }
+      const webPart = web ? ` web=${web.url}` : ''
+      process.stdout.write(`openhop: ready api=${api.url}${webPart} elapsed=0s\n`)
     }
   })
+
+registerDemo(program)
 
 // --- push ---
 program

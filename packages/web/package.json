@@ -1,8 +1,22 @@
 {
   "name": "@openhop/web",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "OpenHop web UI. Prebuilt static assets — animated data-flow renderer.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naorsabag/OpenHop.git",
+    "directory": "packages/web"
+  },
+  "homepage": "https://github.com/naorsabag/OpenHop#readme",
+  "bugs": {
+    "url": "https://github.com/naorsabag/OpenHop/issues"
+  },
+  "license": "MIT",
+  "author": "Naor Sabag (https://github.com/naorsabag)",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -b --noEmit",
@@ -10,28 +24,27 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@openhop/shared": "*",
-    "@tailwindcss/vite": "^4.2.4",
-    "@xyflow/react": "^12.10.2",
-    "elkjs": "^0.11.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "tailwindcss": "^4.2.2"
+    "preview": "vite preview",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@openhop/shared": "*",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^1.6.1",
+    "@xyflow/react": "^12.10.2",
+    "elkjs": "^0.11.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tailwindcss": "^4.2.2",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.59.1",
     "vite": "^8.0.10",

@@ -61,13 +61,15 @@ curl -s http://localhost:8787/health
 
 If it returns `{"status":"ok"}`, OpenHop is ready.
 
-If not running, follow the install and run instructions in the repo README at `~/openhop/README.md`. If the repo doesn't exist yet, clone it first:
+If not running, start OpenHop with one command — both the API and the web UI come from the npm package:
 
 ```bash
-git clone https://github.com/naorsabag/OpenHop.git ~/openhop
+npx openhop demo    # one-shot: starts API + web UI, posts a starter flow, opens the browser
+# or
+npx openhop serve   # long-lived: starts API + web UI, no starter flow, no browser
 ```
 
-Then follow the README's Install and Run sections. After starting, open http://localhost:8788.
+Once `curl -s http://localhost:8787/health` returns `{"status":"ok"}`, the web UI is at http://localhost:8788.
 
 ## How to Work: Sketch → Detail → Polish
 
