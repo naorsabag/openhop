@@ -18,9 +18,9 @@
     "@fastify/swagger-ui": "^5.2.6",
     "@openhop/shared": "*",
     "fastify": "^5.0.0",
-    "nanoid": "^5.1.9",
+    "nanoid": "^5.1.11",
     "tsx": "^4.0.0",
-    "yaml": "^2.0.0"
+    "yaml": "^2.8.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
