@@ -1,32 +1,58 @@
 {
   "name": "@openhop/server",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
+  "description": "OpenHop API server. Fastify app for storing and serving data-flow definitions.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naorsabag/OpenHop.git",
+    "directory": "packages/server"
+  },
+  "homepage": "https://github.com/naorsabag/OpenHop#readme",
+  "bugs": {
+    "url": "https://github.com/naorsabag/OpenHop/issues"
+  },
+  "license": "MIT",
+  "author": "Naor Sabag (https://github.com/naorsabag)",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/server.js",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:fastify --external:@fastify/cors --external:@fastify/swagger --external:@fastify/swagger-ui --external:nanoid --external:yaml --external:zod --external:zod-to-json-schema",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^5.2.6",
-    "@openhop/shared": "*",
     "fastify": "^5.0.0",
     "nanoid": "^5.1.11",
-    "tsx": "^4.0.0",
-    "yaml": "^2.8.4"
+    "yaml": "^2.8.4",
+    "zod": "^4.4.2",
+    "zod-to-json-schema": "^3.24.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@openhop/shared": "*",
     "@types/node": "^24.12.2",
+    "esbuild": "^0.28.0",
     "eslint": "^9.39.4",
     "globals": "^17.6.0",
+    "tsx": "^4.0.0",
     "typescript-eslint": "^8.59.1",
     "vitest": "^1.6.1"
   }

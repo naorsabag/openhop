@@ -1,3 +1,11 @@
+# Contributor-only convenience. End users should run `npx openhop demo`
+# (or `openhop serve`) instead — the npm package ships a self-contained
+# server + web UI and does not need a repo checkout.
+#
+# This compose file mounts the source tree, runs `npm install` inside a
+# Node container, and starts the workspace dev script. Use it when you
+# want to hack on OpenHop in an isolated container without installing
+# Node locally.
 services:
   openhop:
     image: node:22-alpine

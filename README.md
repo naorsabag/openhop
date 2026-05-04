@@ -53,28 +53,19 @@ between components on a pixel-art canvas. Click any node to drill into its sub-f
 ## Try it in 60 seconds
 
 ```bash
-git clone https://github.com/naorsabag/OpenHop.git
-cd OpenHop
-npm install           # installs deps and builds the CLI bundle
-cd packages/cli && npm link && cd ../..
-npm run dev           # API :8787 + web UI :8788
+npx openhop demo
 ```
 
-In another terminal:
-
-```bash
-openhop push examples/auth-flow.yaml
-# → prints a URL. Open it.
-```
+That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts a starter flow, and opens your browser. Press Ctrl-C to stop.
 
 ## Install
 
-| Scenario                     | Command                                                   |
-| ---------------------------- | --------------------------------------------------------- |
-| **Try locally (no install)** | Clone this repo, `npm install`, `npm run dev`. See above. |
-| **Use the CLI globally**     | After `npm install`, `cd packages/cli && npm link`        |
-
-> npm, plugin-registry, and `npx openhop init` install paths are in progress — track [#18–#37](https://github.com/naorsabag/OpenHop/issues) for launch-readiness.
+| Scenario                           | Command                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------- |
+| **One-shot demo**                  | `npx openhop demo` — boots everything and opens the browser                     |
+| **Long-lived local server**        | `npm install -g openhop && openhop serve` — API + web UI, no starter flow       |
+| **Install the agent skill**        | `npx openhop init` — copies `SKILL.md` into every detected AI client            |
+| **Run from source (contributors)** | `git clone … && npm install && npm run dev` — see [Contributing](#contributing) |
 
 ## Give your agent the skill
 
