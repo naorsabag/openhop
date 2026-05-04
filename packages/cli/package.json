@@ -47,7 +47,7 @@
     "commander": "^12.0.0",
     "fastify": "^5.0.0",
     "yaml": "^2.8.4",
-    "zod": "^4.4.2"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
