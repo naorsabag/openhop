@@ -18,18 +18,33 @@
 
 <p align="center">
   <a href="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml"><img src="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://www.npmjs.com/package/openhop"><img src="https://img.shields.io/npm/v/openhop.svg?color=cb3837&label=npm" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
   <a href="https://github.com/naorsabag/OpenHop/stargazers"><img src="https://img.shields.io/github/stars/naorsabag/OpenHop?style=social" alt="GitHub stars" /></a>
 </p>
 
 <p align="center">
-  <sub>Works with</sub><br/>
-  <img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" />
-  <img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" />
-  <img src="https://img.shields.io/badge/Windsurf-✓-262626?style=flat-square" alt="Windsurf" />
-  <img src="https://img.shields.io/badge/Cline-✓-262626?style=flat-square" alt="Cline" />
-  <img src="https://img.shields.io/badge/Continue.dev-advisory-666?style=flat-square" alt="Continue.dev (advisory)" />
+  <sub>One-step install (<code>npx openhop init</code>):</sub><br/>
+  <a href="https://docs.anthropic.com/en/docs/claude-code/skills"><img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" /></a>
+  <a href="https://cursor.com/docs/skills"><img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" /></a>
+  <a href="https://docs.windsurf.com/windsurf/cascade/skills"><img src="https://img.shields.io/badge/Windsurf-✓-262626?style=flat-square" alt="Windsurf" /></a>
+  <a href="https://docs.cline.bot/customization/skills"><img src="https://img.shields.io/badge/Cline-✓-262626?style=flat-square" alt="Cline" /></a>
+  <a href="https://docs.continue.dev/customize/deep-dives/rules"><img src="https://img.shields.io/badge/Continue.dev-advisory-666?style=flat-square" alt="Continue.dev (advisory)" /></a>
 </p>
+
+<p align="center">
+  <sub>Via OpenSkills (<code>npx openskills install naorsabag/openhop</code>):</sub><br/>
+  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex_CLI-via_OpenSkills-555?style=flat-square" alt="OpenAI Codex CLI" /></a>
+  <a href="https://github.com/google-gemini/gemini-cli"><img src="https://img.shields.io/badge/Gemini_CLI-via_OpenSkills-555?style=flat-square" alt="Gemini CLI" /></a>
+  <a href="https://www.jetbrains.com/junie/"><img src="https://img.shields.io/badge/JetBrains_Junie-via_OpenSkills-555?style=flat-square" alt="JetBrains Junie" /></a>
+  <a href="https://github.com/features/copilot"><img src="https://img.shields.io/badge/GitHub_Copilot-via_OpenSkills-555?style=flat-square" alt="GitHub Copilot" /></a>
+  <a href="https://opencode.ai/"><img src="https://img.shields.io/badge/OpenCode-via_OpenSkills-555?style=flat-square" alt="OpenCode" /></a>
+  <a href="https://block.github.io/goose/"><img src="https://img.shields.io/badge/Goose-via_OpenSkills-555?style=flat-square" alt="Goose" /></a>
+  <a href="https://antigravity.google/"><img src="https://img.shields.io/badge/Antigravity-via_OpenSkills-555?style=flat-square" alt="Antigravity" /></a>
+  <a href="https://aider.chat/"><img src="https://img.shields.io/badge/Aider-CLI_only*-999?style=flat-square" alt="Aider (CLI only)" /></a>
+</p>
+
+<p align="center"><sub><sup>* Aider has no skill surface — install the <code>openhop</code> CLI globally and invoke commands via Aider's shell access.</sup></sub></p>
 
 ---
 
@@ -60,12 +75,13 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 
 ## Install
 
-| Scenario                           | Command                                                                                                                                  |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **One-shot demo**                  | `npx openhop demo` — boots everything and opens the browser                                                                              |
-| **Long-lived local server**        | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
-| **Install the agent skill**        | `npx openhop init` — copies `SKILL.md` into every detected AI client                                                                     |
-| **Run from source (contributors)** | `git clone … && npm install && npm run dev` — see [Contributing](#contributing)                                                          |
+| Scenario                                | Command                                                                                                                                  |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **One-shot demo**                       | `npx openhop demo` — boots everything and opens the browser                                                                              |
+| **Long-lived local server**             | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
+| **Install the skill — Tier 1**          | `npx openhop init` — auto-detects Claude Code, Cursor, Windsurf, Cline, Continue.dev and drops `SKILL.md` in place                       |
+| **Install the skill — everything else** | `npx openskills install naorsabag/openhop` — covers Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, …               |
+| **Run from source (contributors)**      | `git clone … && npm install && npm run dev` — see [Contributing](#contributing)                                                          |
 
 ## Give your agent the skill
 
