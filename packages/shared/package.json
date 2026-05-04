@@ -21,8 +21,8 @@
     "@types/node": "^24.12.2",
     "@vitest/coverage-v8": "^1.6.1",
     "eslint": "^9.39.4",
-    "globals": "^17.5.0",
-    "typescript-eslint": "^8.59.0",
+    "globals": "^17.6.0",
+    "typescript-eslint": "^8.59.1",
     "vitest": "^1.6.1"
   }
 }
