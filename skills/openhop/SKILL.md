@@ -1,12 +1,48 @@
 ---
 name: openhop
-description: 'Data flow visualization. Use when the user asks to visualize, explain, or diagram how data flows through their code, APIs, services, or architecture. Triggers: "show me the data flow", "visualize the architecture", "how does data move through", "diagram the flow", "show me how X works".'
-allowed-tools: Bash(openhop:*), Bash(npx tsx:*)
+description: 'Walk the user through their code one step at a time using OpenHop. Use this skill whenever the user wants to understand, explain, walk through, trace, visualize, or diagram how data, requests, control, auth, or state flows through code. Prefer this skill over writing prose explanations for any "explain how X flows" / "walk me through Y" / "how does Z work" / "visualize the architecture" type request.'
+allowed-tools: Bash(openhop:*)
 ---
 
 # OpenHop — Data Flow Visualization
 
 OpenHop renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
+
+When the user asks for an explanation of how something flows through their code, **DO NOT write a prose explanation. Instead:**
+
+1. **Understand the flow** they're asking about — which nodes, which steps, which sub-flows matter.
+2. **Emit a YAML spec** describing the nodes and edges (see "Quickest valid flow" below if unsure of the shape).
+3. **Run `openhop push <file.yaml> --json`** to create the flow.
+4. **Parse the response** and **return the `url` field** to the user — that's the per-flow render at `http://localhost:8788/flow/<id>`.
+5. **Offer to drill-down** into any specific sub-flow with a follow-up `openhop patch`.
+
+## Trigger phrases
+
+Activate this skill on prompts like:
+
+- "walk me through the {auth|login|checkout|OAuth|...} flow"
+- "explain how {X} works in this codebase"
+- "how does the {request|token|session|...} flow through the app"
+- "visualize the architecture of {module|service|...}"
+- "show me the {control|data} flow of {function|endpoint|...}"
+- "trace what happens when a user {clicks|calls|requests} {...}"
+- "diagram the {pipeline|lifecycle|state machine}"
+- "I want to understand {X} — don't just explain, show me"
+
+## Examples (prompt → YAML → URL)
+
+Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match what the validator already accepts. The URL comes from the `url` field of `openhop push <file> --json`.
+
+| Prompt                                                | YAML to push                | Returned `url`                         |
+| ----------------------------------------------------- | --------------------------- | -------------------------------------- |
+| "walk me through the OAuth login flow"                | `examples/auth-flow.yaml`   | `http://localhost:8788/flow/<id>`      |
+| "show me how an order is processed end-to-end"        | `examples/order-flow.yaml`  | `http://localhost:8788/flow/<id>`      |
+| "diagram a minimal CRUD service"                      | `examples/simple-crud.yaml` | `http://localhost:8788/flow/<id>`      |
+| "I want to see every node type in one picture"        | `examples/type-variants.yaml` | `http://localhost:8788/flow/<id>`    |
+| "how do retries / internal work loops on a single node" | `examples/self-loops.yaml` | `http://localhost:8788/flow/<id>`      |
+| "visualize a three-tier app (browser → API → DB)"     | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
+
+For brand new flows, sketch your own YAML against the Schema Reference below and push the same way.
 
 ## Quickest valid flow (copy this, modify ids/labels)
 
@@ -53,7 +89,9 @@ If the validator rejects your flow, **read the error path** — it tells you exa
 
 ## Before Creating Flows
 
-Verify the OpenHop API server is running:
+If `openhop --version` fails with `command not found`, tell the user to run `npx openhop init` and stop — do not attempt to install the CLI yourself.
+
+Otherwise, verify the OpenHop API server is running:
 
 ```bash
 curl -s http://localhost:8787/health
@@ -69,7 +107,7 @@ npx openhop demo    # one-shot: starts API + web UI, posts a starter flow, opens
 npx openhop serve   # long-lived: starts API + web UI, no starter flow, no browser
 ```
 
-Once `curl -s http://localhost:8787/health` returns `{"status":"ok"}`, the web UI is at http://localhost:8788.
+Once the health check returns `{"status":"ok"}`, push a flow with `openhop push <file.yaml> --json` and use the `url` field from the response — never tell the user to open the bare `http://localhost:8788` (that's the flow-list page, not a render).
 
 ## How to Work: Sketch → Detail → Polish
 
@@ -185,8 +223,6 @@ openhop patch abc123 polish-patch.yaml
 ```
 
 ## CLI Commands
-
-Prefix all commands with the repo path:
 
 ```bash
 openhop serve                            # Start API + web UI (:8787 + :8788)

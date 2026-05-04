@@ -14,7 +14,7 @@ OpenHop is a YAML-driven data-flow visualizer. Authors describe a flow in YAML, 
 - `packages/web` — React + React Flow + ELK layout. Served by Vite at `:8788`.
 - `packages/cli` — `openhop` command (esbuild-bundled, no runtime TS).
 - `packages/shared` — Zod schemas + types, imported by all three.
-- `skills/openhop/` — Claude Skill with topical rules. **If you're being asked to author a flow, load that skill first.**
+- `skills/openhop/SKILL.md` — the canonical authoring guide for any SKILL-compatible agent. **If you're being asked to author a flow, load that file first.**
 - `examples/` — reference flows (`order-flow.yaml` is the canonical example; `type-variants.yaml` exercises every node type).
 
 ## Run locally
@@ -70,15 +70,7 @@ The shared test suite is fully passing. The previous `patch.test.ts` "old singul
 
 ## Authoring flows
 
-**Don't improvise from scratch.** Load `skills/openhop/SKILL.md` — it routes to per-topic rule files:
-
-- `rules/install.md` — cold-start recovery
-- `rules/authoring.md` — sketch → detail → polish workflow
-- `rules/schema.md` — full YAML shapes (node, step, data)
-- `rules/node-types.md` — the closed 11-type enum + real-world variants
-- `rules/patch-operations.md` — incremental updates
-- `rules/cli.md` — command reference
-- `rules/data.md` — payload shape + diff markers
+**Don't improvise from scratch.** Load [`skills/openhop/SKILL.md`](./skills/openhop/SKILL.md) — it's the single canonical surface and covers cold-start recovery, the sketch → detail → polish workflow, the full schema (nodes, steps, data), the closed type enum + variants, the patch operations, the CLI commands, and payload diff markers.
 
 ## Conventions
 
@@ -100,7 +92,7 @@ The shared test suite is fully passing. The previous `patch.test.ts` "old singul
 - Don't add per-edge `filter: drop-shadow(...)` styles — use the shared SVG filter.
 - Don't re-add legacy PNG sprites or the `iso-*` modules. They were intentionally deleted in the p6 branch; a 9p filesystem quirk can leave them on disk after a checkout. Run `git clean -fdx packages/web/public/sprites packages/web/src/lib packages/web/src/components/iso` if they reappear in `git status` unexpectedly.
 - Don't invent new node types. The enum in `packages/shared/src/schema.ts:NodeTypeEnum` is the complete list; anything else belongs under `custom` with `icon` + `color`.
-- Don't re-push a whole flow to make a small change — use PATCH (see `skills/openhop/rules/patch-operations.md`).
+- Don't re-push a whole flow to make a small change — use PATCH (see the PATCH Operations section in `skills/openhop/SKILL.md`).
 
 ## When things go wrong
 
