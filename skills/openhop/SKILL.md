@@ -1,6 +1,6 @@
 ---
 name: openhop
-description: Data flow visualization. Use when the user asks to visualize, explain, or diagram how data flows through their code, APIs, services, or architecture. Triggers: "show me the data flow", "visualize the architecture", "how does data move through", "diagram the flow", "show me how X works".
+description: 'Data flow visualization. Use when the user asks to visualize, explain, or diagram how data flows through their code, APIs, services, or architecture. Triggers: "show me the data flow", "visualize the architecture", "how does data move through", "diagram the flow", "show me how X works".'
 allowed-tools: Bash(openhop:*), Bash(npx tsx:*)
 ---
 
