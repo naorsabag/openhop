@@ -33,14 +33,14 @@ Activate this skill on prompts like:
 
 Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match what the validator already accepts. The URL comes from the `url` field of `openhop push <file> --json`.
 
-| Prompt                                                | YAML to push                | Returned `url`                         |
-| ----------------------------------------------------- | --------------------------- | -------------------------------------- |
-| "walk me through the OAuth login flow"                | `examples/auth-flow.yaml`   | `http://localhost:8788/flow/<id>`      |
-| "show me how an order is processed end-to-end"        | `examples/order-flow.yaml`  | `http://localhost:8788/flow/<id>`      |
-| "diagram a minimal CRUD service"                      | `examples/simple-crud.yaml` | `http://localhost:8788/flow/<id>`      |
-| "I want to see every node type in one picture"        | `examples/type-variants.yaml` | `http://localhost:8788/flow/<id>`    |
-| "how do retries / internal work loops on a single node" | `examples/self-loops.yaml` | `http://localhost:8788/flow/<id>`      |
-| "visualize a three-tier app (browser → API → DB)"     | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
+| Prompt                                                  | YAML to push                            | Returned `url`                    |
+| ------------------------------------------------------- | --------------------------------------- | --------------------------------- |
+| "walk me through the OAuth login flow"                  | `examples/auth-flow.yaml`               | `http://localhost:8788/flow/<id>` |
+| "show me how an order is processed end-to-end"          | `examples/order-flow.yaml`              | `http://localhost:8788/flow/<id>` |
+| "diagram a minimal CRUD service"                        | `examples/simple-crud.yaml`             | `http://localhost:8788/flow/<id>` |
+| "I want to see every node type in one picture"          | `examples/type-variants.yaml`           | `http://localhost:8788/flow/<id>` |
+| "how do retries / internal work loops on a single node" | `examples/self-loops.yaml`              | `http://localhost:8788/flow/<id>` |
+| "visualize a three-tier app (browser → API → DB)"       | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
 
 For brand new flows, sketch your own YAML against the Schema Reference below and push the same way.
 
