@@ -42,7 +42,7 @@ Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match w
 | "how do retries / internal work loops on a single node" | `examples/self-loops.yaml`              | `http://localhost:8788/flow/<id>` |
 | "visualize a three-tier app (browser → API → DB)"       | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
 
-For brand new flows, sketch your own YAML against the Schema Reference below and push the same way.
+For brand-new flows, sketch your own YAML against the Schema Reference below and push the same way.
 
 ## Quickest valid flow (copy this, modify ids/labels)
 
