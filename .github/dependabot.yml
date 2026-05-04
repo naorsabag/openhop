@@ -11,7 +11,12 @@ updates:
       production-dependencies:
         dependency-type: production
     ignore:
-      # Avoid noisy major-version PRs; bump these manually after evaluating breakage.
+      # Suppress noisy major-version PRs from regular version-update runs —
+      # bump these manually after evaluating breakage.
+      # Dependabot **security updates** (Settings → Code security → Dependabot
+      # security updates) bypass this filter by default, so CVEs that need a
+      # major bump still produce a PR. Don't tighten this without checking
+      # that the security-update path stays open.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
