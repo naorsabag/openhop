@@ -51,6 +51,9 @@ try {
 }
 
 const port = parseInt(process.env.PORT ?? '8787')
-await app.listen({ port, host: '0.0.0.0' })
-console.log(`OpenHop server running on http://localhost:${port}`)
+// Default to loopback so a casual `npm run dev` is not exposed to the LAN.
+// Containers / docker-compose set HOST=0.0.0.0 to bind every interface.
+const host = process.env.HOST ?? '127.0.0.1'
+await app.listen({ port, host })
+console.log(`OpenHop server running on http://localhost:${port} (bound to ${host})`)
 console.log(`Swagger docs at http://localhost:${port}/docs`)

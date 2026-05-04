@@ -120,7 +120,13 @@ const COMMAND_META: Record<string, { exitCodes: number[]; examples: string[] }> 
     ],
   },
   init: {
-    exitCodes: [ExitCode.SUCCESS, ExitCode.GENERIC, ExitCode.USAGE],
+    exitCodes: [
+      ExitCode.SUCCESS,
+      ExitCode.GENERIC,
+      ExitCode.USAGE,
+      ExitCode.NOT_FOUND,
+      ExitCode.CONFLICT,
+    ],
     examples: [
       'openhop init',
       'openhop init --dry-run --json',
