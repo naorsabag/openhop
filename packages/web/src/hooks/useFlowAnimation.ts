@@ -109,18 +109,22 @@ export function useFlowAnimation(
 
     // Check if we've completed all steps
     if (rawNext >= steps.length) {
-      if (onCycleCompleteRef.current) {
-        // Don't loop — fire cycle complete callback
-        // But NOT here — this runs at the start of the NEXT advance
-        // The previous step's pixel might still be animating
-        // So just fire the callback and return
-        onCycleCompleteRef.current()
-        return
-      }
-      // No callback — loop back to start
+      // Reset cycle state regardless of whether we'll loop OR fire a
+      // callback. Without resetting `stepIndexRef`, a consumer that pauses
+      // on cycle-complete (App.tsx / AppFragment.tsx) and then re-plays
+      // would re-enter advanceStep with `stepIndexRef.current` still at
+      // steps.length-1 — `rawNext` would again be >= steps.length, fire
+      // onCycleComplete a second time, and the Play button would flash
+      // back to "Play" instantly. Resetting here makes re-play clean.
+      stepIndexRef.current = -1
       nodeProgressRef.current = new Map()
       activeNodesRef.current = new Set()
       destroyedNodesRef.current = new Set()
+      if (onCycleCompleteRef.current) {
+        onCycleCompleteRef.current()
+        return
+      }
+      // No callback — fall through and loop back to step 0.
     }
 
     const nextIdx = rawNext % steps.length

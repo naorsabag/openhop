@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [tailwindcss(), react()],
+  // VITE_BASE='/OpenHop/' for the GitHub Pages deploy; '/' for dev. Set in
+  // .github/workflows/pages.yml so dev builds aren't affected.
+  base: process.env.VITE_BASE ?? '/',
   server: {
     host: '0.0.0.0',
     port: 8788,
