@@ -191,7 +191,7 @@ function TreeItem({
         role="treeitem"
         aria-expanded={expanded}
         data-testid={`folder-${node.path}`}
-        className="group relative"
+        className="group/folder relative"
       >
         <button
           onClick={() => toggleFolder(node.path)}
@@ -213,7 +213,9 @@ function TreeItem({
             }}
             title="Add (flow or folder)"
             className={`absolute right-2 top-1/2 -translate-y-1/2 font-pixel text-xs transition-opacity ${
-              menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+              menuOpen
+                ? 'opacity-100'
+                : 'opacity-0 group-hover/folder:opacity-100 focus:opacity-100'
             }`}
             style={{
               background: 'transparent',
@@ -264,7 +266,7 @@ function TreeItem({
       role="treeitem"
       aria-selected={isActive}
       data-testid={`sidebar-flow-${flowId}`}
-      className="group relative"
+      className="group/flow relative"
     >
       <button
         onClick={() => flowId && onSelectFlow(flowId)}
@@ -283,7 +285,7 @@ function TreeItem({
       </button>
       {flowId && (onEditFlow || onDeleteFlow) && (
         <div
-          className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+          className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/flow:opacity-100 focus-within:opacity-100 transition-opacity"
           style={{ pointerEvents: 'auto' }}
         >
           {onEditFlow && (
