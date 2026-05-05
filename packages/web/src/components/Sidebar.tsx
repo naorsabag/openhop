@@ -75,6 +75,8 @@ interface TreeItemProps {
   expandedFolders: Set<string>
   toggleFolder: (path: string) => void
   onSelectFlow: (id: string) => void
+  onEditFlow?: (id: string) => void
+  onDeleteFlow?: (id: string) => void
 }
 
 function TreeItem({
@@ -84,6 +86,8 @@ function TreeItem({
   expandedFolders,
   toggleFolder,
   onSelectFlow,
+  onEditFlow,
+  onDeleteFlow,
 }: TreeItemProps) {
   if (node.type === 'folder') {
     const expanded = expandedFolders.has(node.path)
@@ -110,6 +114,8 @@ function TreeItem({
                 expandedFolders={expandedFolders}
                 toggleFolder={toggleFolder}
                 onSelectFlow={onSelectFlow}
+                onEditFlow={onEditFlow}
+                onDeleteFlow={onDeleteFlow}
               />
             ))}
           </ul>
@@ -119,11 +125,17 @@ function TreeItem({
   }
 
   const isActive = node.flowId === selectedFlowId
+  const flowId = node.flowId
   return (
-    <li role="treeitem" aria-selected={isActive} data-testid={`sidebar-flow-${node.flowId}`}>
+    <li
+      role="treeitem"
+      aria-selected={isActive}
+      data-testid={`sidebar-flow-${flowId}`}
+      className="group relative"
+    >
       <button
-        onClick={() => node.flowId && onSelectFlow(node.flowId)}
-        className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm transition-colors truncate"
+        onClick={() => flowId && onSelectFlow(flowId)}
+        className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm transition-colors truncate pr-12"
         style={{
           paddingLeft: depth * 16 + 8,
           color: isActive ? '#7df9ff' : 'rgba(224, 224, 255, 0.6)',
@@ -136,6 +148,57 @@ function TreeItem({
         </span>
         <span className="truncate">{node.name}</span>
       </button>
+      {flowId && (onEditFlow || onDeleteFlow) && (
+        <div
+          className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+          style={{ pointerEvents: 'auto' }}
+        >
+          {onEditFlow && (
+            <button
+              aria-label={`Edit ${node.name}`}
+              data-testid={`sidebar-edit-${flowId}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onEditFlow(flowId)
+              }}
+              title="Edit (E)"
+              className="font-pixel text-xs hover:text-accent transition-colors"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(224, 224, 255, 0.5)',
+                cursor: 'pointer',
+                padding: '0 4px',
+                fontSize: 11,
+              }}
+            >
+              {'\u270E'}
+            </button>
+          )}
+          {onDeleteFlow && (
+            <button
+              aria-label={`Delete ${node.name}`}
+              data-testid={`sidebar-delete-${flowId}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteFlow(flowId)
+              }}
+              title="Delete"
+              className="font-pixel text-xs hover:text-red-400 transition-colors"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(224, 224, 255, 0.5)',
+                cursor: 'pointer',
+                padding: '0 4px',
+                fontSize: 11,
+              }}
+            >
+              {'\u2715'}
+            </button>
+          )}
+        </div>
+      )}
     </li>
   )
 }
@@ -145,9 +208,20 @@ interface SidebarProps {
   loading: boolean
   selectedFlowId: string | null
   onSelectFlow: (id: string | null) => void
+  onNewFlow?: () => void
+  onEditFlow?: (id: string) => void
+  onDeleteFlow?: (id: string) => void
 }
 
-export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: SidebarProps) {
+export function Sidebar({
+  flows,
+  loading,
+  selectedFlowId,
+  onSelectFlow,
+  onNewFlow,
+  onEditFlow,
+  onDeleteFlow,
+}: SidebarProps) {
   const [search, setSearch] = useState('')
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => new Set())
 
@@ -204,8 +278,28 @@ export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: Sideba
       style={{ width: 260, background: '#141428', borderRight: '2px solid #2a2a4a' }}
       aria-label="File explorer"
     >
-      {/* Search */}
-      <div className="p-2 shrink-0" style={{ borderBottom: '1px solid #2a2a4a' }}>
+      {/* New + Search */}
+      <div
+        className="p-2 shrink-0 flex flex-col gap-2"
+        style={{ borderBottom: '1px solid #2a2a4a' }}
+      >
+        {onNewFlow && (
+          <button
+            aria-label="New flow"
+            data-testid="sidebar-new-flow"
+            onClick={onNewFlow}
+            className="w-full font-pixel text-xs py-1.5 border transition-colors"
+            style={{
+              fontSize: 10,
+              background: 'rgba(125, 249, 255, 0.08)',
+              borderColor: '#7df9ff',
+              color: '#7df9ff',
+              cursor: 'pointer',
+            }}
+          >
+            + New flow
+          </button>
+        )}
         <input
           aria-label="Search flows"
           type="text"
@@ -236,6 +330,8 @@ export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: Sideba
                 expandedFolders={expandedFolders}
                 toggleFolder={toggleFolder}
                 onSelectFlow={handleSelectFlow}
+                onEditFlow={onEditFlow}
+                onDeleteFlow={onDeleteFlow}
               />
             ))}
           </ul>

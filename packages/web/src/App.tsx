@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import YAML from 'yaml'
 import { Sidebar } from './components/Sidebar'
 import { FlowCanvas } from './components/FlowCanvas'
 import {
@@ -6,7 +7,9 @@ import {
   InspectorToggle,
   type DockSide,
 } from './components/DataInspectionPanel'
+import { FlowEditorModal } from './components/FlowEditorModal'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
+import { useFlowMutations } from './hooks/useFlowMutations'
 import type { FlowNode, FlowStep, Flow } from './types'
 
 interface FlowNavItem {
@@ -40,8 +43,73 @@ function App() {
     return () => window.removeEventListener('popstate', handler)
   }, [])
 
-  const { flows, loading: listLoading } = useFlowList()
+  const { flows, loading: listLoading, reload: reloadFlows } = useFlowList()
   const { flow: apiFlow, loading: flowLoading } = useFlowData(selectedFlowId)
+
+  // Editor modal state. mode='new' opens a blank editor; mode='edit' pre-populates.
+  const [editor, setEditor] = useState<
+    { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; flowId: string; initialYaml: string }
+  >({ mode: 'closed' })
+  const mutations = useFlowMutations()
+
+  const handleNewFlow = useCallback(() => {
+    mutations.reset()
+    setEditor({ mode: 'new' })
+  }, [mutations])
+
+  const handleEditFlow = useCallback(
+    async (flowId: string) => {
+      mutations.reset()
+      try {
+        const res = await fetch(`/api/flows/${flowId}`)
+        if (!res.ok) {
+          window.alert(`Could not load flow ${flowId} for editing (HTTP ${res.status}).`)
+          return
+        }
+        const data = (await res.json()) as { meta: unknown; flow: unknown }
+        const yamlText = YAML.stringify({ meta: data.meta, flow: data.flow })
+        setEditor({ mode: 'edit', flowId, initialYaml: yamlText })
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e)
+        window.alert(`Could not load flow ${flowId} for editing: ${message}`)
+      }
+    },
+    [mutations]
+  )
+
+  const handleDeleteFlow = useCallback(
+    async (flowId: string) => {
+      const target = flows.find((f) => f.id === flowId)
+      const label = target?.title ? `"${target.title}"` : flowId
+      if (!window.confirm(`Delete flow ${label}? This cannot be undone.`)) return
+      const ok = await mutations.deleteFlow(flowId)
+      if (!ok) {
+        window.alert(`Failed to delete flow: ${mutations.error?.message ?? 'unknown error'}`)
+        return
+      }
+      reloadFlows()
+      if (selectedFlowId === flowId) selectFlow(null)
+    },
+    [flows, mutations, reloadFlows, selectedFlowId, selectFlow]
+  )
+
+  const handleEditorSave = useCallback(
+    async (yamlText: string) => {
+      const created = await mutations.createFlow(yamlText)
+      if (!created) return // server error stays in mutations.error; modal renders it
+      reloadFlows()
+      // For both new + edit modes we POST; selecting the new id navigates to /flow/<id>.
+      // (For edit, this means a fresh id since the server creates a new flow on POST.
+      //  Patch-ops-based in-place edit is the CLI's `openhop patch` flow — out of scope per #74.)
+      selectFlow(created.id)
+      setEditor({ mode: 'closed' })
+    },
+    [mutations, reloadFlows, selectFlow]
+  )
+
+  const handleEditorCancel = useCallback(() => {
+    setEditor({ mode: 'closed' })
+  }, [])
 
   const [playing, setPlaying] = useState(false)
   const [flowStack, setFlowStack] = useState<FlowNavItem[]>([])
@@ -232,6 +300,9 @@ function App() {
           loading={listLoading}
           selectedFlowId={selectedFlowId}
           onSelectFlow={selectFlow}
+          onNewFlow={handleNewFlow}
+          onEditFlow={handleEditFlow}
+          onDeleteFlow={handleDeleteFlow}
         />
 
         {/* Canvas + Inspector */}
@@ -347,6 +418,17 @@ function App() {
           )}
         </div>
       </div>
+
+      {/* Editor modal — overlays everything when open */}
+      <FlowEditorModal
+        open={editor.mode !== 'closed'}
+        title={editor.mode === 'edit' ? 'Edit flow' : 'New flow'}
+        initialYaml={editor.mode === 'edit' ? editor.initialYaml : ''}
+        saving={mutations.inFlight}
+        serverError={mutations.error}
+        onSave={handleEditorSave}
+        onCancel={handleEditorCancel}
+      />
     </div>
   )
 }

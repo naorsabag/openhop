@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Flow } from '../types'
 
 const API_BASE = '' // proxy handles /api -> localhost:8787
@@ -15,6 +15,11 @@ export interface FlowListItem {
 export function useFlowList() {
   const [flows, setFlows] = useState<FlowListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [tick, setTick] = useState(0)
+
+  // `reload()` bumps `tick`, which retriggers the fetch effect. Mutations
+  // (create / delete) call this to refresh the sidebar without remounting.
+  const reload = useCallback(() => setTick((t) => t + 1), [])
 
   useEffect(() => {
     fetch(`${API_BASE}/api/flows`)
@@ -24,9 +29,9 @@ export function useFlowList() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [])
+  }, [tick])
 
-  return { flows, loading }
+  return { flows, loading, reload }
 }
 
 export function useFlowData(flowId: string | null) {
