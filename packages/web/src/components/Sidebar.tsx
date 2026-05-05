@@ -68,6 +68,95 @@ function filterTree(nodes: TreeNode[], query: string): TreeNode[] {
   return result
 }
 
+interface AddMenuState {
+  /** Full folder path for which the menu is open. `''` represents the root. `null` = closed. */
+  openForPath: string | null
+  setOpenForPath: (path: string | null) => void
+}
+
+interface AddMenuProps {
+  parentPath: string // '' for root
+  onClose: () => void
+  onCreateAt: (kind: 'flow' | 'folder', parentPath: string) => void
+}
+
+function AddMenu({ parentPath, onClose, onCreateAt }: AddMenuProps) {
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  // Close on outside click / Esc.
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    // Defer the click listener until next tick so the click that opened the
+    // menu (which bubbles up to document) doesn't immediately close it.
+    const t = setTimeout(() => document.addEventListener('mousedown', onDoc), 0)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+
+  return (
+    <div
+      ref={ref}
+      role="menu"
+      data-testid={`add-menu-${parentPath}`}
+      className="absolute z-20 font-terminal text-xs flex flex-col"
+      style={{
+        right: 8,
+        top: 'calc(100% + 2px)',
+        background: '#1a1a2e',
+        border: '1px solid #2a2a4a',
+        borderRadius: 4,
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+        minWidth: 130,
+      }}
+    >
+      <button
+        role="menuitem"
+        data-testid={`add-menu-${parentPath}-flow`}
+        onClick={() => {
+          onCreateAt('flow', parentPath)
+          onClose()
+        }}
+        className="text-left px-3 py-2 hover:bg-white/5 transition-colors"
+        style={{
+          background: 'none',
+          border: 'none',
+          color: 'rgba(224, 224, 255, 0.85)',
+          cursor: 'pointer',
+        }}
+      >
+        📄 New flow
+      </button>
+      <button
+        role="menuitem"
+        data-testid={`add-menu-${parentPath}-folder`}
+        onClick={() => {
+          onCreateAt('folder', parentPath)
+          onClose()
+        }}
+        className="text-left px-3 py-2 hover:bg-white/5 transition-colors"
+        style={{
+          background: 'none',
+          border: 'none',
+          color: 'rgba(224, 224, 255, 0.85)',
+          cursor: 'pointer',
+          borderTop: '1px solid #2a2a4a',
+        }}
+      >
+        📁 New folder
+      </button>
+    </div>
+  )
+}
+
 interface TreeItemProps {
   node: TreeNode
   depth: number
@@ -75,6 +164,13 @@ interface TreeItemProps {
   expandedFolders: Set<string>
   toggleFolder: (path: string) => void
   onSelectFlow: (id: string) => void
+  onEditFlow?: (id: string) => void
+  onDeleteFlow?: (id: string) => void
+  onDeleteFolder?: (path: string) => void
+  onCreateAt?: (kind: 'flow' | 'folder', parentPath: string) => void
+  addMenu?: AddMenuState
+  /** Marks the synthetic top-level "/" row. Always expanded, no delete, no toggle caret. */
+  isRoot?: boolean
 }
 
 function TreeItem({
@@ -84,21 +180,122 @@ function TreeItem({
   expandedFolders,
   toggleFolder,
   onSelectFlow,
+  onEditFlow,
+  onDeleteFlow,
+  onDeleteFolder,
+  onCreateAt,
+  addMenu,
+  isRoot,
 }: TreeItemProps) {
   if (node.type === 'folder') {
-    const expanded = expandedFolders.has(node.path)
+    // Root is always expanded \u2014 collapsing the workspace serves no purpose
+    // and would just hide the entire tree.
+    const expanded = isRoot || expandedFolders.has(node.path)
+    const showAddBtn = !!onCreateAt
+    const showDeleteBtn = !isRoot && !!onDeleteFolder
+    const menuOpen = addMenu?.openForPath === node.path
+    // Wrap the header in its own .group/folder.relative so hover and absolute
+    // positioning scope to just the folder header row, not the entire expanded
+    // subtree (which includes child <ul>). Without this, "top: 50%" on the
+    // "+" button lands at the geometric center of the whole subtree, and
+    // hovering a child flow row triggers the parent folder's group-hover.
+    const rowPaddingLeft = depth * 16 + 8
+    const headerLabel = isRoot ? '/' : node.name
     return (
-      <li role="treeitem" aria-expanded={expanded} data-testid={`folder-${node.path}`}>
-        <button
-          onClick={() => toggleFolder(node.path)}
-          className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm text-text/70 hover:text-text transition-colors"
-          style={{ paddingLeft: depth * 16 + 8, cursor: 'pointer' }}
-        >
-          <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center' }}>
-            {expanded ? '\u25BE' : '\u25B8'}
-          </span>
-          <span className="truncate">{node.name}</span>
-        </button>
+      <li
+        role="treeitem"
+        aria-expanded={expanded}
+        data-testid={isRoot ? 'folder-root' : `folder-${node.path}`}
+      >
+        <div className="group/folder relative">
+          {isRoot ? (
+            // Root row \u2014 non-toggleable, slightly emphasized.
+            <div
+              className="flex items-center gap-1.5 w-full py-1 font-terminal text-sm text-text/80 pr-12"
+              style={{ paddingLeft: rowPaddingLeft }}
+            >
+              <span
+                className="shrink-0 text-xs"
+                style={{ width: 16, textAlign: 'center', opacity: 0.5 }}
+              >
+                {'/'}
+              </span>
+              <span className="truncate text-text/90">{headerLabel}</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => toggleFolder(node.path)}
+              className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm text-text/70 hover:text-text transition-colors pr-12"
+              style={{ paddingLeft: rowPaddingLeft, cursor: 'pointer' }}
+            >
+              <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center' }}>
+                {expanded ? '\u25BE' : '\u25B8'}
+              </span>
+              <span className="truncate">{headerLabel}</span>
+            </button>
+          )}
+          <div
+            className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity ${
+              menuOpen
+                ? 'opacity-100'
+                : 'opacity-0 group-hover/folder:opacity-100 focus-within:opacity-100'
+            }`}
+          >
+            {showAddBtn && (
+              <button
+                aria-label={`Add inside ${headerLabel}`}
+                data-testid={isRoot ? 'sidebar-add-root' : `sidebar-add-${node.path}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  addMenu?.setOpenForPath(menuOpen ? null : node.path)
+                }}
+                title="Add (flow or folder)"
+                className="font-pixel transition-colors"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: menuOpen ? '#7df9ff' : 'rgba(224, 224, 255, 0.7)',
+                  cursor: 'pointer',
+                  padding: '0 4px',
+                  fontSize: 14,
+                  lineHeight: 1,
+                }}
+              >
+                {'+'}
+              </button>
+            )}
+            {showDeleteBtn && (
+              <button
+                aria-label={`Delete folder ${node.name}`}
+                data-testid={`sidebar-delete-folder-${node.path}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDeleteFolder?.(node.path)
+                }}
+                title="Delete folder"
+                className="font-pixel text-xs hover:text-red-400 transition-colors"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'rgba(224, 224, 255, 0.5)',
+                  cursor: 'pointer',
+                  padding: '0 4px',
+                  fontSize: 11,
+                  lineHeight: 1,
+                }}
+              >
+                {'\u2715'}
+              </button>
+            )}
+          </div>
+          {menuOpen && onCreateAt && (
+            <AddMenu
+              parentPath={node.path}
+              onClose={() => addMenu?.setOpenForPath(null)}
+              onCreateAt={onCreateAt}
+            />
+          )}
+        </div>
         {expanded && (
           <ul role="group">
             {node.children.map((child, i) => (
@@ -110,6 +307,11 @@ function TreeItem({
                 expandedFolders={expandedFolders}
                 toggleFolder={toggleFolder}
                 onSelectFlow={onSelectFlow}
+                onEditFlow={onEditFlow}
+                onDeleteFlow={onDeleteFlow}
+                onDeleteFolder={onDeleteFolder}
+                onCreateAt={onCreateAt}
+                addMenu={addMenu}
               />
             ))}
           </ul>
@@ -119,23 +321,79 @@ function TreeItem({
   }
 
   const isActive = node.flowId === selectedFlowId
+  const flowId = node.flowId
   return (
-    <li role="treeitem" aria-selected={isActive} data-testid={`sidebar-flow-${node.flowId}`}>
+    <li
+      role="treeitem"
+      aria-selected={isActive}
+      data-testid={`sidebar-flow-${flowId}`}
+      className="group/flow relative"
+    >
       <button
-        onClick={() => node.flowId && onSelectFlow(node.flowId)}
-        className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm transition-colors truncate"
-        style={{
-          paddingLeft: depth * 16 + 8,
-          color: isActive ? '#7df9ff' : 'rgba(224, 224, 255, 0.6)',
-          background: isActive ? 'rgba(125, 249, 255, 0.08)' : 'transparent',
-          cursor: 'pointer',
-        }}
+        onClick={() => flowId && onSelectFlow(flowId)}
+        className={`flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm transition-colors truncate pr-12 cursor-pointer ${
+          isActive
+            ? 'text-[#7df9ff] bg-[rgba(125,249,255,0.08)]'
+            : 'text-text/60 hover:text-text hover:bg-white/5'
+        }`}
+        style={{ paddingLeft: depth * 16 + 8 }}
       >
         <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center', opacity: 0.5 }}>
           {'\u25C7'}
         </span>
         <span className="truncate">{node.name}</span>
       </button>
+      {flowId && (onEditFlow || onDeleteFlow) && (
+        <div
+          className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/flow:opacity-100 focus-within:opacity-100 transition-opacity"
+          style={{ pointerEvents: 'auto' }}
+        >
+          {onEditFlow && (
+            <button
+              aria-label={`Edit ${node.name}`}
+              data-testid={`sidebar-edit-${flowId}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onEditFlow(flowId)
+              }}
+              title="Edit"
+              className="font-pixel text-xs hover:text-accent transition-colors"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(224, 224, 255, 0.5)',
+                cursor: 'pointer',
+                padding: '0 4px',
+                fontSize: 11,
+              }}
+            >
+              {'\u270E'}
+            </button>
+          )}
+          {onDeleteFlow && (
+            <button
+              aria-label={`Delete ${node.name}`}
+              data-testid={`sidebar-delete-${flowId}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteFlow(flowId)
+              }}
+              title="Delete"
+              className="font-pixel text-xs hover:text-red-400 transition-colors"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(224, 224, 255, 0.5)',
+                cursor: 'pointer',
+                padding: '0 4px',
+                fontSize: 11,
+              }}
+            >
+              {'\u2715'}
+            </button>
+          )}
+        </div>
+      )}
     </li>
   )
 }
@@ -145,9 +403,29 @@ interface SidebarProps {
   loading: boolean
   selectedFlowId: string | null
   onSelectFlow: (id: string | null) => void
+  /** parentPath is `''` for root, or the folder path for nested creation. */
+  onCreateAt?: (kind: 'flow' | 'folder', parentPath: string) => void
+  onEditFlow?: (id: string) => void
+  onDeleteFlow?: (id: string) => void
+  /** Delete a folder and every flow whose meta.path is at-or-below it. Not callable on root. */
+  onDeleteFolder?: (path: string) => void
 }
 
-export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: SidebarProps) {
+export function Sidebar({
+  flows,
+  loading,
+  selectedFlowId,
+  onSelectFlow,
+  onCreateAt,
+  onEditFlow,
+  onDeleteFlow,
+  onDeleteFolder,
+}: SidebarProps) {
+  const [addMenuPath, setAddMenuPath] = useState<string | null>(null)
+  const addMenu: AddMenuState = useMemo(
+    () => ({ openForPath: addMenuPath, setOpenForPath: setAddMenuPath }),
+    [addMenuPath]
+  )
   const [search, setSearch] = useState('')
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => new Set())
 
@@ -217,27 +495,31 @@ export function Sidebar({ flows, loading, selectedFlowId, onSelectFlow }: Sideba
         />
       </div>
 
-      {/* Tree */}
+      {/* Tree — root row is synthetic and always present so users can add at "/" */}
       <div className="flex-1 overflow-y-auto py-1">
         {loading ? (
           <p className="text-text/40 font-terminal text-xs px-3 py-4">Loading...</p>
-        ) : displayTree.length === 0 ? (
-          <p className="text-text/40 font-terminal text-xs px-3 py-4">
-            {search ? 'No matches' : 'No flows yet'}
-          </p>
         ) : (
           <ul role="tree">
-            {displayTree.map((node, i) => (
-              <TreeItem
-                key={node.type === 'flow' ? node.flowId : `${node.path}-${i}`}
-                node={node}
-                depth={0}
-                selectedFlowId={selectedFlowId}
-                expandedFolders={expandedFolders}
-                toggleFolder={toggleFolder}
-                onSelectFlow={handleSelectFlow}
-              />
-            ))}
+            <TreeItem
+              node={{ name: '/', type: 'folder', path: '', children: displayTree }}
+              depth={0}
+              selectedFlowId={selectedFlowId}
+              expandedFolders={expandedFolders}
+              toggleFolder={toggleFolder}
+              onSelectFlow={handleSelectFlow}
+              onEditFlow={onEditFlow}
+              onDeleteFlow={onDeleteFlow}
+              onDeleteFolder={onDeleteFolder}
+              onCreateAt={onCreateAt}
+              addMenu={addMenu}
+              isRoot
+            />
+            {displayTree.length === 0 && (
+              <li className="text-text/40 font-terminal text-xs px-3 py-3" aria-live="polite">
+                {search ? 'No matches' : 'No flows yet — add one with the "+" above.'}
+              </li>
+            )}
           </ul>
         )}
       </div>

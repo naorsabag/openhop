@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Flow } from '../types'
 
 const API_BASE = '' // proxy handles /api -> localhost:8787
@@ -15,18 +15,33 @@ export interface FlowListItem {
 export function useFlowList() {
   const [flows, setFlows] = useState<FlowListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [tick, setTick] = useState(0)
+
+  // `reload()` bumps `tick`, which retriggers the fetch effect. Mutations
+  // (create / delete) call this to refresh the sidebar without remounting.
+  const reload = useCallback(() => setTick((t) => t + 1), [])
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/flows`)
+    // AbortController cancels the previous in-flight fetch when `reload()`
+    // bumps `tick`. Without it, two overlapping /api/flows requests can
+    // resolve out of order and a stale response can overwrite the fresh
+    // post-mutation list — putting just-deleted flows back in the sidebar.
+    const controller = new AbortController()
+    fetch(`${API_BASE}/api/flows`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         setFlows(data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
-  }, [])
+      .catch((err) => {
+        // AbortError means a newer reload superseded us — leave state alone.
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        setLoading(false)
+      })
+    return () => controller.abort()
+  }, [tick])
 
-  return { flows, loading }
+  return { flows, loading, reload }
 }
 
 export function useFlowData(flowId: string | null) {

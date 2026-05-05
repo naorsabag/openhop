@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import YAML from 'yaml'
 import { Sidebar } from './components/Sidebar'
 import { FlowCanvas } from './components/FlowCanvas'
 import {
@@ -6,7 +7,10 @@ import {
   InspectorToggle,
   type DockSide,
 } from './components/DataInspectionPanel'
+import { FlowEditorModal } from './components/FlowEditorModal'
+import { buildStarterYaml } from './lib/starter-yaml'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
+import { useFlowMutations } from './hooks/useFlowMutations'
 import type { FlowNode, FlowStep, Flow } from './types'
 
 interface FlowNavItem {
@@ -40,8 +44,133 @@ function App() {
     return () => window.removeEventListener('popstate', handler)
   }, [])
 
-  const { flows, loading: listLoading } = useFlowList()
+  const { flows, loading: listLoading, reload: reloadFlows } = useFlowList()
   const { flow: apiFlow, loading: flowLoading } = useFlowData(selectedFlowId)
+
+  // Editor modal state. mode='new' opens with a (path-aware) starter YAML;
+  // mode='edit' pre-populates from the stored flow.
+  const [editor, setEditor] = useState<
+    | { mode: 'closed' }
+    | { mode: 'new'; initialYaml: string }
+    | { mode: 'edit'; flowId: string; initialYaml: string }
+  >({ mode: 'closed' })
+  const mutations = useFlowMutations()
+
+  // Sidebar's per-folder "+" menu calls this with kind='flow'|'folder' and the
+  // parent folder path ('' for root). For 'folder' we prompt for a name and
+  // splice it into the path, so the modal opens with `meta.path: <parent>/<name>`.
+  const handleCreateAt = useCallback(
+    (kind: 'flow' | 'folder', parentPath: string) => {
+      mutations.reset()
+      let path = parentPath
+      if (kind === 'folder') {
+        const raw = window.prompt('New folder name:')
+        if (!raw) return
+        const name = raw
+          .trim()
+          .replace(/^\/+|\/+$/g, '')
+          .replace(/\s+/g, '-')
+        if (!name) return
+        path = parentPath ? `${parentPath}/${name}` : name
+      }
+      setEditor({ mode: 'new', initialYaml: buildStarterYaml(path || undefined) })
+    },
+    [mutations]
+  )
+
+  const handleEditFlow = useCallback(
+    async (flowId: string) => {
+      mutations.reset()
+      try {
+        const res = await fetch(`/api/flows/${flowId}`)
+        if (!res.ok) {
+          window.alert(`Could not load flow ${flowId} for editing (HTTP ${res.status}).`)
+          return
+        }
+        const data = (await res.json()) as { meta: unknown; flow: unknown }
+        const yamlText = YAML.stringify({ meta: data.meta, flow: data.flow })
+        setEditor({ mode: 'edit', flowId, initialYaml: yamlText })
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e)
+        window.alert(`Could not load flow ${flowId} for editing: ${message}`)
+      }
+    },
+    [mutations]
+  )
+
+  const handleDeleteFlow = useCallback(
+    async (flowId: string) => {
+      const target = flows.find((f) => f.id === flowId)
+      const label = target?.title ? `"${target.title}"` : flowId
+      if (!window.confirm(`Delete flow ${label}? This cannot be undone.`)) return
+      const err = await mutations.deleteFlow(flowId)
+      if (err) {
+        window.alert(`Failed to delete flow: ${err.message}`)
+        return
+      }
+      reloadFlows()
+      if (selectedFlowId === flowId) selectFlow(null)
+    },
+    [flows, mutations, reloadFlows, selectedFlowId, selectFlow]
+  )
+
+  // Delete every flow at-or-below the given folder path. The server has no
+  // bulk-delete endpoint (and folders are virtual — they exist only as a
+  // derived view of each flow's meta.path), so we iterate. Confirms with the
+  // count up-front; bails on the first failure.
+  const handleDeleteFolder = useCallback(
+    async (folderPath: string) => {
+      if (!folderPath) return // root is undeletable; UI should never call this
+      const targets = flows.filter(
+        (f) => f.path === folderPath || (f.path ?? '').startsWith(`${folderPath}/`)
+      )
+      if (targets.length === 0) {
+        window.alert(`Folder "${folderPath}" is empty already.`)
+        return
+      }
+      const msg =
+        targets.length === 1
+          ? `Delete folder "${folderPath}" and the 1 flow inside? This cannot be undone.`
+          : `Delete folder "${folderPath}" and all ${targets.length} flows inside? This cannot be undone.`
+      if (!window.confirm(msg)) return
+
+      let failure: { label: string; message: string } | null = null
+      for (const target of targets) {
+        const err = await mutations.deleteFlow(target.id)
+        if (err) {
+          failure = { label: target.title || target.id, message: err.message }
+          break
+        }
+      }
+      reloadFlows()
+      if (failure) {
+        window.alert(
+          `Stopped after failing to delete "${failure.label}" (${failure.message}) — refresh to see what's left in the folder.`
+        )
+        return
+      }
+      if (selectedFlowId && targets.some((t) => t.id === selectedFlowId)) selectFlow(null)
+    },
+    [flows, mutations, reloadFlows, selectedFlowId, selectFlow]
+  )
+
+  const handleEditorSave = useCallback(
+    async (yamlText: string) => {
+      const created = await mutations.createFlow(yamlText)
+      if (!created) return // server error stays in mutations.error; modal renders it
+      reloadFlows()
+      // For both new + edit modes we POST; selecting the new id navigates to /flow/<id>.
+      // (For edit, this means a fresh id since the server creates a new flow on POST.
+      //  Patch-ops-based in-place edit is the CLI's `openhop patch` flow — out of scope per #74.)
+      selectFlow(created.id)
+      setEditor({ mode: 'closed' })
+    },
+    [mutations, reloadFlows, selectFlow]
+  )
+
+  const handleEditorCancel = useCallback(() => {
+    setEditor({ mode: 'closed' })
+  }, [])
 
   const [playing, setPlaying] = useState(false)
   const [flowStack, setFlowStack] = useState<FlowNavItem[]>([])
@@ -232,6 +361,10 @@ function App() {
           loading={listLoading}
           selectedFlowId={selectedFlowId}
           onSelectFlow={selectFlow}
+          onCreateAt={handleCreateAt}
+          onEditFlow={handleEditFlow}
+          onDeleteFlow={handleDeleteFlow}
+          onDeleteFolder={handleDeleteFolder}
         />
 
         {/* Canvas + Inspector */}
@@ -347,6 +480,17 @@ function App() {
           )}
         </div>
       </div>
+
+      {/* Editor modal — overlays everything when open */}
+      <FlowEditorModal
+        open={editor.mode !== 'closed'}
+        title={editor.mode === 'edit' ? 'Edit flow' : 'New flow'}
+        initialYaml={editor.mode === 'closed' ? '' : editor.initialYaml}
+        saving={mutations.inFlight}
+        serverError={mutations.error}
+        onSave={handleEditorSave}
+        onCancel={handleEditorCancel}
+      />
     </div>
   )
 }
