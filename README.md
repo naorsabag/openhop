@@ -59,13 +59,13 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 
 ## Install
 
-| Scenario                                                                            | Command                                                                                                                                  |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **One-shot demo**                                                                   | `npx openhop demo` — boots everything and opens the browser                                                                              |
-| **Long-lived local server**                                                         | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
-| **Install the skill** (Claude Code, Cursor, Windsurf, Cline; Continue.dev advisory) | `npx openhop init` — auto-detects your AI client and drops `SKILL.md` in place                                                           |
-| **Install the skill** (Codex, Gemini, Junie, Copilot, …)                            | `npx openskills install naorsabag/openhop` — universal install via OpenSkills                                                            |
-| **Run from source (contributors)**                                                  | `git clone https://github.com/naorsabag/OpenHop.git && cd OpenHop && npm install && npm run dev` — see [Contributing](#contributing)     |
+| Scenario                                                     | Command                                                                                                                                  |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **One-shot demo**                                            | `npx openhop demo` — boots everything and opens the browser                                                                              |
+| **Long-lived local server**                                  | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
+| **Install the skill** (Claude Code, Cursor, Windsurf, Cline) | `npx openhop init` — auto-detects your AI client and drops `SKILL.md` in place                                                           |
+| **Install the skill** (Codex, Gemini, Junie, Copilot, …)     | `npx openskills install naorsabag/openhop` — universal install via OpenSkills                                                            |
+| **Run from source (contributors)**                           | `git clone https://github.com/naorsabag/OpenHop.git && cd OpenHop && npm install && npm run dev` — see [Contributing](#contributing)     |
 
 ## Give your agent the skill
 
