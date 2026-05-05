@@ -113,6 +113,46 @@ function App() {
     [flows, mutations, reloadFlows, selectedFlowId, selectFlow]
   )
 
+  // Delete every flow at-or-below the given folder path. The server has no
+  // bulk-delete endpoint (and folders are virtual — they exist only as a
+  // derived view of each flow's meta.path), so we iterate. Confirms with the
+  // count up-front; bails on the first failure.
+  const handleDeleteFolder = useCallback(
+    async (folderPath: string) => {
+      if (!folderPath) return // root is undeletable; UI should never call this
+      const targets = flows.filter(
+        (f) => f.path === folderPath || (f.path ?? '').startsWith(`${folderPath}/`)
+      )
+      if (targets.length === 0) {
+        window.alert(`Folder "${folderPath}" is empty already.`)
+        return
+      }
+      const msg =
+        targets.length === 1
+          ? `Delete folder "${folderPath}" and the 1 flow inside? This cannot be undone.`
+          : `Delete folder "${folderPath}" and all ${targets.length} flows inside? This cannot be undone.`
+      if (!window.confirm(msg)) return
+
+      let failed: string | null = null
+      for (const target of targets) {
+        const ok = await mutations.deleteFlow(target.id)
+        if (!ok) {
+          failed = target.title || target.id
+          break
+        }
+      }
+      reloadFlows()
+      if (failed) {
+        window.alert(
+          `Stopped after failing to delete "${failed}" — refresh to see what's left in the folder.`
+        )
+        return
+      }
+      if (selectedFlowId && targets.some((t) => t.id === selectedFlowId)) selectFlow(null)
+    },
+    [flows, mutations, reloadFlows, selectedFlowId, selectFlow]
+  )
+
   const handleEditorSave = useCallback(
     async (yamlText: string) => {
       const created = await mutations.createFlow(yamlText)
@@ -323,6 +363,7 @@ function App() {
           onCreateAt={handleCreateAt}
           onEditFlow={handleEditFlow}
           onDeleteFlow={handleDeleteFlow}
+          onDeleteFolder={handleDeleteFolder}
         />
 
         {/* Canvas + Inspector */}

@@ -99,6 +99,38 @@ flow:
   })
 })
 
+describe('handleDeleteFolder descendant match — what gets bulk-deleted', () => {
+  // Mirror the predicate in App.handleDeleteFolder: a flow is in the folder
+  // when its path equals the folder OR starts with `${folder}/`. Locking the
+  // semantics so "delete folder billing" doesn't accidentally take billing-x
+  // or x/billing.
+  const inFolder = (folderPath: string, flowPath: string | undefined): boolean =>
+    flowPath === folderPath || (flowPath ?? '').startsWith(`${folderPath}/`)
+
+  it('matches the folder itself', () => {
+    expect(inFolder('billing', 'billing')).toBe(true)
+  })
+
+  it('matches descendants of the folder', () => {
+    expect(inFolder('billing', 'billing/refunds')).toBe(true)
+    expect(inFolder('billing', 'billing/refunds/q1')).toBe(true)
+  })
+
+  it('does NOT match siblings with the folder name as a prefix', () => {
+    expect(inFolder('billing', 'billing-tax')).toBe(false)
+    expect(inFolder('billing', 'billing2')).toBe(false)
+  })
+
+  it('does NOT match unrelated paths or root flows', () => {
+    expect(inFolder('billing', 'orders')).toBe(false)
+    expect(inFolder('billing', undefined)).toBe(false) // a flow at the root
+  })
+
+  it('does NOT match folder appearing as a non-prefix segment', () => {
+    expect(inFolder('billing', 'eu/billing')).toBe(false)
+  })
+})
+
 describe('buildStarterYaml — path injection for the per-folder "+" menu', () => {
   it('omits meta.path when no folder is provided (root creation)', () => {
     const yamlText = buildStarterYaml()
