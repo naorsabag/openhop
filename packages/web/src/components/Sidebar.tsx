@@ -331,15 +331,12 @@ function TreeItem({
     >
       <button
         onClick={() => flowId && onSelectFlow(flowId)}
-        className={`flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm transition-colors truncate pr-12 ${
-          isActive ? '' : 'hover:bg-white/5 hover:text-text'
+        className={`flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm transition-colors truncate pr-12 cursor-pointer ${
+          isActive
+            ? 'text-[#7df9ff] bg-[rgba(125,249,255,0.08)]'
+            : 'text-text/60 hover:text-text hover:bg-white/5'
         }`}
-        style={{
-          paddingLeft: depth * 16 + 8,
-          color: isActive ? '#7df9ff' : 'rgba(224, 224, 255, 0.6)',
-          background: isActive ? 'rgba(125, 249, 255, 0.08)' : 'transparent',
-          cursor: 'pointer',
-        }}
+        style={{ paddingLeft: depth * 16 + 8 }}
       >
         <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center', opacity: 0.5 }}>
           {'\u25C7'}
