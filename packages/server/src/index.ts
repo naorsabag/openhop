@@ -45,7 +45,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
           title: 'OpenHop API',
           description:
             'Data flow visualization platform. AI tools POST flow definitions (YAML/JSON) and OpenHop renders them as animated diagrams.',
-          version: '0.1.0',
+          version: '0.1.0-beta.0',
         },
       },
     })
