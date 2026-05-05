@@ -186,53 +186,59 @@ function TreeItem({
     const expanded = expandedFolders.has(node.path)
     const showAddBtn = !!onCreateAt
     const menuOpen = addMenu?.openForPath === node.path
+    // Wrap the header in its own .group/folder.relative so hover and absolute
+    // positioning scope to just the folder header row, not the entire expanded
+    // subtree (which includes child <ul>). Without this, "top: 50%" on the
+    // "+" button lands at the geometric center of the whole subtree, and
+    // hovering a child flow row triggers the parent folder's group-hover.
     return (
-      <li
-        role="treeitem"
-        aria-expanded={expanded}
-        data-testid={`folder-${node.path}`}
-        className="group/folder relative"
-      >
-        <button
-          onClick={() => toggleFolder(node.path)}
-          className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm text-text/70 hover:text-text transition-colors pr-7"
-          style={{ paddingLeft: depth * 16 + 8, cursor: 'pointer' }}
-        >
-          <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center' }}>
-            {expanded ? '\u25BE' : '\u25B8'}
-          </span>
-          <span className="truncate">{node.name}</span>
-        </button>
-        {showAddBtn && (
+      <li role="treeitem" aria-expanded={expanded} data-testid={`folder-${node.path}`}>
+        <div className="group/folder relative">
           <button
-            aria-label={`Add inside ${node.name}`}
-            data-testid={`sidebar-add-${node.path}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              addMenu?.setOpenForPath(menuOpen ? null : node.path)
-            }}
-            title="Add (flow or folder)"
-            className="absolute right-2 top-1/2 -translate-y-1/2 font-pixel text-sm transition-colors"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: menuOpen ? '#7df9ff' : 'rgba(224, 224, 255, 0.55)',
-              cursor: 'pointer',
-              padding: '0 4px',
-              fontSize: 14,
-              lineHeight: 1,
-            }}
+            onClick={() => toggleFolder(node.path)}
+            className="flex items-center gap-1.5 w-full text-left py-1 font-terminal text-sm text-text/70 hover:text-text transition-colors pr-7"
+            style={{ paddingLeft: depth * 16 + 8, cursor: 'pointer' }}
           >
-            {'+'}
+            <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center' }}>
+              {expanded ? '\u25BE' : '\u25B8'}
+            </span>
+            <span className="truncate">{node.name}</span>
           </button>
-        )}
-        {menuOpen && onCreateAt && (
-          <AddMenu
-            parentPath={node.path}
-            onClose={() => addMenu?.setOpenForPath(null)}
-            onCreateAt={onCreateAt}
-          />
-        )}
+          {showAddBtn && (
+            <button
+              aria-label={`Add inside ${node.name}`}
+              data-testid={`sidebar-add-${node.path}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                addMenu?.setOpenForPath(menuOpen ? null : node.path)
+              }}
+              title="Add (flow or folder)"
+              className={`absolute right-2 top-1/2 -translate-y-1/2 font-pixel transition-opacity ${
+                menuOpen
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover/folder:opacity-100 focus:opacity-100'
+              }`}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: menuOpen ? '#7df9ff' : 'rgba(224, 224, 255, 0.7)',
+                cursor: 'pointer',
+                padding: '0 4px',
+                fontSize: 14,
+                lineHeight: 1,
+              }}
+            >
+              {'+'}
+            </button>
+          )}
+          {menuOpen && onCreateAt && (
+            <AddMenu
+              parentPath={node.path}
+              onClose={() => addMenu?.setOpenForPath(null)}
+              onCreateAt={onCreateAt}
+            />
+          )}
+        </div>
         {expanded && (
           <ul role="group">
             {node.children.map((child, i) => (
