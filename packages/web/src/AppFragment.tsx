@@ -223,10 +223,16 @@ export default function AppFragment() {
     isInSubFlowRef.current = isInSubFlow
   }, [isInSubFlow])
   const handleCycleComplete = useCallback(() => {
-    if (!playingRef.current || !isInSubFlowRef.current) return
-    setTimeout(() => {
-      setFlowStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
-    }, 800)
+    if (!playingRef.current) return
+    if (isInSubFlowRef.current) {
+      setTimeout(() => {
+        setFlowStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
+      }, 800)
+    } else {
+      // Root cycle complete — stop playing so the header button flips back
+      // to "▶ Play". Mirrors the same fix in App.tsx.
+      setPlaying(false)
+    }
   }, [])
 
   return (

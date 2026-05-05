@@ -300,10 +300,19 @@ function App() {
     isInSubFlowRef.current = isInSubFlow
   }, [isInSubFlow])
   const handleCycleComplete = useCallback(() => {
-    if (!playingRef.current || !isInSubFlowRef.current) return
-    setTimeout(() => {
-      setFlowStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
-    }, 800)
+    if (!playingRef.current) return
+    if (isInSubFlowRef.current) {
+      // Sub-flow finished — pop back to the parent (which is still playing,
+      // resumes from `resumeFromStep`).
+      setTimeout(() => {
+        setFlowStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
+      }, 800)
+    } else {
+      // Root flow's cycle finished — stop playing so the header button flips
+      // back to "▶ Play". Otherwise the animation just loops indefinitely
+      // and the button is stuck on "⏸ Pause".
+      setPlaying(false)
+    }
   }, [])
 
   // Zoom transition when flow stack changes
