@@ -18,17 +18,16 @@
 
 <p align="center">
   <a href="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml"><img src="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://www.npmjs.com/package/openhop"><img src="https://img.shields.io/npm/v/openhop.svg?color=cb3837&label=npm" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
   <a href="https://github.com/naorsabag/OpenHop/stargazers"><img src="https://img.shields.io/github/stars/naorsabag/OpenHop?style=social" alt="GitHub stars" /></a>
 </p>
 
 <p align="center">
   <sub>Works with</sub><br/>
-  <img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" />
-  <img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" />
-  <img src="https://img.shields.io/badge/Windsurf-✓-262626?style=flat-square" alt="Windsurf" />
-  <img src="https://img.shields.io/badge/Cline-✓-262626?style=flat-square" alt="Cline" />
-  <img src="https://img.shields.io/badge/Continue.dev-advisory-666?style=flat-square" alt="Continue.dev (advisory)" />
+  <a href="https://docs.anthropic.com/en/docs/claude-code/skills"><img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" /></a>
+  <a href="https://cursor.com/docs/skills"><img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" /></a>
+  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex-✓-262626?style=flat-square" alt="OpenAI Codex" /></a>
 </p>
 
 ---
@@ -60,12 +59,13 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 
 ## Install
 
-| Scenario                           | Command                                                                                                                                  |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **One-shot demo**                  | `npx openhop demo` — boots everything and opens the browser                                                                              |
-| **Long-lived local server**        | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
-| **Install the agent skill**        | `npx openhop init` — copies `SKILL.md` into every detected AI client                                                                     |
-| **Run from source (contributors)** | `git clone … && npm install && npm run dev` — see [Contributing](#contributing)                                                          |
+| Scenario                                                     | Command                                                                                                                                  |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **One-shot demo**                                            | `npx openhop demo` — boots everything and opens the browser                                                                              |
+| **Long-lived local server**                                  | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
+| **Install the skill** (Claude Code, Cursor, Windsurf, Cline) | `npx openhop init` — auto-detects your AI client and drops `SKILL.md` in place                                                           |
+| **Install the skill** (Codex, Gemini, Junie, Copilot, …)     | `npx openskills install naorsabag/openhop` — universal install via OpenSkills                                                            |
+| **Run from source (contributors)**                           | `git clone https://github.com/naorsabag/OpenHop.git && cd OpenHop && npm install && npm run dev` — see [Contributing](#contributing)     |
 
 ## Give your agent the skill
 
