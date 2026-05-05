@@ -79,9 +79,9 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **One-shot demo**                       | `npx openhop demo` — boots everything and opens the browser                                                                              |
 | **Long-lived local server**             | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
-| **Install the skill — Tier 1**          | `npx openhop init` — auto-detects Claude Code, Cursor, Windsurf, Cline, Continue.dev and drops `SKILL.md` in place                       |
+| **Install the skill — Tier 1**          | `npx openhop init` — auto-detects Claude Code, Cursor, Windsurf, Cline (Continue.dev support is advisory) and drops `SKILL.md` in place  |
 | **Install the skill — everything else** | `npx openskills install naorsabag/openhop` — covers Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, …               |
-| **Run from source (contributors)**      | `git clone … && npm install && npm run dev` — see [Contributing](#contributing)                                                          |
+| **Run from source (contributors)**      | `git clone https://github.com/naorsabag/OpenHop.git && cd OpenHop && npm install && npm run dev` — see [Contributing](#contributing)     |
 
 ## Give your agent the skill
 
