@@ -356,7 +356,7 @@ function TreeItem({
                 e.stopPropagation()
                 onEditFlow(flowId)
               }}
-              title="Edit (E)"
+              title="Edit"
               className="font-pixel text-xs hover:text-accent transition-colors"
               style={{
                 background: 'transparent',

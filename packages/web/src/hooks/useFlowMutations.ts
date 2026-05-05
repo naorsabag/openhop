@@ -71,24 +71,32 @@ export function useFlowMutations() {
     }
   }, [])
 
-  const deleteFlow = useCallback(async (flowId: string): Promise<boolean> => {
+  // Returns the error directly (or null on success) instead of just a bool —
+  // callers that `await` then immediately read `mutations.error` would get
+  // stale closure state because the post-await `mutations` reference still
+  // points at the pre-setState render. Returning the error inline avoids
+  // that footgun.
+  const deleteFlow = useCallback(async (flowId: string): Promise<MutationError | null> => {
     setState({ inFlight: true, error: null })
     try {
       const res = await fetch(`${API_BASE}/api/flows/${flowId}`, { method: 'DELETE' })
       if (!res.ok && res.status !== 404) {
-        setState({
-          inFlight: false,
-          error: { kind: 'server', status: res.status, message: `HTTP ${res.status}` },
-        })
-        return false
+        const err: MutationError = {
+          kind: 'server',
+          status: res.status,
+          message: `HTTP ${res.status}`,
+        }
+        setState({ inFlight: false, error: err })
+        return err
       }
       // 404 is treated as success — already gone.
       setState({ inFlight: false, error: null })
-      return true
+      return null
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
-      setState({ inFlight: false, error: { kind: 'network', message } })
-      return false
+      const err: MutationError = { kind: 'network', message }
+      setState({ inFlight: false, error: err })
+      return err
     }
   }, [])
 

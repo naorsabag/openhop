@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import YAML from 'yaml'
 import { parseFlowYaml } from '@openhop/shared'
-import { buildStarterYaml } from '../src/components/FlowEditorModal'
+import { buildStarterYaml } from '../src/lib/starter-yaml'
 
 const VALID_YAML = `meta:
   title: Test
@@ -46,24 +46,35 @@ flow:
   })
 
   it('reports path + message + suggestion for an unknown step ref', () => {
+    // Use a typo close enough that the validator's findClosest() returns a
+    // suggestion (Levenshtein-bounded). Refer to "dbb" when "db" exists →
+    // "Did you mean \"db\"?". The earlier "nonexistent" pointed at no
+    // similar id and so the hint silently dropped, missing the contract.
     const bad = `meta:
   title: T
 flow:
   nodes:
-    - id: a
-      label: A
-      type: actor
+    - id: api
+      label: API
+      type: endpoint
+    - id: db
+      label: DB
+      type: database
   steps:
-    - from: a
-      to: nonexistent
+    - from: api
+      to: dbb
       data: x
 `
     const result = parseFlowYaml(bad)
     expect(result.success).toBe(false)
     expect(result.errors.length).toBeGreaterThan(0)
     const err = result.errors[0]
-    expect(err.path).toBeTruthy()
+    expect(err.path).toBe('flow.steps[0].to')
     expect(err.message.toLowerCase()).toContain('node')
+    // Lock the modal's "[path]: msg — hint" contract: dropping the
+    // suggestion would silently lose the typo hint.
+    expect(err.suggestion).toBeTruthy()
+    expect(err.suggestion?.toLowerCase()).toContain('did you mean')
   })
 
   it('returns a validation error when the YAML is malformed / empty', () => {

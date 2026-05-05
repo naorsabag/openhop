@@ -4,40 +4,7 @@ import { yaml as yamlLang } from '@codemirror/lang-yaml'
 import { parseFlowYaml } from '@openhop/shared'
 import type { ValidationError } from '@openhop/shared'
 import type { MutationError } from '../hooks/useFlowMutations'
-
-/**
- * Default seed used when the parent doesn't supply an `initialYaml`.
- * For path-aware "New flow" / "New folder" calls the parent should build a
- * starter via `buildStarterYaml(path)` and pass it explicitly.
- */
-const STARTER_YAML = `meta:
-  title: New flow
-flow:
-  nodes:
-    - id: browser
-      label: Browser
-      type: actor
-    - id: api
-      label: API
-      type: endpoint
-  steps:
-    - from: browser
-      to: api
-      data: request
-    - from: api
-      to: browser
-      data: response
-`
-
-/** Build the seed YAML for a "New flow" inside a given folder path. */
-export function buildStarterYaml(path?: string): string {
-  if (!path) return STARTER_YAML
-  // Inject `path:` under meta. Match the shape of STARTER_YAML literally.
-  return STARTER_YAML.replace(
-    /^meta:\n  title: New flow\n/,
-    `meta:\n  title: New flow\n  path: ${path}\n`
-  )
-}
+import { STARTER_YAML } from '../lib/starter-yaml'
 
 export interface FlowEditorModalProps {
   open: boolean
@@ -72,11 +39,19 @@ export function FlowEditorModal({
   const onSaveRef = useRef(onSave)
   const onCancelRef = useRef(onCancel)
   const textRef = useRef(text)
+  // While `saving` is true we freeze every dismiss + save trigger:
+  // POST /api/flows is non-idempotent, so allowing Cmd+Enter to fire twice
+  // (or Esc/backdrop to "dismiss" while a save is mid-flight) would create
+  // duplicate flows or hidden background saves. The Save button itself is
+  // already gated via disabled={!canSave}; this ref carries the same gate
+  // into the keyboard / backdrop / Cancel paths through the closure.
+  const savingRef = useRef(saving)
 
   useEffect(() => {
     onSaveRef.current = onSave
     onCancelRef.current = onCancel
     textRef.current = text
+    savingRef.current = saving
   })
 
   // Re-seed the editor whenever the modal opens with a new flow.
@@ -86,10 +61,12 @@ export function FlowEditorModal({
 
   const localValidation = useMemo(() => parseFlowYaml(text), [text])
 
-  // Keyboard shortcuts: Cmd/Ctrl-Enter saves, Esc cancels.
+  // Keyboard shortcuts: Cmd/Ctrl-Enter saves, Esc cancels. Both no-op while
+  // a save is in flight (see savingRef rationale above).
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
+      if (savingRef.current) return
       if (e.key === 'Escape') {
         e.preventDefault()
         onCancelRef.current()
@@ -116,7 +93,9 @@ export function FlowEditorModal({
       aria-label={title}
       data-testid="flow-editor-modal"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onCancel()
+        // Backdrop click dismisses, but only when no save is in flight — see
+        // savingRef rationale at the top of the component.
+        if (!saving && e.target === e.currentTarget) onCancel()
       }}
       style={{
         position: 'fixed',
@@ -150,7 +129,8 @@ export function FlowEditorModal({
           <button
             aria-label="Close"
             onClick={onCancel}
-            className="font-pixel text-text/60 hover:text-text transition-colors"
+            disabled={saving}
+            className="font-pixel text-text/60 hover:text-text transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ fontSize: 12, background: 'none', border: 'none', cursor: 'pointer' }}
           >
             ✕
@@ -214,7 +194,8 @@ export function FlowEditorModal({
           </span>
           <button
             onClick={onCancel}
-            className="font-pixel text-xs px-3 py-1 border transition-colors"
+            disabled={saving}
+            className="font-pixel text-xs px-3 py-1 border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               fontSize: 10,
               background: 'transparent',

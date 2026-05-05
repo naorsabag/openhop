@@ -7,7 +7,8 @@ import {
   InspectorToggle,
   type DockSide,
 } from './components/DataInspectionPanel'
-import { FlowEditorModal, buildStarterYaml } from './components/FlowEditorModal'
+import { FlowEditorModal } from './components/FlowEditorModal'
+import { buildStarterYaml } from './lib/starter-yaml'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import { useFlowMutations } from './hooks/useFlowMutations'
 import type { FlowNode, FlowStep, Flow } from './types'
@@ -102,9 +103,9 @@ function App() {
       const target = flows.find((f) => f.id === flowId)
       const label = target?.title ? `"${target.title}"` : flowId
       if (!window.confirm(`Delete flow ${label}? This cannot be undone.`)) return
-      const ok = await mutations.deleteFlow(flowId)
-      if (!ok) {
-        window.alert(`Failed to delete flow: ${mutations.error?.message ?? 'unknown error'}`)
+      const err = await mutations.deleteFlow(flowId)
+      if (err) {
+        window.alert(`Failed to delete flow: ${err.message}`)
         return
       }
       reloadFlows()
@@ -133,18 +134,18 @@ function App() {
           : `Delete folder "${folderPath}" and all ${targets.length} flows inside? This cannot be undone.`
       if (!window.confirm(msg)) return
 
-      let failed: string | null = null
+      let failure: { label: string; message: string } | null = null
       for (const target of targets) {
-        const ok = await mutations.deleteFlow(target.id)
-        if (!ok) {
-          failed = target.title || target.id
+        const err = await mutations.deleteFlow(target.id)
+        if (err) {
+          failure = { label: target.title || target.id, message: err.message }
           break
         }
       }
       reloadFlows()
-      if (failed) {
+      if (failure) {
         window.alert(
-          `Stopped after failing to delete "${failed}" — refresh to see what's left in the folder.`
+          `Stopped after failing to delete "${failure.label}" (${failure.message}) — refresh to see what's left in the folder.`
         )
         return
       }

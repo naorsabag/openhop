@@ -8,13 +8,19 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 8788,
-    // Allow access from any hostname — the dev server binds to 0.0.0.0 so
-    // contributors running inside docker / WSL / a dev container can hit it
-    // via `host.docker.internal`, the container's bridge IP, or a tunneled
-    // hostname. Vite's default host check rejects anything other than
-    // `localhost` with a 403 "host not allowed", which surprises people
-    // running everything inside docker-compose.
-    allowedHosts: true,
+    // Explicit allowlist (not `true`) — `allowedHosts: true` disables Vite's
+    // host-header validation entirely and opens the dev server up to DNS
+    // rebinding attacks (a malicious page can resolve a hostname back to the
+    // dev server and pull source). The defaults already cover localhost +
+    // every IP literal; we only need to add the docker/WSL hostnames a
+    // contributor might hit when running inside a container, plus an env-var
+    // escape hatch for tunneled hostnames (ngrok / cloudflared / etc.).
+    allowedHosts: [
+      'host.docker.internal',
+      'openhop',
+      '.localhost',
+      ...(process.env.VITE_ADDITIONAL_ALLOWED_HOSTS?.split(',').map((s) => s.trim()) ?? []),
+    ],
     proxy: {
       '/api': 'http://localhost:8787',
       '/health': 'http://localhost:8787',
