@@ -1,0 +1,51 @@
+name: pages
+
+# Builds the @openhop/web bundle in fragment mode (no API server, flows in
+# the URL hash) and deploys to GitHub Pages. Repo Settings → Pages must be
+# set to "Source: GitHub Actions" for the deploy to succeed.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one concurrent deploy; cancel any in-progress run when a newer push
+# lands so we don't ship a stale bundle on top of a fresh one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build web (fragment mode)
+        run: npm run build -w @openhop/web
+        env:
+          VITE_BASE: /OpenHop/
+          VITE_FRAGMENT_MODE: "1"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

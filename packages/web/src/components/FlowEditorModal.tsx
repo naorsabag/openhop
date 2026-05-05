@@ -18,6 +18,12 @@ export interface FlowEditorModalProps {
   serverError: MutationError | null
   onSave: (yamlText: string) => void
   onCancel: () => void
+  /**
+   * 'server' (default) — Save POSTs the YAML to /api/flows.
+   * 'fragment' — GitHub Pages deploy with no backend; Save copies the YAML
+   * into a sharable URL fragment and writes it to the clipboard.
+   */
+  mode?: 'server' | 'fragment'
 }
 
 /**
@@ -34,7 +40,9 @@ export function FlowEditorModal({
   serverError,
   onSave,
   onCancel,
+  mode = 'server',
 }: FlowEditorModalProps) {
+  const isFragment = mode === 'fragment'
   const [text, setText] = useState(initialYaml || STARTER_YAML)
   const onSaveRef = useRef(onSave)
   const onCancelRef = useRef(onCancel)
@@ -244,7 +252,9 @@ export function FlowEditorModal({
           style={{ borderTop: '1px solid #2a2a4a', background: '#1a1a2e' }}
         >
           <span className="font-terminal text-xs text-text/40 mr-auto">
-            ⌘/Ctrl-Enter to save · Esc to cancel
+            {isFragment
+              ? '⌘/Ctrl-Enter to copy URL · Esc to cancel'
+              : '⌘/Ctrl-Enter to save · Esc to cancel'}
           </span>
           <button
             onClick={onCancel}
@@ -273,7 +283,13 @@ export function FlowEditorModal({
             }}
             data-testid="flow-editor-save"
           >
-            {saving ? 'Saving…' : 'Save'}
+            {saving
+              ? isFragment
+                ? 'Copying…'
+                : 'Saving…'
+              : isFragment
+                ? 'Copy share URL'
+                : 'Save'}
           </button>
         </div>
       </div>
