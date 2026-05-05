@@ -46,6 +46,9 @@ export function FlowEditorModal({
   // already gated via disabled={!canSave}; this ref carries the same gate
   // into the keyboard / backdrop / Cancel paths through the closure.
   const savingRef = useRef(saving)
+  // Refs for focus management — see the focus-trap effect below.
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     onSaveRef.current = onSave
@@ -61,11 +64,60 @@ export function FlowEditorModal({
 
   const localValidation = useMemo(() => parseFlowYaml(text), [text])
 
-  // Keyboard shortcuts: Cmd/Ctrl-Enter saves, Esc cancels. Both no-op while
-  // a save is in flight (see savingRef rationale above).
+  // Focus management: on open, save the previously-focused element and move
+  // focus into the dialog. On close, restore focus. Without this, keyboard
+  // users could Tab into the sidebar/header behind the overlay even though
+  // role="dialog" + aria-modal are set.
+  useEffect(() => {
+    if (!open) return
+    previouslyFocusedRef.current = (document.activeElement as HTMLElement | null) ?? null
+    // Defer to next frame so the dialog's children (CodeMirror, buttons) are
+    // mounted and focusable.
+    const t = window.setTimeout(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+      if (first) first.focus()
+      else dialogRef.current?.focus()
+    }, 0)
+    return () => {
+      window.clearTimeout(t)
+      previouslyFocusedRef.current?.focus?.()
+    }
+  }, [open])
+
+  // Keyboard handler — combines:
+  //   - Esc: cancel (no-op while saving)
+  //   - Cmd/Ctrl-Enter: save (no-op while saving / invalid)
+  //   - Tab / Shift-Tab: trap focus inside the dialog
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusables = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        )
+        if (focusables.length === 0) return
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        const active = document.activeElement
+        // Edge cases: if focus is somehow outside the dialog, pull it back in.
+        if (active && !dialogRef.current.contains(active)) {
+          e.preventDefault()
+          ;(e.shiftKey ? last : first).focus()
+          return
+        }
+        if (e.shiftKey && active === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault()
+          first.focus()
+        }
+        return
+      }
       if (savingRef.current) return
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -88,10 +140,12 @@ export function FlowEditorModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={title}
       data-testid="flow-editor-modal"
+      tabIndex={-1}
       onClick={(e) => {
         // Backdrop click dismisses, but only when no save is in flight — see
         // savingRef rationale at the top of the component.
