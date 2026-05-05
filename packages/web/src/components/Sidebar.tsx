@@ -212,18 +212,15 @@ function TreeItem({
               addMenu?.setOpenForPath(menuOpen ? null : node.path)
             }}
             title="Add (flow or folder)"
-            className={`absolute right-2 top-1/2 -translate-y-1/2 font-pixel text-xs transition-opacity ${
-              menuOpen
-                ? 'opacity-100'
-                : 'opacity-0 group-hover/folder:opacity-100 focus:opacity-100'
-            }`}
+            className="absolute right-2 top-1/2 -translate-y-1/2 font-pixel text-sm transition-colors"
             style={{
               background: 'transparent',
               border: 'none',
-              color: menuOpen ? '#7df9ff' : 'rgba(224, 224, 255, 0.6)',
+              color: menuOpen ? '#7df9ff' : 'rgba(224, 224, 255, 0.55)',
               cursor: 'pointer',
               padding: '0 4px',
-              fontSize: 12,
+              fontSize: 14,
+              lineHeight: 1,
             }}
           >
             {'+'}
