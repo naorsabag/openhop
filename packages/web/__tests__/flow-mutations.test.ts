@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import YAML from 'yaml'
 import { parseFlowYaml } from '@openhop/shared'
+import { buildStarterYaml } from '../src/components/FlowEditorModal'
 
 const VALID_YAML = `meta:
   title: Test
@@ -95,5 +96,31 @@ flow:
 
   it('canned VALID_YAML is what the e2e fetch test would POST', () => {
     expect(parseFlowYaml(VALID_YAML).success).toBe(true)
+  })
+})
+
+describe('buildStarterYaml — path injection for the per-folder "+" menu', () => {
+  it('omits meta.path when no folder is provided (root creation)', () => {
+    const yamlText = buildStarterYaml()
+    const parsed = parseFlowYaml(yamlText)
+    expect(parsed.success).toBe(true)
+    const meta = (YAML.parse(yamlText) as { meta: { path?: string } }).meta
+    expect(meta.path).toBeUndefined()
+  })
+
+  it('injects meta.path when called with a folder path', () => {
+    const yamlText = buildStarterYaml('billing/payments')
+    const parsed = parseFlowYaml(yamlText)
+    expect(parsed.success).toBe(true)
+    const meta = (YAML.parse(yamlText) as { meta: { path?: string } }).meta
+    expect(meta.path).toBe('billing/payments')
+  })
+
+  it('preserves path through nested folder creation (folder-then-flow)', () => {
+    // Sidebar's handleCreateAt('folder', 'billing') prompts for a name, splices
+    // it onto the parent path, and calls buildStarterYaml('billing/<name>').
+    const yamlText = buildStarterYaml('billing/refunds')
+    const meta = (YAML.parse(yamlText) as { meta: { path?: string } }).meta
+    expect(meta.path).toBe('billing/refunds')
   })
 })

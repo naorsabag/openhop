@@ -5,6 +5,11 @@ import { parseFlowYaml } from '@openhop/shared'
 import type { ValidationError } from '@openhop/shared'
 import type { MutationError } from '../hooks/useFlowMutations'
 
+/**
+ * Default seed used when the parent doesn't supply an `initialYaml`.
+ * For path-aware "New flow" / "New folder" calls the parent should build a
+ * starter via `buildStarterYaml(path)` and pass it explicitly.
+ */
 const STARTER_YAML = `meta:
   title: New flow
 flow:
@@ -23,6 +28,16 @@ flow:
       to: browser
       data: response
 `
+
+/** Build the seed YAML for a "New flow" inside a given folder path. */
+export function buildStarterYaml(path?: string): string {
+  if (!path) return STARTER_YAML
+  // Inject `path:` under meta. Match the shape of STARTER_YAML literally.
+  return STARTER_YAML.replace(
+    /^meta:\n  title: New flow\n/,
+    `meta:\n  title: New flow\n  path: ${path}\n`
+  )
+}
 
 export interface FlowEditorModalProps {
   open: boolean

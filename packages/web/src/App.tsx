@@ -7,7 +7,7 @@ import {
   InspectorToggle,
   type DockSide,
 } from './components/DataInspectionPanel'
-import { FlowEditorModal } from './components/FlowEditorModal'
+import { FlowEditorModal, buildStarterYaml } from './components/FlowEditorModal'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import { useFlowMutations } from './hooks/useFlowMutations'
 import type { FlowNode, FlowStep, Flow } from './types'
@@ -46,16 +46,36 @@ function App() {
   const { flows, loading: listLoading, reload: reloadFlows } = useFlowList()
   const { flow: apiFlow, loading: flowLoading } = useFlowData(selectedFlowId)
 
-  // Editor modal state. mode='new' opens a blank editor; mode='edit' pre-populates.
+  // Editor modal state. mode='new' opens with a (path-aware) starter YAML;
+  // mode='edit' pre-populates from the stored flow.
   const [editor, setEditor] = useState<
-    { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; flowId: string; initialYaml: string }
+    | { mode: 'closed' }
+    | { mode: 'new'; initialYaml: string }
+    | { mode: 'edit'; flowId: string; initialYaml: string }
   >({ mode: 'closed' })
   const mutations = useFlowMutations()
 
-  const handleNewFlow = useCallback(() => {
-    mutations.reset()
-    setEditor({ mode: 'new' })
-  }, [mutations])
+  // Sidebar's per-folder "+" menu calls this with kind='flow'|'folder' and the
+  // parent folder path ('' for root). For 'folder' we prompt for a name and
+  // splice it into the path, so the modal opens with `meta.path: <parent>/<name>`.
+  const handleCreateAt = useCallback(
+    (kind: 'flow' | 'folder', parentPath: string) => {
+      mutations.reset()
+      let path = parentPath
+      if (kind === 'folder') {
+        const raw = window.prompt('New folder name:')
+        if (!raw) return
+        const name = raw
+          .trim()
+          .replace(/^\/+|\/+$/g, '')
+          .replace(/\s+/g, '-')
+        if (!name) return
+        path = parentPath ? `${parentPath}/${name}` : name
+      }
+      setEditor({ mode: 'new', initialYaml: buildStarterYaml(path || undefined) })
+    },
+    [mutations]
+  )
 
   const handleEditFlow = useCallback(
     async (flowId: string) => {
@@ -300,7 +320,7 @@ function App() {
           loading={listLoading}
           selectedFlowId={selectedFlowId}
           onSelectFlow={selectFlow}
-          onNewFlow={handleNewFlow}
+          onCreateAt={handleCreateAt}
           onEditFlow={handleEditFlow}
           onDeleteFlow={handleDeleteFlow}
         />
@@ -423,7 +443,7 @@ function App() {
       <FlowEditorModal
         open={editor.mode !== 'closed'}
         title={editor.mode === 'edit' ? 'Edit flow' : 'New flow'}
-        initialYaml={editor.mode === 'edit' ? editor.initialYaml : ''}
+        initialYaml={editor.mode === 'closed' ? '' : editor.initialYaml}
         saving={mutations.inFlight}
         serverError={mutations.error}
         onSave={handleEditorSave}
