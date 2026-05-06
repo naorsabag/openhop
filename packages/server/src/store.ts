@@ -21,10 +21,27 @@ interface StoredFlowFile {
   root: Root // the full Root object on disk
 }
 
+/**
+ * Resolve the default storage directory. Order:
+ *   1. Constructor `dir` arg (explicit override, used by tests)
+ *   2. `OPENHOP_DATA_DIR` env var (per-process / per-deployment override)
+ *   3. `<homedir>/.openhop/flows` (cross-OS default — Linux:
+ *      `/home/<user>/`, macOS: `/Users/<user>/`, Windows:
+ *      `C:\Users\<user>\`).
+ *
+ * Flows persist across server restarts: the same user account on the
+ * same machine always sees the same flow set, even after `npx openhop
+ * demo` / `serve` is killed and re-run. Set `OPENHOP_DATA_DIR=...` to
+ * isolate (e.g. ephemeral demo, per-project workspace, CI fixture).
+ */
+function defaultDataDir(): string {
+  return process.env.OPENHOP_DATA_DIR || join(homedir(), '.openhop', 'flows')
+}
+
 export class FlowStore {
   private initialized = false
 
-  constructor(private dir: string = join(homedir(), '.openhop', 'flows')) {}
+  constructor(private dir: string = defaultDataDir()) {}
 
   private async ensureDir(): Promise<void> {
     if (this.initialized) return
