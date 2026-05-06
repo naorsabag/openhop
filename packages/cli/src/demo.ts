@@ -132,7 +132,7 @@ export function registerDemo(program: Command): void {
       let web: { url: string; close: () => Promise<void> }
       try {
         const { startWebServer } = await import('./web-server.js')
-        web = await startWebServer({ port: webPort })
+        web = await startWebServer({ port: webPort, apiUrl: api.url })
       } catch (err) {
         errStderr(red(`✗ Failed to start web UI: ${errorMessage(err)}`))
         await api.close()

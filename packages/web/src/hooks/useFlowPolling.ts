@@ -56,9 +56,19 @@ export function useFlowData(flowId: string | null) {
       return
     }
     setLoading(true)
+    setFlow(null)
     fetch(`${API_BASE}/api/flows/${flowId}`)
-      .then((r) => r.json())
-      .then((data) => {
+      .then(async (r) => {
+        // 404 / 5xx / etc → treat as "no flow"; the App's `!apiFlow` branch
+        // renders the "Flow not found" UX. Without this the error body
+        // (`{"error":"not_found",...}`) would slip through .json() and
+        // produce a flow object with `flow: undefined`, crashing the
+        // canvas on `flow.steps`/`flow.nodes` access.
+        if (!r.ok) {
+          setLoading(false)
+          return
+        }
+        const data = await r.json()
         setFlow({ meta: data.meta, flow: data.flow }) // StoredFlow has { id, meta, flow, version, ... }
         versionRef.current = data.version
         setLoading(false)
@@ -72,10 +82,12 @@ export function useFlowData(flowId: string | null) {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`${API_BASE}/api/flows/${flowId}/version`)
+        if (!res.ok) return // Flow gone (e.g. deleted from another tab) — leave state for now.
         const { version } = await res.json()
         if (version > versionRef.current) {
           // Version changed — re-fetch full flow
           const fullRes = await fetch(`${API_BASE}/api/flows/${flowId}`)
+          if (!fullRes.ok) return
           const data = await fullRes.json()
           setFlow({ meta: data.meta, flow: data.flow })
           versionRef.current = data.version
