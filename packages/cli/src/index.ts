@@ -50,7 +50,7 @@ if (process.argv.includes('--api-version')) {
 
 const program = new Command()
 
-program.name('openhop').description('OpenHop — Data Flow Visualization CLI').version('0.1.0-beta.0')
+program.name('openhop').description('OpenHop — Data Flow Visualization CLI').version('0.1.0-beta.1')
 
 // --- serve ---
 //
@@ -87,7 +87,7 @@ program
       logStderr(dim(`Starting OpenHop web UI on port ${webPort}...`))
       try {
         const { startWebServer } = await import('./web-server.js')
-        web = await startWebServer({ port: webPort })
+        web = await startWebServer({ port: webPort, apiUrl: api.url })
       } catch (err) {
         errStderr(red(`Failed to start web UI: ${errorMessage(err)}`))
         // Web failure is non-fatal — API can still run for headless agents.
