@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/image.png" width="720" alt="OpenHop — animated data-flow diagram" />
+  <img src="docs/order-flow.gif" width="720" alt="OpenHop animating an end-to-end order flow" />
 </p>
 
 <p align="center">
