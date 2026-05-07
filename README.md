@@ -1,11 +1,7 @@
-<h1 align="center">OpenHop</h1>
+# 🐇 OpenHop — Diagrams your AI agent can write
 
 <p align="center">
-  <img src="docs/logo.png" width="600" alt="OpenHop logo" />
-</p>
-
-<p align="center">
-  <b>Diagrams your AI agent can write.</b><br/>
+  <img src="docs/logo.png" width="600" alt="OpenHop logo" /><br/>
   Animated, multi-level data flows — described in YAML, drawn by your coding agent.
 </p>
 
