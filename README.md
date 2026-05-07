@@ -16,6 +16,12 @@
 </p>
 
 <p align="center">
+  <a href="https://docs.anthropic.com/en/docs/claude-code/skills"><img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" /></a>
+  <a href="https://cursor.com/docs/skills"><img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" /></a>
+  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex-✓-262626?style=flat-square" alt="OpenAI Codex" /></a>
+</p>
+
+<p align="center">
   <img src="docs/order-flow.gif" width="720" alt="OpenHop animating an end-to-end order flow" />
 </p>
 
@@ -24,13 +30,6 @@
   <a href="#give-your-agent-the-skill">AI skill</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a>
-</p>
-
-<p align="center">
-  <sub>Works with</sub><br/>
-  <a href="https://docs.anthropic.com/en/docs/claude-code/skills"><img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" /></a>
-  <a href="https://cursor.com/docs/skills"><img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" /></a>
-  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex-✓-262626?style=flat-square" alt="OpenAI Codex" /></a>
 </p>
 
 ---
