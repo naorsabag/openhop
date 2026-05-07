@@ -1,6 +1,10 @@
 <h1 align="center">OpenHop</h1>
 
 <p align="center">
+  <img src="docs/logo.png" width="600" alt="OpenHop logo" />
+</p>
+
+<p align="center">
   <b>Diagrams your AI agent can write.</b><br/>
   Animated, multi-level data flows — described in YAML, drawn by your coding agent.
 </p>
@@ -17,10 +21,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml"><img src="https://github.com/naorsabag/OpenHop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/naorsabag/openhop/actions/workflows/ci.yml"><img src="https://github.com/naorsabag/openhop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://www.npmjs.com/package/openhop"><img src="https://img.shields.io/npm/v/openhop.svg?color=cb3837&label=npm" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
-  <a href="https://github.com/naorsabag/OpenHop/stargazers"><img src="https://img.shields.io/github/stars/naorsabag/OpenHop?style=social" alt="GitHub stars" /></a>
+  <a href="https://github.com/naorsabag/openhop/stargazers"><img src="https://img.shields.io/github/stars/naorsabag/openhop?style=social" alt="GitHub stars" /></a>
 </p>
 
 <p align="center">
@@ -65,7 +69,7 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 | **Long-lived local server**                                  | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
 | **Install the skill** (Claude Code, Cursor, Windsurf, Cline) | `npx openhop init` — auto-detects your AI client and drops `SKILL.md` in place                                                           |
 | **Install the skill** (Codex, Gemini, Junie, Copilot, …)     | `npx openskills install naorsabag/openhop` — universal install via OpenSkills                                                            |
-| **Run from source (contributors)**                           | `git clone https://github.com/naorsabag/OpenHop.git && cd OpenHop && npm install && npm run dev` — see [Contributing](#contributing)     |
+| **Run from source (contributors)**                           | `git clone https://github.com/naorsabag/openhop.git && cd openhop && npm install && npm run dev` — see [Contributing](#contributing)     |
 
 ## Give your agent the skill
 
@@ -132,7 +136,7 @@ openhop push examples/order-flow.yaml
 ## Contributing
 
 PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-Security reports via [GitHub's private vulnerability reporting](https://github.com/naorsabag/OpenHop/security/advisories/new).
+Security reports via [GitHub's private vulnerability reporting](https://github.com/naorsabag/openhop/security/advisories/new).
 
 ## License
 
