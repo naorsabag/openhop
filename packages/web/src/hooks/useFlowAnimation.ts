@@ -240,9 +240,12 @@ export function useFlowAnimation(
 
   useEffect(() => {
     if (playing) {
-      if (phaseRef.current && pauseOffsetMsRef.current > 0) {
-        // Resuming from a pause mid-step. Re-enter the same phase with the
-        // captured offset so timer + DataPixel rAF pick up where they left off.
+      if (phaseRef.current) {
+        // Resuming inside a known phase — either pause mid-step (offset > 0)
+        // or after a manual scrub via goToStep (offset = 0). In both cases
+        // we want to continue the current phase from `offset` rather than
+        // call advanceStep, which would increment past the step the user
+        // is currently looking at.
         const phase = phaseRef.current
         const offset = pauseOffsetMsRef.current
         pauseOffsetMsRef.current = 0
@@ -394,6 +397,15 @@ export function useFlowAnimation(
       stepIndexRef.current = idx
       const mapping = mappingsRef.current[idx]
       if (!mapping) return
+
+      // Mark the phase as 'pixel-active' so a subsequent Play takes the
+      // resume path (enterPhase('pixel-active', 0)) and the current step
+      // gets its full pixel-active duration before advancing. Without this
+      // the resume path saw phaseRef=null and fell into the fresh-start
+      // branch, which calls advanceStep() — that increments stepIndex,
+      // skipping the step the user just scrubbed to.
+      phaseRef.current = 'pixel-active'
+      phaseStartedAtRef.current = performance.now()
 
       setState((prev) => ({
         ...prev,
