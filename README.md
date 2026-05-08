@@ -27,7 +27,7 @@
 
 <p align="center">
   <a href="#try-it-in-60-seconds">Quickstart</a> ·
-  <a href="#give-your-agent-the-skill">AI skill</a> ·
+  <a href="#install">Install</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a>
@@ -63,27 +63,50 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 
 ## Install
 
-| Scenario                                                     | Command                                                                                                                                  |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **One-shot demo**                                            | `npx openhop demo` — boots everything and opens the browser                                                                              |
-| **Long-lived local server**                                  | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
-| **Install the skill** (Claude Code, Cursor, Windsurf, Cline) | `npx openhop init` — auto-detects your AI client and drops `SKILL.md` in place                                                           |
-| **Install the skill** (Codex, Gemini, Junie, Copilot, …)     | `npx openskills install naorsabag/openhop` — universal install via OpenSkills                                                            |
-| **Run from source (contributors)**                           | `git clone https://github.com/naorsabag/openhop.git && cd openhop && npm install && npm run dev` — see [Contributing](#contributing)     |
+OpenHop has two pieces and they do different things:
 
-## Give your agent the skill
+1. **The local CLI + server** — runs on `:8787` (API) and `:8788` (web UI). Renders flows.
+2. **The skill** — a `SKILL.md` file that lives in your AI agent's config dir. Teaches the agent how to call the CLI.
 
-OpenHop ships a skill file at [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md) that teaches any
-SKILL-compatible agent how to use OpenHop.
+You need the **CLI** to see anything render. You need the **skill** if you want your AI agent to call it for you. Most people want both.
 
-For Claude Code, copy the skill into your skills directory:
+### Path A — just kicking the tires (no agent setup)
 
 ```bash
-mkdir -p ~/.claude/skills/openhop
-cp skills/openhop/SKILL.md ~/.claude/skills/openhop/
+npx openhop demo
 ```
 
-That's it — the agent now knows how to use OpenHop. Open your codebase in any SKILL-compatible client and ask it for a flow (see [Use cases](#use-cases) below for prompt ideas). The agent loads the skill, sketches the flow in YAML, calls `openhop push`, and hands you back a URL with the animation playing.
+Installs the CLI on first run, starts the server, pushes a canonical OAuth example, and opens it in your browser. Press Ctrl-C to stop. **This is the fastest way to see what OpenHop does**, and it's all you need if you only want to look at example flows.
+
+### Path B — agent-driven use (the actual product)
+
+You need both pieces installed.
+
+**Step 1 — install the skill** so your agent knows how to call OpenHop:
+
+| Client                                             | One-time command                           |
+| -------------------------------------------------- | ------------------------------------------ |
+| Claude Code, Cursor, Windsurf, Cline, Continue     | `npx openhop init`                         |
+| Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, … | `npx openskills install naorsabag/openhop` |
+
+**Step 2 — run the server** in a terminal you'll keep open:
+
+```bash
+npx openhop serve
+```
+
+That's the long-lived form of `npx openhop demo` — same API + web UI, no starter flow. Leave it running.
+
+**Step 3 — ask your agent for a flow** (see [Use cases](#use-cases) for prompt ideas). The agent generates YAML, pushes it via `openhop push`, hands you back a URL with the animation playing.
+
+### Path C — contributor (run from source)
+
+```bash
+git clone https://github.com/naorsabag/openhop.git
+cd openhop && npm install && npm run dev
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Use cases
 
