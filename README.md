@@ -37,8 +37,6 @@
 
 ## Try it in 60 seconds
 
-Install the skill:
-
 ```bash
 npx openhop init
 ```
