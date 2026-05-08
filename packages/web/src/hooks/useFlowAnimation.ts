@@ -103,6 +103,10 @@ export function useFlowAnimation(
   const phaseRef = useRef<'pixel-active' | 'gap' | null>(null)
   const phaseStartedAtRef = useRef<number>(0)
   const pauseOffsetMsRef = useRef<number>(0)
+  // Stable ref to the latest `advanceStep`, so `enterPhase` (which has [] deps
+  // to keep the timer chain stable) always invokes the current closure even
+  // if `steps.length` changes mid-playback.
+  const advanceStepRef = useRef<() => void>(() => {})
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) {
@@ -195,6 +199,11 @@ export function useFlowAnimation(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steps.length])
 
+  // Keep the ref pointing at the latest advanceStep closure so `enterPhase`'s
+  // gap-phase timer fires the current implementation, not a stale one captured
+  // when enterPhase was first created.
+  advanceStepRef.current = advanceStep
+
   // Schedule the timer for the given phase, accepting an `offset` so we can
   // resume mid-phase after a pause. `offset = 0` means the phase just started.
   const enterPhase = useCallback((phase: 'pixel-active' | 'gap', offset: number) => {
@@ -223,7 +232,7 @@ export function useFlowAnimation(
       timerRef.current = setTimeout(() => {
         if (!playingRef.current) return
         phaseRef.current = null
-        advanceStep()
+        advanceStepRef.current()
       }, remaining)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

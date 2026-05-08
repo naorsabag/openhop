@@ -158,6 +158,7 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     <div
       role="group"
       aria-label={`Node: ${label}`}
+      title={label}
       data-id={id}
       onClick={handleNodeClick}
       style={{
@@ -243,7 +244,6 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         }}
       >
         <span
-          title={label}
           style={{
             position: 'absolute',
             top: 0,

@@ -261,7 +261,7 @@ flow:
 ### Node
 
 - `id` (required): alphanumeric + hyphens + underscores
-- `label` (required): display name — **freeform**, anything human-readable (`"Stripe Payment Gateway"`, `"Customer #1"`, `"Order Service v2"`)
+- `label` (required): display name — short noun phrase, **≤ 4 words** so it fits the fixed-width label slot (`"Stripe"`, `"Order Service"`, `"Auth API"`). Longer labels truncate with "…".
 - `type`: **closed enum, exactly one of**: `actor | endpoint | auth | database | external | cache | queue | service | docker | k8s | scheduler | custom`. Anything else fails validation. Default if omitted: `service`.
 - `icon`: Iconify icon ID (e.g. `"logos:postgresql"`) — overlays on top of the node's pixel art. Works on any `type`, not just `custom`. Browse: https://icon-sets.iconify.design/logos/
 - `color`: hex color
