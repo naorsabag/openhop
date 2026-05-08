@@ -67,31 +67,31 @@ OpenHop is a skill — a `SKILL.md` file your AI agent reads to learn how to ren
 
 Pick the install path that matches your AI client.
 
-### Path A — Claude Code, Cursor, Windsurf, Cline, Continue
+#### Path A — Claude Code, Cursor, Windsurf, Cline, Continue
 
 ```bash
 npx openhop init
 ```
 
-### Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, … (via [OpenSkills](https://github.com/numman-ali/openskills))
+#### Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, … (via [OpenSkills](https://github.com/numman-ali/openskills))
 
 ```bash
 npx openskills install naorsabag/openhop
 ```
 
-### Want to start the server yourself?
+#### Want to start the server yourself?
 
 ```bash
 npx openhop serve
 ```
 
-### Just looking?
+#### Just looking?
 
 ```bash
 npx openhop demo
 ```
 
-### Contributors
+#### Contributors
 
 ```bash
 git clone https://github.com/naorsabag/openhop.git
