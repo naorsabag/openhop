@@ -18,7 +18,7 @@ The agent generates the YAML, pushes it via `openhop push`, and returns a URL wi
 
 ## Commands
 
-```
+```text
 openhop init                         # install the SKILL.md into every detected AI client
 openhop serve                        # start API server on :8787 + web UI on :8788
 openhop push <file.yaml>             # create a flow → returns ID + URL
