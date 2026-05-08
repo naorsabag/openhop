@@ -81,11 +81,18 @@ mkdir -p ~/.claude/skills/openhop
 cp skills/openhop/SKILL.md ~/.claude/skills/openhop/
 ```
 
-Then ask your agent:
+Then ask your agent things like:
 
-> "Walk me through the OAuth flow in this codebase."
+- _"Walk me through the OAuth flow in this codebase."_
+- _"Diagram how a request flows through this Express app."_
+- _"Show me how the checkout pipeline processes an order, end to end."_
+- _"Trace what happens when a user clicks **Submit**."_
+- _"Visualize the auth middleware — every step, every state transition."_
+- _"How does cache invalidation work in this service?"_
+- _"Diagram the WebSocket reconnection state machine."_
+- _"Walk me through what happens after `npm publish` — every step until the package is on the registry."_
 
-The agent will sketch the nodes in YAML, push via `openhop push`, and hand you back a URL.
+The agent loads the skill, sketches the flow in YAML, calls `openhop push`, and hands you back a URL with the animation playing.
 
 ## CLI
 
@@ -148,6 +155,10 @@ openhop push examples/order-flow.yaml
 
 PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 Security reports via [GitHub's private vulnerability reporting](https://github.com/naorsabag/openhop/security/advisories/new).
+
+## Contact
+
+General questions: open a [GitHub issue](https://github.com/naorsabag/openhop/issues/new) or email [openhop.dev@gmail.com](mailto:openhop.dev@gmail.com).
 
 ## License
 
