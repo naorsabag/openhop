@@ -685,11 +685,14 @@ function FlowCanvasInner({
               onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
               delayMs={plan.delayMs || undefined}
               dataOverride={dataObj}
+              paused={!playing}
             />
           )
         })}
 
-      {/* Data pixel overlay — manual (click-to-fire) */}
+      {/* Data pixel overlay — manual (click-to-fire). These animate
+          unconditionally — pause is for the autoplay loop only; a click
+          should always play out its single step regardless of global state. */}
       {manualPixels.map((mp) => (
         <DataPixel
           key={mp.id}

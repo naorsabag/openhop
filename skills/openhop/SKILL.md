@@ -84,6 +84,7 @@ Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin)
 - `type` must be one of the 12 enum values (see Schema Reference below). `transform`, `validation`, `redis`, `oauth`, etc. are **not** valid types.
 - `data` is a `string` or an object — never a list. `data: "request"` ✓, `data: { label: "request", fields: [...] }` ✓, `data: [{ name: "request" }]` ✗
 - `id` is alphanumeric + hyphens + underscores only.
+- **Node `label` must be ≤ 4 words.** Labels render under each node in a fixed-width box; longer labels truncate with "…" and read poorly. Pick the shortest noun phrase that identifies the component. ✓ `Order Service`, `Auth API`, `Stripe`. ✗ `Order Processing Service With Retries`, `User Authentication and Authorization API`.
 
 If the validator rejects your flow, **read the error path** — it tells you exactly which field is wrong.
 
@@ -260,7 +261,7 @@ flow:
 ### Node
 
 - `id` (required): alphanumeric + hyphens + underscores
-- `label` (required): display name — **freeform**, anything human-readable (`"Stripe Payment Gateway"`, `"Customer #1"`, `"Order Service v2"`)
+- `label` (required): display name — short noun phrase, **≤ 4 words** so it fits the fixed-width label slot (`"Stripe"`, `"Order Service"`, `"Auth API"`). Longer labels truncate with "…".
 - `type`: **closed enum, exactly one of**: `actor | endpoint | auth | database | external | cache | queue | service | docker | k8s | scheduler | custom`. Anything else fails validation. Default if omitted: `service`.
 - `icon`: Iconify icon ID (e.g. `"logos:postgresql"`) — overlays on top of the node's pixel art. Works on any `type`, not just `custom`. Browse: https://icon-sets.iconify.design/logos/
 - `color`: hex color

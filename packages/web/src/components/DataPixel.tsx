@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useViewport } from '@xyflow/react'
 import type { FlowStep, FlowData } from '../types'
 import { DataTooltip } from './DataTooltip'
 
@@ -25,6 +26,10 @@ interface DataPixelProps {
   onPixelClick?: (step: FlowStep, position: { x: number; y: number }) => void
   delayMs?: number
   dataOverride?: FlowData
+  /** When true, freeze the pixel mid-flight: each tick re-anchors the
+   *  start time so `elapsed` doesn't advance, leaving the pixel rendered
+   *  at its current position. On resume the pixel continues from there. */
+  paused?: boolean
 }
 
 const PIXEL_SIZE = 28
@@ -44,15 +49,27 @@ export function DataPixel({
   onPixelClick,
   delayMs,
   dataOverride,
+  paused = false,
 }: DataPixelProps) {
   const pixelRef = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
+  const lastTickTimeRef = useRef<number>(0)
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
   const onCompleteRef = useRef(onAnimationComplete)
   useEffect(() => {
     onCompleteRef.current = onAnimationComplete
   }, [onAnimationComplete])
+  // Reactive viewport from React Flow's store. Without this we were regex-
+  // parsing `viewport.style.transform`, which fails when RF emits a `matrix(…)`
+  // form — `scale` fell back to 1, so the carrot stayed at its base size and
+  // drifted off the path on zoom. Using the store directly keeps the carrot
+  // anchored and sized in sync with the rest of the canvas.
+  const viewport = useViewport()
+  const viewportRef = useRef(viewport)
+  viewportRef.current = viewport
   const [hovered, setHovered] = useState(false)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
   // pixelColor (palette cycling / data.color) > sourceNodeColor (variant
@@ -77,15 +94,26 @@ export function DataPixel({
     )
     if (!edgePath) return
 
-    // Get the viewport transform from React Flow
-    const viewport = container.querySelector<HTMLDivElement>('.react-flow__viewport')
-    if (!viewport) return
-
     const totalLength = edgePath.getTotalLength()
     if (totalLength === 0) return
 
     const tick = (timestamp: number) => {
+      // Always initialize startTimeRef on the first tick — without this,
+      // a manual pixel fired while paused saw startTimeRef=0 and elapsed
+      // computed to a huge timestamp, snapping the carrot to the edge end
+      // (visually: a pixel hovering on the next node instead of starting
+      // at the source).
+      const wasPaused = pausedRef.current
       if (!startTimeRef.current) startTimeRef.current = timestamp + (delayMs ?? 0)
+      // Pause: shift startTimeRef forward by however long this paused tick
+      // covered, so `elapsed` stays constant. The position-update logic
+      // below STILL runs each frame so the carrot can react to zoom changes
+      // while paused (without this, zooming during pause left the carrot
+      // glued to its pre-pause screen position + size).
+      if (wasPaused && lastTickTimeRef.current > 0) {
+        startTimeRef.current += timestamp - lastTickTimeRef.current
+      }
+      lastTickTimeRef.current = timestamp
 
       const elapsed = timestamp - startTimeRef.current
       const progress = Math.min(elapsed / (ANIMATION_DURATION_BASE / getSpeed()), 1)
@@ -96,41 +124,36 @@ export function DataPixel({
 
       const point = edgePath.getPointAtLength((reverse ? 1 - eased : eased) * totalLength)
 
-      // Get the viewport transform to convert SVG coordinates to screen coordinates
-      const viewportTransform = viewport.style.transform
-      const match = viewportTransform.match(
-        /translate\(([^,]+)px,\s*([^)]+)px\)\s*scale\(([^)]+)\)/
-      )
-
-      let tx = 0
-      let ty = 0
-      let scale = 1
-      if (match) {
-        tx = parseFloat(match[1])
-        ty = parseFloat(match[2])
-        scale = parseFloat(match[3])
-      }
-
-      const screenX = point.x * scale + tx
-      const screenY = point.y * scale + ty
-      const scaledPixelSize = PIXEL_SIZE * scale
-      const scaledLabelFontSize = 11 * scale
+      // Read the live viewport (x, y, zoom) from the React Flow store. This
+      // replaces a regex-parse of `viewport.style.transform` which didn't
+      // handle every transform format RF emits — when the regex missed, zoom
+      // fell back to 1, the carrot stayed at base size and drifted off the
+      // (zoomed) path. Reading from the store keeps everything in lockstep
+      // with the rest of the canvas.
+      const { x: tx, y: ty, zoom } = viewportRef.current
+      const screenX = point.x * zoom + tx
+      const screenY = point.y * zoom + ty
+      const pixelSize = PIXEL_SIZE * zoom
+      const labelFontSize = 11 * zoom
 
       setPosition({ x: screenX, y: screenY })
 
       if (pixelRef.current) {
-        pixelRef.current.style.width = `${scaledPixelSize}px`
-        pixelRef.current.style.height = `${scaledPixelSize}px`
-        pixelRef.current.style.transform = `translate(${screenX - scaledPixelSize / 2}px, ${screenY - scaledPixelSize / 2}px)`
+        pixelRef.current.style.width = `${pixelSize}px`
+        pixelRef.current.style.height = `${pixelSize}px`
+        pixelRef.current.style.transform = `translate(${screenX - pixelSize / 2}px, ${screenY - pixelSize / 2}px)`
         pixelRef.current.style.opacity = '1'
       }
       if (labelRef.current) {
-        labelRef.current.style.fontSize = `${scaledLabelFontSize}px`
-        labelRef.current.style.transform = `translate(${screenX + scaledPixelSize / 2 + 4 * scale}px, ${screenY - 6 * scale}px)`
+        labelRef.current.style.fontSize = `${labelFontSize}px`
+        labelRef.current.style.transform = `translate(${screenX + pixelSize / 2 + 4 * zoom}px, ${screenY - 6 * zoom}px)`
         labelRef.current.style.opacity = '1'
       }
 
-      if (progress < 1) {
+      // Keep ticking while paused (so zoom updates land), and while still
+      // animating. Only fire the completion callback when truly done AND not
+      // paused — otherwise a paused-at-edge-end pixel would get destroyed.
+      if (wasPaused || progress < 1) {
         rafRef.current = requestAnimationFrame(tick)
       } else if (onCompleteRef.current) {
         onCompleteRef.current()
@@ -138,6 +161,7 @@ export function DataPixel({
     }
 
     startTimeRef.current = 0
+    lastTickTimeRef.current = 0
     rafRef.current = requestAnimationFrame(tick)
   }, [edgeId, reverse, containerRef, delayMs])
 

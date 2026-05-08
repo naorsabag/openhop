@@ -94,6 +94,20 @@ export function useFlowAnimation(
   const mappingsRef = useRef(stepMappings)
   mappingsRef.current = stepMappings
 
+  // Phase-aware pause/resume state. Each step plays in two phases:
+  //   1. 'pixel-active' — pixel travelling along the edge, edges + nodes lit
+  //   2. 'gap' — pixel cleared, brief delay before next step
+  // Pause captures phase + elapsed so resume picks up where it left off
+  // instead of jumping to the next step (the prior bug: the active state
+  // was cleared on pause and the chain restarted from advanceStep).
+  const phaseRef = useRef<'pixel-active' | 'gap' | null>(null)
+  const phaseStartedAtRef = useRef<number>(0)
+  const pauseOffsetMsRef = useRef<number>(0)
+  // Stable ref to the latest `advanceStep`, so `enterPhase` (which has [] deps
+  // to keep the timer chain stable) always invokes the current closure even
+  // if `steps.length` changes mid-playback.
+  const advanceStepRef = useRef<() => void>(() => {})
+
   const clearTimers = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current)
@@ -181,52 +195,81 @@ export function useFlowAnimation(
       destroyedNodes: new Set(destroyedNodesRef.current),
     }))
 
-    timerRef.current = setTimeout(() => {
-      if (!playingRef.current) return
-
-      setState((prev) => ({
-        ...prev,
-        activeEdgeIds: new Set<string>(),
-        activeEdgeFlows: [],
-        activeFromIds: new Set<string>(),
-        activeToIds: new Set<string>(),
-        activeStep: null,
-        nodeProgress: new Map(nodeProgressRef.current),
-      }))
-
-      timerRef.current = setTimeout(
-        () => {
-          advanceStep()
-        },
-        (STEP_DURATION_BASE - PIXEL_DURATION_BASE) / getSpeed()
-      )
-    }, PIXEL_DURATION_BASE / getSpeed())
+    enterPhase('pixel-active', 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steps.length])
 
+  // Keep the ref pointing at the latest advanceStep closure so `enterPhase`'s
+  // gap-phase timer fires the current implementation, not a stale one captured
+  // when enterPhase was first created.
+  advanceStepRef.current = advanceStep
+
+  // Schedule the timer for the given phase, accepting an `offset` so we can
+  // resume mid-phase after a pause. `offset = 0` means the phase just started.
+  const enterPhase = useCallback((phase: 'pixel-active' | 'gap', offset: number) => {
+    phaseRef.current = phase
+    phaseStartedAtRef.current = performance.now() - offset
+    const speed = getSpeed()
+
+    if (phase === 'pixel-active') {
+      const remaining = Math.max(0, PIXEL_DURATION_BASE / speed - offset)
+      timerRef.current = setTimeout(() => {
+        if (!playingRef.current) return
+        setState((prev) => ({
+          ...prev,
+          activeEdgeIds: new Set<string>(),
+          activeEdgeFlows: [],
+          activeFromIds: new Set<string>(),
+          activeToIds: new Set<string>(),
+          activeStep: null,
+          nodeProgress: new Map(nodeProgressRef.current),
+        }))
+        enterPhase('gap', 0)
+      }, remaining)
+    } else {
+      const gapMs = (STEP_DURATION_BASE - PIXEL_DURATION_BASE) / speed
+      const remaining = Math.max(0, gapMs - offset)
+      timerRef.current = setTimeout(() => {
+        if (!playingRef.current) return
+        phaseRef.current = null
+        advanceStepRef.current()
+      }, remaining)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     if (playing) {
-      // Delay first step so React Flow has time to render edges (important for sub-flow drill-down)
-      timerRef.current = setTimeout(() => {
-        advanceStep()
-      }, 500)
+      if (phaseRef.current && pauseOffsetMsRef.current > 0) {
+        // Resuming from a pause mid-step. Re-enter the same phase with the
+        // captured offset so timer + DataPixel rAF pick up where they left off.
+        const phase = phaseRef.current
+        const offset = pauseOffsetMsRef.current
+        pauseOffsetMsRef.current = 0
+        setState((prev) => ({ ...prev, playing: true }))
+        enterPhase(phase, offset)
+      } else {
+        // Fresh start (or a previous pause that was already past its phase).
+        // Delay first step so React Flow has time to render edges (important
+        // for sub-flow drill-down).
+        timerRef.current = setTimeout(() => {
+          advanceStep()
+        }, 500)
+      }
     } else {
       clearTimers()
-      setState((prev) => ({
-        ...prev,
-        playing: false,
-        activeEdgeIds: new Set<string>(),
-        activeEdgeFlows: [],
-        activeFromIds: new Set<string>(),
-        activeToIds: new Set<string>(),
-        activeStep: null,
-        activeNodes: new Set<string>(),
-        destroyedNodes: new Set<string>(),
-      }))
+      // Capture how far into the current phase we got, so resume can pick up.
+      // The active state (activeStep, activeEdgeIds, …) is intentionally NOT
+      // cleared here — that was the prior pause bug: the highlighted step
+      // would vanish and the in-flight pixel would disappear.
+      if (phaseRef.current) {
+        pauseOffsetMsRef.current = performance.now() - phaseStartedAtRef.current
+      }
+      setState((prev) => ({ ...prev, playing: false }))
     }
 
     return clearTimers
-  }, [playing, advanceStep, clearTimers])
+  }, [playing, advanceStep, clearTimers, enterPhase])
 
   const manualPixelCounter = useRef(0)
 
