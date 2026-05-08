@@ -43,7 +43,9 @@ Install the skill:
 npx openhop init
 ```
 
-**That's it!** Now restart your agent so it picks up the new skill, and ask:
+**That's it!**
+
+Now restart your agent so it picks up the new skill, and ask:
 
 > "Walk me through the main flow of this codebase."
 
