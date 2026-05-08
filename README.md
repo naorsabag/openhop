@@ -37,7 +37,7 @@
 
 ## Try it in 60 seconds
 
-Step 1 — install the skill into your AI agent:
+Install the skill into your AI agent:
 
 ```bash
 npx openhop init
@@ -45,7 +45,7 @@ npx openhop init
 
 (For Codex / Gemini / Junie / Copilot / OpenCode / Goose / Antigravity, use `npx openskills install naorsabag/openhop` instead — see [Install](#install).)
 
-Step 2 — open your codebase in the agent and ask:
+Open your codebase in the agent and ask:
 
 > "Walk me through the OAuth flow in this codebase."
 
