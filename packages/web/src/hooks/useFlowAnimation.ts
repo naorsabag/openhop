@@ -351,19 +351,50 @@ export function useFlowAnimation(
     }))
   }, [clearTimers])
 
-  // Snap to a specific step's "pixel-active" visualization. Doesn't
-  // accumulate node progress / create-destroy effects (caller's
-  // responsibility to know that scrubbing is a snapshot, not a replay);
-  // press Play to advance from there with proper state.
+  // Snap to a specific step. Replays steps 0..idx CUMULATIVELY so
+  // create/destroy effects and per-node progress match what autoplay
+  // would have produced if you'd watched up to that step. Without this
+  // replay, scrubbing past a `destroy:` step would still show the
+  // destroyed node, and `create:`-spawned nodes would persist after
+  // rewinding through their create step.
   const goToStep = useCallback(
     (idx: number) => {
       if (idx < 0 || idx >= steps.length) return
       clearTimers()
       phaseRef.current = null
       pauseOffsetMsRef.current = 0
+
+      // Reset cumulative refs and replay everything up to (and including)
+      // the target step.
+      nodeProgressRef.current = new Map()
+      activeNodesRef.current = new Set()
+      destroyedNodesRef.current = new Set()
+
+      const applyStepEffects = (i: number) => {
+        const step = steps[i]
+        const mapping = mappingsRef.current[i]
+        if (!step) return
+        if ('create' in step && step.create) {
+          activeNodesRef.current.add(step.create)
+          destroyedNodesRef.current.delete(step.create)
+        }
+        if ('destroy' in step && step.destroy) {
+          destroyedNodesRef.current.add(step.destroy)
+          activeNodesRef.current.delete(step.destroy)
+        }
+        if (mapping) {
+          for (const nid of mapping.fromIds) {
+            nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
+          }
+        }
+      }
+
+      for (let i = 0; i <= idx; i++) applyStepEffects(i)
+
       stepIndexRef.current = idx
       const mapping = mappingsRef.current[idx]
       if (!mapping) return
+
       setState((prev) => ({
         ...prev,
         playing: false,
@@ -373,9 +404,12 @@ export function useFlowAnimation(
         activeFromIds: new Set(mapping.fromIds),
         activeToIds: new Set(mapping.toIds),
         activeStep: mapping.step,
+        nodeProgress: new Map(nodeProgressRef.current),
+        activeNodes: new Set(activeNodesRef.current),
+        destroyedNodes: new Set(destroyedNodesRef.current),
       }))
     },
-    [steps.length, clearTimers]
+    [steps, clearTimers]
   )
 
   return {

@@ -85,6 +85,12 @@ interface FlowCanvasProps {
   playing: boolean
   /** Toggle play/pause from the on-canvas Play button. */
   onTogglePlay?: () => void
+  /** Force playing to false. Called by Restart / Prev / Next so the
+   *  parent's `playing` state matches the hook's internal "scrubbed"
+   *  state — without this, the play button stays in Pause mode and
+   *  the DataPixel keeps animating because `paused={!playing}` is
+   *  driven by the parent prop. */
+  onPause?: () => void
   onDrillDown?: (nodeId: string) => void
   onDrilldownStep?: (nodeId: string, atStepIndex: number) => void
   onCycleComplete?: () => void
@@ -101,6 +107,7 @@ function FlowCanvasInner({
   flow,
   playing,
   onTogglePlay,
+  onPause,
   onDrillDown,
   onDrilldownStep,
   onCycleComplete,
@@ -625,12 +632,21 @@ function FlowCanvasInner({
               borderRadius: 4,
             }}
           >
-            <PlaybackButton ariaLabel="Restart flow" onClick={restart}>
+            <PlaybackButton
+              ariaLabel="Restart flow"
+              onClick={() => {
+                onPause?.()
+                restart()
+              }}
+            >
               {'⏮'}
             </PlaybackButton>
             <PlaybackButton
               ariaLabel="Previous step"
-              onClick={() => goToStep((animState.currentStepIndex ?? 0) - 1)}
+              onClick={() => {
+                onPause?.()
+                goToStep((animState.currentStepIndex ?? 0) - 1)
+              }}
               disabled={(animState.currentStepIndex ?? -1) <= 0}
             >
               {'⏪'}
@@ -640,7 +656,10 @@ function FlowCanvasInner({
             </PlaybackButton>
             <PlaybackButton
               ariaLabel="Next step"
-              onClick={() => goToStep((animState.currentStepIndex ?? -1) + 1)}
+              onClick={() => {
+                onPause?.()
+                goToStep((animState.currentStepIndex ?? -1) + 1)
+              }}
               disabled={
                 animState.currentStepIndex !== undefined &&
                 animState.currentStepIndex >= flowSteps.length - 1

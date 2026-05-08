@@ -473,6 +473,7 @@ function App() {
                     flow={displayFlow}
                     playing={playing}
                     onTogglePlay={() => setPlaying((p) => !p)}
+                    onPause={() => setPlaying(false)}
                     onDrillDown={handleDrillDown}
                     onDrilldownStep={handleAutoDrilldown}
                     onCycleComplete={handleCycleComplete}
