@@ -43,9 +43,9 @@ Install the skill (auto-detects Claude Code, Cursor, Windsurf, Cline, Continue â
 npx openhop init
 ```
 
-Open your codebase in the agent and ask:
+Restart your agent so it picks up the new skill, then open your codebase and ask:
 
-> "Walk me through the OAuth flow in this codebase."
+> "Walk me through the main flow of this codebase."
 
 The agent generates the YAML, pushes it, and returns a URL with the animation playing.
 
