@@ -4,15 +4,23 @@
   "description": "OpenHop API server. Fastify app for storing and serving data-flow definitions.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/naorsabag/OpenHop.git",
+    "url": "https://github.com/naorsabag/openhop.git",
     "directory": "packages/server"
   },
-  "homepage": "https://github.com/naorsabag/OpenHop#readme",
+  "homepage": "https://github.com/naorsabag/openhop#readme",
   "bugs": {
-    "url": "https://github.com/naorsabag/OpenHop/issues"
+    "url": "https://github.com/naorsabag/openhop/issues"
   },
   "license": "MIT",
   "author": "Naor Sabag (https://github.com/naorsabag)",
+  "keywords": [
+    "openhop",
+    "data-flow",
+    "diagram",
+    "fastify",
+    "ai-agents",
+    "yaml"
+  ],
   "type": "module",
   "main": "dist/server.js",
   "types": "dist/index.d.ts",

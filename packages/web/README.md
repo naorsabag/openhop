@@ -1,73 +1,22 @@
-# React + TypeScript + Vite
+# @openhop/web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Pre-built static assets for the [OpenHop](https://github.com/naorsabag/openhop) web UI — animated data-flow renderer (PIXI.js).
 
-Currently, two official plugins are available:
+This is an internal package consumed by the [`openhop`](https://www.npmjs.com/package/openhop) CLI. **You don't need to install it directly** — `openhop serve` and `openhop demo` serve these assets for you on `http://localhost:8788`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The package contains a built Vite bundle (HTML + JS + sprites) that:
 
-## React Compiler
+- Subscribes to the OpenHop API for a flow's contents
+- Renders nodes as pixel-art sprites
+- Animates data pixels traveling between nodes
+- Supports drill-down into sub-flows
+- Reads flows from URL fragments for the static GitHub Pages deploy
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Documentation
 
-## Expanding the ESLint configuration
+Full documentation:
+**[github.com/naorsabag/openhop](https://github.com/naorsabag/openhop)**
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## License
 
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x"
-import reactDom from "eslint-plugin-react-dom"
-
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+MIT © Naor Sabag
