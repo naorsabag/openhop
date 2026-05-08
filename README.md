@@ -103,12 +103,14 @@ Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
 
 ```mermaid
 flowchart LR
+    skill[SKILL.md]
     agent([Agent])
     cli[CLI<br/>zod validation]
     api[Fastify API]
     web[Web UI<br/>PIXI]
     browser([Browser])
 
+    skill -- teaches --> agent
     agent -- YAML --> cli
     cli -- JSON --> api
     api --> web
