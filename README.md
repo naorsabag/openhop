@@ -28,6 +28,7 @@
 <p align="center">
   <a href="#try-it-in-60-seconds">Quickstart</a> ·
   <a href="#give-your-agent-the-skill">AI skill</a> ·
+  <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a>
 </p>
@@ -37,9 +38,10 @@
 ## Why
 
 AI coding agents are great at explaining how code works — in 800-line bullet walls you can't verify.
-OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You describe
-the flow in YAML (your agent writes it for you); OpenHop renders animated data pixels traveling
-between components on a pixel-art canvas. Click any node to drill into its sub-flow.
+OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You ask in
+plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
+pixels traveling between components on a pixel-art canvas. Click any node to drill into its
+sub-flow.
 
 ## Features
 
@@ -81,7 +83,11 @@ mkdir -p ~/.claude/skills/openhop
 cp skills/openhop/SKILL.md ~/.claude/skills/openhop/
 ```
 
-Then ask your agent things like:
+That's it — the agent now knows how to use OpenHop. Open your codebase in any SKILL-compatible client and ask it for a flow (see [Use cases](#use-cases) below for prompt ideas). The agent loads the skill, sketches the flow in YAML, calls `openhop push`, and hands you back a URL with the animation playing.
+
+## Use cases
+
+Once the skill is installed, point your agent at a codebase and ask it things like:
 
 - _"Walk me through the OAuth flow in this codebase."_
 - _"Diagram how a request flows through this Express app."_
@@ -92,7 +98,7 @@ Then ask your agent things like:
 - _"Diagram the WebSocket reconnection state machine."_
 - _"Walk me through what happens after `npm publish` — every step until the package is on the registry."_
 
-The agent loads the skill, sketches the flow in YAML, calls `openhop push`, and hands you back a URL with the animation playing.
+The shape that activates the skill is "explain / walk through / trace / visualize / diagram \_ flow". When the agent recognizes one of those patterns it switches from prose to YAML + animation.
 
 ## CLI
 
