@@ -92,7 +92,9 @@ If the validator rejects your flow, **read the error path** — it tells you exa
 
 If `openhop --version` fails with `command not found`, OpenHop's CLI isn't installed yet. Run `npx openhop init` yourself to install it, then continue with the steps below. (`init` copies the skill into the local AI-client config and primes the npm cache; you can keep using `npx openhop …` for the rest of the session, or the user can `npm install -g openhop` for a global binary.)
 
-Once `openhop --version` (or `npx openhop --version`) succeeds, verify the OpenHop API server is running:
+Once `openhop --version` (or `npx openhop --version`) succeeds, **lock in whichever form worked** — bare `openhop` if globally installed, otherwise `npx openhop` — and use that exact prefix for every subsequent command in this session (`push`, `patch`, `list`, `serve`, etc.). Don't mix forms; the bare command will fail if there's no global install.
+
+Then verify the OpenHop API server is running:
 
 ```bash
 curl -s http://localhost:8787/health
