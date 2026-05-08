@@ -11,7 +11,7 @@ import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import { useFlowMutations } from './hooks/useFlowMutations'
-import type { FlowNode, FlowStep, Flow } from './types'
+import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
 interface FlowNavItem {
   flow: { nodes: FlowNode[]; steps?: FlowStep[] }
@@ -205,6 +205,9 @@ function App() {
   // Track current step index for resume
   const currentStepRef = useRef(0)
   const [inspectedStep, setInspectedStep] = useState<FlowStep | null>(null)
+  // When the user clicks a single carrot of a multi-data step, this is the
+  // specific FlowData entry to highlight + scroll to in the inspect panel.
+  const [inspectedFocusData, setInspectedFocusData] = useState<FlowData | null>(null)
   const displayFlowRef = useRef(displayFlow)
   useEffect(() => {
     displayFlowRef.current = displayFlow
@@ -212,7 +215,10 @@ function App() {
   const handleStepChange = useCallback((stepIndex: number) => {
     currentStepRef.current = stepIndex
     const steps = displayFlowRef.current?.flow.steps ?? []
-    if (steps[stepIndex]) setInspectedStep(steps[stepIndex])
+    if (steps[stepIndex]) {
+      setInspectedStep(steps[stepIndex])
+      setInspectedFocusData(null)
+    }
   }, [])
 
   // Inspector panel state
@@ -223,10 +229,13 @@ function App() {
   // Reset inspected step when flow changes
   useEffect(() => {
     setInspectedStep(null)
+    setInspectedFocusData(null)
   }, [selectedFlowId, flowStack.length])
 
-  const handleInspectStep = useCallback((step: FlowStep) => {
+  const handleInspectStep = useCallback((step: FlowStep, focusData?: FlowData) => {
     setInspectedStep(step)
+    setInspectedFocusData(focusData ?? null)
+    setInspectorOpen(true)
   }, [])
 
   // Fallback: first step when nothing has been inspected
@@ -480,6 +489,7 @@ function App() {
           {inspectorOpen && selectedFlowId && (
             <DataInspectionPanel
               step={currentStep}
+              focusData={inspectedFocusData}
               side={inspectorSide}
               size={inspectorSize}
               onSideChange={setInspectorSide}

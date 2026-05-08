@@ -12,13 +12,12 @@ import {
 } from '@xyflow/react'
 import type React from 'react'
 import '@xyflow/react/dist/style.css'
-import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { RoadEdge } from './edges/RoadEdge'
 import { useFlowAnimation, type EdgeFlowRef, type StepEdgeMapping } from '../hooks/useFlowAnimation'
 import { useFlowGraphLayout } from '../hooks/useFlowGraphLayout'
 import { DataPixel } from './DataPixel'
-import { DataPopup } from './DataPopup'
 import { buildFlowTopology } from '../lib/flow-layout'
 import { resolvePixelStyle, type ResolvedStepPixel } from '../lib/pixel-palette'
 import type { Flow, FlowStep, FlowData } from '../types'
@@ -88,7 +87,10 @@ interface FlowCanvasProps {
   onCycleComplete?: () => void
   startFromStep?: number
   onStepChange?: (stepIndex: number) => void
-  onInspectStep?: (step: FlowStep) => void
+  /** Open the inspect panel on a step. Optional `focusData` is the
+   *  specific FlowData entry to highlight + scroll into view (used when
+   *  the user clicks a single carrot of a multi-data step). */
+  onInspectStep?: (step: FlowStep, focusData?: FlowData) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
@@ -104,11 +106,6 @@ function FlowCanvasInner({
 }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const flowSteps = useMemo(() => flow.flow.steps ?? [], [flow.flow.steps])
-  const [pinnedEdge, setPinnedEdge] = useState<{
-    edgeId: string
-    steps: FlowStep[]
-    position: { x: number; y: number }
-  } | null>(null)
 
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
@@ -223,56 +220,6 @@ function FlowCanvasInner({
       return { stepIndex, edgeFlows, fromIds, toIds, step }
     })
   }, [flowSteps, resolveEdgeFlow])
-
-  const edgeStepsById = useMemo(() => {
-    const map = new Map<string, FlowStep[]>()
-
-    const pushStep = (edgeId: string, step: FlowStep) => {
-      const steps = map.get(edgeId) ?? []
-      if (!steps.includes(step)) steps.push(step)
-      map.set(edgeId, steps)
-    }
-
-    for (const mapping of stepMappings) {
-      for (const edgeFlow of mapping.edgeFlows) {
-        pushStep(edgeFlow.edgeId, edgeFlow.step)
-      }
-    }
-
-    return map
-  }, [stepMappings])
-
-  const handlePinPopup = useCallback(
-    (step: FlowStep, position: { x: number; y: number }, edgeId?: string) => {
-      const id = edgeId ?? '__pixel__'
-      if (pinnedEdge?.edgeId === id) {
-        setPinnedEdge(null)
-        return
-      }
-      // If the step has array data, create virtual steps (one per data object) for pagination
-      let edgeSteps: FlowStep[]
-      if (Array.isArray(step.data)) {
-        edgeSteps = step.data.map((d) => ({ ...step, data: d }))
-      } else {
-        edgeSteps = [step]
-      }
-      if (id !== '__pixel__') {
-        const relatedSteps = edgeStepsById.get(id) ?? []
-        for (const relatedStep of relatedSteps) {
-          if (relatedStep === step) continue
-          if (Array.isArray(relatedStep.data)) {
-            for (const d of relatedStep.data) {
-              edgeSteps.push({ ...relatedStep, data: d })
-            }
-          } else {
-            edgeSteps.push(relatedStep)
-          }
-        }
-      }
-      setPinnedEdge({ edgeId: id, steps: edgeSteps, position })
-    },
-    [pinnedEdge, edgeStepsById]
-  )
 
   // Build a map from node id to type and shadow color for animated pixels.
   // The shadow color comes from the topology's variant assignment so it
@@ -642,7 +589,6 @@ function FlowCanvasInner({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
-        onPaneClick={() => setPinnedEdge(null)}
         nodesConnectable={false}
         edgesFocusable={false}
         nodesDraggable={false}
@@ -682,7 +628,7 @@ function FlowCanvasInner({
               pixelFilter={plan.pixelFilter}
               step={edgeStep}
               containerRef={containerRef}
-              onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
+              onPixelClick={(s, focusData) => onInspectStep?.(s, focusData)}
               delayMs={plan.delayMs || undefined}
               dataOverride={dataObj}
               paused={!playing}
@@ -707,18 +653,9 @@ function FlowCanvasInner({
           containerRef={containerRef}
           isManual
           onAnimationComplete={() => removeManualPixel(mp.id)}
-          onPixelClick={(s, pos) => handlePinPopup(s, pos, mp.edgeId)}
+          onPixelClick={(s, focusData) => onInspectStep?.(s, focusData)}
         />
       ))}
-
-      {/* Pinned data popup — fixed position overlay */}
-      {pinnedEdge && (
-        <DataPopup
-          steps={pinnedEdge.steps}
-          position={pinnedEdge.position}
-          onClose={() => setPinnedEdge(null)}
-        />
-      )}
     </div>
   )
 }

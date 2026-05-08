@@ -1,10 +1,14 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { FlowStep, FlowData } from '../types'
 
 export type DockSide = 'right' | 'bottom'
 
 interface DataInspectionPanelProps {
   step: FlowStep | null
+  /** Optional FlowData entry to highlight + scroll into view. Set when the
+   *  user clicks a single carrot of a multi-data step so they can tell
+   *  which slice of the step's data they just clicked. */
+  focusData?: FlowData | null
   side: DockSide
   size: number
   onSideChange: (side: DockSide) => void
@@ -17,6 +21,7 @@ const MAX_SIZE = 800
 
 export function DataInspectionPanel({
   step,
+  focusData = null,
   side,
   size,
   onSideChange,
@@ -88,7 +93,7 @@ export function DataInspectionPanel({
       />
       <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Header side={side} onSideChange={onSideChange} onClose={onClose} />
-        <StepBody step={step} />
+        <StepBody step={step} focusData={focusData} />
       </div>
     </aside>
   )
@@ -215,7 +220,7 @@ function normalizeData(raw: FlowStep['data']): FlowData[] {
   return [raw]
 }
 
-function StepBody({ step }: { step: FlowStep | null }) {
+function StepBody({ step, focusData }: { step: FlowStep | null; focusData: FlowData | null }) {
   if (!step) {
     return (
       <div
@@ -259,7 +264,12 @@ function StepBody({ step }: { step: FlowStep | null }) {
           </div>
           {f.data.length === 0 && <div style={{ color: '#888' }}>No data.</div>}
           {f.data.map((d, di) => (
-            <DataBlock key={di} data={d} separated={di > 0} />
+            <DataBlock
+              key={di}
+              data={d}
+              separated={di > 0}
+              highlighted={focusData != null && d === focusData}
+            />
           ))}
         </section>
       ))}
@@ -267,13 +277,44 @@ function StepBody({ step }: { step: FlowStep | null }) {
   )
 }
 
-function DataBlock({ data, separated }: { data: FlowData; separated: boolean }) {
+function DataBlock({
+  data,
+  separated,
+  highlighted,
+}: {
+  data: FlowData
+  separated: boolean
+  highlighted: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  // Scroll the highlighted block into view when it changes. `block: 'nearest'`
+  // keeps the panel from over-scrolling if the block is already visible.
+  useEffect(() => {
+    if (highlighted && ref.current) {
+      ref.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [highlighted])
+
   return (
     <div
+      ref={ref}
       style={{
         marginTop: separated ? 10 : 0,
         paddingTop: separated ? 8 : 0,
         borderTop: separated ? '1px dashed #2a2a4a' : undefined,
+        // Highlighted block gets a subtle accent: left bar in the same
+        // brand cyan as the inspect-header arrows + a soft background
+        // tint so it pops without screaming.
+        ...(highlighted
+          ? {
+              borderLeft: '3px solid #4a9eff',
+              background: 'rgba(74,158,255,0.08)',
+              paddingLeft: 8,
+              marginLeft: -11,
+              marginRight: -8,
+              borderRadius: '0 4px 4px 0',
+            }
+          : null),
       }}
     >
       {data.label && <div style={{ marginBottom: data.fields?.length ? 6 : 0 }}>{data.label}</div>}

@@ -10,7 +10,7 @@ import {
 import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildShareUrl, decodeFragment } from './lib/share-url'
-import type { FlowNode, FlowStep, Flow } from './types'
+import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
 interface FlowNavItem {
   flow: { nodes: FlowNode[]; steps?: FlowStep[] }
@@ -149,6 +149,9 @@ export default function AppFragment() {
 
   const currentStepRef = useRef(0)
   const [inspectedStep, setInspectedStep] = useState<FlowStep | null>(null)
+  // Specific FlowData entry to highlight + scroll to (set when the user
+  // clicks a single carrot of a multi-data step).
+  const [inspectedFocusData, setInspectedFocusData] = useState<FlowData | null>(null)
   const displayFlowRef = useRef(displayFlow)
   useEffect(() => {
     displayFlowRef.current = displayFlow
@@ -156,15 +159,25 @@ export default function AppFragment() {
   const handleStepChange = useCallback((stepIndex: number) => {
     currentStepRef.current = stepIndex
     const steps = displayFlowRef.current?.flow.steps ?? []
-    if (steps[stepIndex]) setInspectedStep(steps[stepIndex])
+    if (steps[stepIndex]) {
+      setInspectedStep(steps[stepIndex])
+      setInspectedFocusData(null)
+    }
   }, [])
 
   const [inspectorOpen, setInspectorOpen] = useState(true)
   const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
   const [inspectorSize, setInspectorSize] = useState(320)
-  useEffect(() => setInspectedStep(null), [hash, flowStack.length])
+  useEffect(() => {
+    setInspectedStep(null)
+    setInspectedFocusData(null)
+  }, [hash, flowStack.length])
 
-  const handleInspectStep = useCallback((step: FlowStep) => setInspectedStep(step), [])
+  const handleInspectStep = useCallback((step: FlowStep, focusData?: FlowData) => {
+    setInspectedStep(step)
+    setInspectedFocusData(focusData ?? null)
+    setInspectorOpen(true)
+  }, [])
   const currentStep: FlowStep | null = useMemo(() => {
     if (inspectedStep) return inspectedStep
     const steps = currentFlowBody?.flow.steps ?? []
@@ -375,6 +388,7 @@ export default function AppFragment() {
           {inspectorOpen && decodedFlow && (
             <DataInspectionPanel
               step={currentStep}
+              focusData={inspectedFocusData}
               side={inspectorSide}
               size={inspectorSize}
               onSideChange={setInspectorSide}
