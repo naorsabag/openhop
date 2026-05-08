@@ -37,17 +37,22 @@
 
 ## Try it in 60 seconds
 
-Install the skill (auto-detects Claude Code, Cursor, Windsurf, Cline, Continue — for other clients see [Install](#install)):
+Install the skill:
 
 ```bash
 npx openhop init
 ```
 
-Restart your agent so it picks up the new skill, then open your codebase and ask:
+**That's it!**
+
+Now restart your agent so it picks up the new skill, and ask:
 
 > "Walk me through the main flow of this codebase."
 
 The agent generates the YAML, pushes it, and returns a URL with the animation playing.
+
+> [!NOTE]
+> `npx openhop init` auto-detects Claude Code, Cursor, Windsurf, Cline, and Continue. For other clients, see [Install](#install).
 
 ## Why
 
