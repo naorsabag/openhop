@@ -101,15 +101,18 @@ Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
 
 ## How it works
 
-```
-┌─────────┐   YAML    ┌────────────┐    JSON    ┌──────────────┐
-│  Agent  │ ────────▶ │  CLI (zod) │ ─────────▶ │  Fastify API │
-└─────────┘           └────────────┘            └──────┬───────┘
-                                                       │
-                                                       ▼
-                                                ┌──────────────┐
-                                                │   Web (PIXI) │ ◀── browser
-                                                └──────────────┘
+```mermaid
+flowchart LR
+    agent([Agent])
+    cli[CLI<br/>zod validation]
+    api[Fastify API]
+    web[Web UI<br/>PIXI]
+    browser([Browser])
+
+    agent -- YAML --> cli
+    cli -- JSON --> api
+    api --> web
+    browser --> web
 ```
 
 The CLI validates YAML against a zod schema (with fuzzy typo hints), posts the flow to the API,
