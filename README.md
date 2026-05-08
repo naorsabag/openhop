@@ -1,7 +1,7 @@
 <h1 align="center">OpenHop</h1>
 
 <p align="center">
-  <img src="docs/logo.png" width="600" alt="OpenHop logo" />
+  <img src="assets/logo.png" width="600" alt="OpenHop logo" />
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/order-flow.gif" width="720" alt="OpenHop animating an end-to-end order flow" />
+  <img src="assets/order-flow.gif" width="720" alt="OpenHop animating an end-to-end order flow" />
 </p>
 
 <p align="center">
