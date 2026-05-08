@@ -111,7 +111,7 @@ Once the skill is installed, point your agent at a codebase and ask it things li
 - "Diagram the WebSocket reconnection state machine."
 - "Walk me through what happens after `npm publish` — every step until the package is on the registry."
 
-The skill activates on prompts asking your agent to **understand, explain, walk through, trace, visualize, or diagram** how data, requests, control, auth, or state flows through code. When it recognizes that shape, it switches from prose to YAML + animation. The full trigger-phrase list lives in [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md).
+The skill activates on prompts asking your agent to **explain, walk through, trace, visualize, or diagram** how data, requests, control, auth, or state flows through code. When it recognizes that shape, it switches from prose to YAML + animation. The full trigger-phrase list lives in [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md).
 
 ## CLI
 
