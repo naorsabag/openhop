@@ -111,7 +111,7 @@ Once the skill is installed, point your agent at a codebase and ask it things li
 - "Diagram the WebSocket reconnection state machine."
 - "Walk me through what happens after `npm publish` — every step until the package is on the registry."
 
-The shape that activates the skill is "explain / walk through / trace / visualize / diagram \_ flow". When the agent recognizes one of those patterns it switches from prose to YAML + animation.
+The skill activates on prompts that ask your agent to **explain, walk through, trace, visualize, or diagram** how something works in code — data flows, request paths, lifecycles, state machines, processing pipelines, click-to-action traces. When it recognizes that shape, it switches from prose to YAML + animation.
 
 ## CLI
 
