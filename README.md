@@ -35,6 +35,14 @@
 
 ---
 
+## Why
+
+AI coding agents are great at explaining how code works — in 800-line bullet walls you can't verify.
+OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You ask in
+plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
+pixels traveling between components on a pixel-art canvas. Click any node to drill into its
+sub-flow.
+
 ## Try it in 60 seconds
 
 ```bash
@@ -51,14 +59,6 @@ The agent generates the YAML, pushes it, and returns a URL with the animation pl
 
 > [!NOTE]
 > `npx openhop init` auto-detects Claude Code, Cursor, Windsurf, Cline, and Continue. For other clients, see [Install](#install).
-
-## Why
-
-AI coding agents are great at explaining how code works — in 800-line bullet walls you can't verify.
-OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You ask in
-plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
-pixels traveling between components on a pixel-art canvas. Click any node to drill into its
-sub-flow.
 
 ## Features
 
