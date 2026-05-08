@@ -84,6 +84,7 @@ Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin)
 - `type` must be one of the 12 enum values (see Schema Reference below). `transform`, `validation`, `redis`, `oauth`, etc. are **not** valid types.
 - `data` is a `string` or an object — never a list. `data: "request"` ✓, `data: { label: "request", fields: [...] }` ✓, `data: [{ name: "request" }]` ✗
 - `id` is alphanumeric + hyphens + underscores only.
+- **Node `label` must be ≤ 4 words.** Labels render under each node in a fixed-width box; longer labels truncate with "…" and read poorly. Pick the shortest noun phrase that identifies the component. ✓ `Order Service`, `Auth API`, `Stripe`. ✗ `Order Processing Service With Retries`, `User Authentication and Authorization API`.
 
 If the validator rejects your flow, **read the error path** — it tells you exactly which field is wrong.
 

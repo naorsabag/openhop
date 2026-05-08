@@ -226,23 +226,60 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
         )}
       </div>
 
-      {/* Label — floats below building, no background */}
-      <span
+      {/* Label: a fixed-height flow slot that holds an absolute-positioned
+          label. The slot reserves vertical room (≈ 2 lines + margin) so
+          the progress bar below doesn't slide up. The label itself is
+          absolute + transform-centered so it can render WIDER than the
+          parent flex column (which auto-sizes to the 108px building, then
+          constrains every descendant unless we escape the flow). Cap at
+          2 lines × ~30 chars per line, ellipsis past that. */}
+      <div
         style={{
-          color: borderColor,
-          fontSize: 20,
-          fontWeight: 700,
-          fontFamily: 'monospace',
-          textAlign: 'center',
-          whiteSpace: 'nowrap',
-          letterSpacing: 0.3,
-          textShadow: '0 1px 4px #000, 0 0 6px #000, 0 0 2px #000',
+          position: 'relative',
+          width: '100%',
+          height: 48,
           marginTop: 4,
-          display: 'block',
+          pointerEvents: 'none',
         }}
       >
-        {label}
-      </span>
+        <span
+          title={label}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: borderColor,
+            fontSize: 20,
+            fontWeight: 700,
+            fontFamily: 'monospace',
+            textAlign: 'center',
+            letterSpacing: 0.3,
+            textShadow: '0 1px 4px #000, 0 0 6px #000, 0 0 2px #000',
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: 2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            // Live-tweakable from DevTools:
+            //   document.documentElement.style.setProperty(
+            //     '--openhop-label-max-width', '200px')
+            maxWidth: 'var(--openhop-label-max-width, 200px)',
+            width: 'max-content',
+            lineHeight: 1.1,
+            wordBreak: 'break-word',
+            // pointer-events:none — the absolute label can extend past its
+            // parent node and overlap adjacent buildings; without this,
+            // clicks intended for the neighboring node land on this label
+            // and hit handleNodeClick on the WRONG node (or nothing at all
+            // because the span has no click handler). Building + progress
+            // bar still receive clicks normally.
+            pointerEvents: 'none',
+          }}
+        >
+          {label}
+        </span>
+      </div>
 
       {/* Progress bar — 56px wide, matches building width */}
       {progressTotal > 0 && (
