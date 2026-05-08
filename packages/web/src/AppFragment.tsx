@@ -283,14 +283,6 @@ export default function AppFragment() {
               >
                 ✎ Edit
               </button>
-              <button
-                aria-label={playing ? 'Pause flow' : 'Play flow'}
-                onClick={() => setPlaying((p) => !p)}
-                className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
-                style={{ fontSize: 10 }}
-              >
-                {playing ? '⏸ Pause' : '▶ Play'}
-              </button>
               <InspectorToggle open={inspectorOpen} onToggle={() => setInspectorOpen((o) => !o)} />
             </>
           )}
@@ -378,6 +370,7 @@ export default function AppFragment() {
                 <FlowCanvas
                   flow={displayFlow}
                   playing={playing}
+                  onTogglePlay={() => setPlaying((p) => !p)}
                   onDrillDown={handleDrillDown}
                   onDrilldownStep={handleAutoDrilldown}
                   onCycleComplete={handleCycleComplete}

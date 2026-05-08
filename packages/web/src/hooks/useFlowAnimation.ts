@@ -325,5 +325,67 @@ export function useFlowAnimation(
     }))
   }, [])
 
-  return { ...state, fireManualPixel, removeManualPixel, setNodeStep, activateNode, deactivateNode }
+  // Manual scrub controls — used by the on-canvas Restart / Prev / Next
+  // buttons. They mutate state directly without scheduling timers; the
+  // caller is expected to keep `playing` false while scrubbing.
+  const restart = useCallback(() => {
+    clearTimers()
+    phaseRef.current = null
+    pauseOffsetMsRef.current = 0
+    stepIndexRef.current = -1
+    nodeProgressRef.current = new Map()
+    activeNodesRef.current = new Set()
+    destroyedNodesRef.current = new Set()
+    setState((prev) => ({
+      ...prev,
+      playing: false,
+      currentStepIndex: -1,
+      activeEdgeIds: new Set<string>(),
+      activeEdgeFlows: [],
+      activeFromIds: new Set<string>(),
+      activeToIds: new Set<string>(),
+      activeStep: null,
+      nodeProgress: new Map(),
+      activeNodes: new Set<string>(),
+      destroyedNodes: new Set<string>(),
+    }))
+  }, [clearTimers])
+
+  // Snap to a specific step's "pixel-active" visualization. Doesn't
+  // accumulate node progress / create-destroy effects (caller's
+  // responsibility to know that scrubbing is a snapshot, not a replay);
+  // press Play to advance from there with proper state.
+  const goToStep = useCallback(
+    (idx: number) => {
+      if (idx < 0 || idx >= steps.length) return
+      clearTimers()
+      phaseRef.current = null
+      pauseOffsetMsRef.current = 0
+      stepIndexRef.current = idx
+      const mapping = mappingsRef.current[idx]
+      if (!mapping) return
+      setState((prev) => ({
+        ...prev,
+        playing: false,
+        currentStepIndex: idx,
+        activeEdgeIds: new Set(mapping.edgeFlows.map((flow) => flow.edgeId)),
+        activeEdgeFlows: mapping.edgeFlows,
+        activeFromIds: new Set(mapping.fromIds),
+        activeToIds: new Set(mapping.toIds),
+        activeStep: mapping.step,
+      }))
+    },
+    [steps.length, clearTimers]
+  )
+
+  return {
+    ...state,
+    fireManualPixel,
+    removeManualPixel,
+    setNodeStep,
+    activateNode,
+    deactivateNode,
+    restart,
+    goToStep,
+  }
 }

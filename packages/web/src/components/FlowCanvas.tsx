@@ -4,6 +4,7 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  Panel,
   useReactFlow,
   type NodeTypes,
   type EdgeTypes,
@@ -82,6 +83,8 @@ const getTargets = (to: string | string[] | undefined) => (Array.isArray(to) ? t
 interface FlowCanvasProps {
   flow: Flow
   playing: boolean
+  /** Toggle play/pause from the on-canvas Play button. */
+  onTogglePlay?: () => void
   onDrillDown?: (nodeId: string) => void
   onDrilldownStep?: (nodeId: string, atStepIndex: number) => void
   onCycleComplete?: () => void
@@ -97,6 +100,7 @@ interface FlowCanvasProps {
 function FlowCanvasInner({
   flow,
   playing,
+  onTogglePlay,
   onDrillDown,
   onDrilldownStep,
   onCycleComplete,
@@ -251,6 +255,8 @@ function FlowCanvasInner({
     setNodeStep,
     activateNode,
     deactivateNode,
+    restart,
+    goToStep,
     manualPixels,
     nodeProgress,
     activeNodes,
@@ -603,6 +609,47 @@ function FlowCanvasInner({
           showInteractive={false}
           style={{ background: '#0d2612', borderColor: '#1a4a22' }}
         />
+        {/* Playback controls — right side, vertical column. Restart rewinds
+            to step -1 with all progress cleared; Prev/Next snap the
+            visualization to the adjacent step (without replaying cumulative
+            create/destroy effects — press Play to advance from there). */}
+        <Panel position="top-right">
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: 6,
+              background: '#0d2612',
+              border: '1px solid #1a4a22',
+              borderRadius: 4,
+            }}
+          >
+            <PlaybackButton ariaLabel="Restart flow" onClick={restart}>
+              {'⏮'}
+            </PlaybackButton>
+            <PlaybackButton
+              ariaLabel="Previous step"
+              onClick={() => goToStep((animState.currentStepIndex ?? 0) - 1)}
+              disabled={(animState.currentStepIndex ?? -1) <= 0}
+            >
+              {'⏪'}
+            </PlaybackButton>
+            <PlaybackButton ariaLabel={playing ? 'Pause flow' : 'Play flow'} onClick={onTogglePlay}>
+              {playing ? '⏸' : '▶'}
+            </PlaybackButton>
+            <PlaybackButton
+              ariaLabel="Next step"
+              onClick={() => goToStep((animState.currentStepIndex ?? -1) + 1)}
+              disabled={
+                animState.currentStepIndex !== undefined &&
+                animState.currentStepIndex >= flowSteps.length - 1
+              }
+            >
+              {'⏩'}
+            </PlaybackButton>
+          </div>
+        </Panel>
       </ReactFlow>
 
       {/* Data pixel overlay — automatic. planStepPixels handles the cycling
@@ -657,6 +704,42 @@ function FlowCanvasInner({
         />
       ))}
     </div>
+  )
+}
+
+function PlaybackButton({
+  ariaLabel,
+  onClick,
+  disabled,
+  children,
+}: {
+  ariaLabel: string
+  onClick?: () => void
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: 28,
+        height: 28,
+        background: '#0d2612',
+        border: '1px solid #1a4a22',
+        color: disabled ? '#3a5a42' : '#7fffaa',
+        cursor: disabled ? 'default' : 'pointer',
+        fontSize: 14,
+        fontFamily: 'monospace',
+        lineHeight: 1,
+        padding: 0,
+        borderRadius: 3,
+      }}
+    >
+      {children}
+    </button>
   )
 }
 

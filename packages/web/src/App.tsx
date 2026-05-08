@@ -363,14 +363,6 @@ function App() {
         </div>
         {selectedFlowId && (
           <div className="flex items-center">
-            <button
-              aria-label={playing ? 'Pause flow' : 'Play flow'}
-              onClick={() => setPlaying((p) => !p)}
-              className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
-              style={{ fontSize: 10 }}
-            >
-              {playing ? '\u23F8 Pause' : '\u25B6 Play'}
-            </button>
             <InspectorToggle open={inspectorOpen} onToggle={() => setInspectorOpen((o) => !o)} />
           </div>
         )}
@@ -480,6 +472,7 @@ function App() {
                   <FlowCanvas
                     flow={displayFlow}
                     playing={playing}
+                    onTogglePlay={() => setPlaying((p) => !p)}
                     onDrillDown={handleDrillDown}
                     onDrilldownStep={handleAutoDrilldown}
                     onCycleComplete={handleCycleComplete}
