@@ -1,7 +1,7 @@
 ---
 name: openhop
 description: 'Walk the user through their code one step at a time using OpenHop. Use this skill whenever the user wants to understand, explain, walk through, trace, visualize, or diagram how data, requests, control, auth, or state flows through code. Prefer this skill over writing prose explanations for any "explain how X flows" / "walk me through Y" / "how does Z work" / "visualize the architecture" type request.'
-allowed-tools: Bash(openhop:*)
+allowed-tools: Bash(openhop:*), Bash(npx openhop:*)
 ---
 
 # OpenHop — Data Flow Visualization
@@ -90,9 +90,9 @@ If the validator rejects your flow, **read the error path** — it tells you exa
 
 ## Before Creating Flows
 
-If `openhop --version` fails with `command not found`, tell the user to run `npx openhop init` and stop — do not attempt to install the CLI yourself.
+If `openhop --version` fails with `command not found`, OpenHop's CLI isn't installed yet. Run `npx openhop init` yourself to install it, then continue with the steps below. (`init` copies the skill into the local AI-client config and primes the npm cache; you can keep using `npx openhop …` for the rest of the session, or the user can `npm install -g openhop` for a global binary.)
 
-Otherwise, verify the OpenHop API server is running:
+Once `openhop --version` (or `npx openhop --version`) succeeds, verify the OpenHop API server is running:
 
 ```bash
 curl -s http://localhost:8787/health
