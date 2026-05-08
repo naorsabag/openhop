@@ -35,6 +35,20 @@
 
 ---
 
+## Try it in 60 seconds
+
+Install the skill (auto-detects Claude Code, Cursor, Windsurf, Cline, Continue — for other clients see [Install](#install)):
+
+```bash
+npx openhop init
+```
+
+Restart your agent so it picks up the new skill, then open your codebase and ask:
+
+> "Walk me through the main flow of this codebase."
+
+The agent generates the YAML, pushes it, and returns a URL with the animation playing.
+
 ## Why
 
 AI coding agents are great at explaining how code works — in 800-line bullet walls you can't verify.
@@ -53,45 +67,37 @@ sub-flow.
 - 🔒 **Local-first, no telemetry.** Runs entirely on your machine — no analytics, no phone-home, no account required.
 - ✂️ **Token-light.** A typical flow YAML is ~5–20× smaller than the equivalent prose explanation an agent would otherwise emit.
 
-## Try it in 60 seconds
-
-```bash
-npx openhop demo
-```
-
-That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts a starter flow, and opens your browser. Press Ctrl-C to stop.
-
 ## Install
 
 OpenHop is a skill — a `SKILL.md` file your AI agent reads to learn how to render flows. **Installing the skill is the only required step.** The CLI + server (which actually paints the pixels) ship in the same npm package and the agent boots them automatically the first time you ask for a flow.
 
 Pick the install path that matches your AI client.
 
-### Path A — Claude Code, Cursor, Windsurf, Cline, Continue
+**Path A — Claude Code, Cursor, Windsurf, Cline, Continue**
 
 ```bash
 npx openhop init
 ```
 
-### Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, … (via [OpenSkills](https://github.com/numman-ali/openskills))
+**Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, …** (via [OpenSkills](https://github.com/numman-ali/openskills))
 
 ```bash
 npx openskills install naorsabag/openhop
 ```
 
-### Want to start the server yourself?
+**Want to start the server yourself?**
 
 ```bash
 npx openhop serve
 ```
 
-### Just looking?
+**Just looking?**
 
 ```bash
 npx openhop demo
 ```
 
-### Contributors
+**Contributors**
 
 ```bash
 git clone https://github.com/naorsabag/openhop.git
