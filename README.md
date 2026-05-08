@@ -73,25 +73,17 @@ Pick the install path that matches your AI client.
 npx openhop init
 ```
 
-Auto-detects which of those clients you have installed and drops `SKILL.md` into each one's skills directory. Open your codebase in any of them and ask for a flow (see [Use cases](#use-cases) below).
-
-### Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, …
+### Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, … (via [OpenSkills](https://github.com/numman-ali/openskills))
 
 ```bash
 npx openskills install naorsabag/openhop
 ```
 
-[OpenSkills](https://github.com/numman-ali/openskills) is the universal cross-vendor installer. It knows where each of these clients keeps skills and drops `SKILL.md` in the right place. Same activation flow afterwards.
-
 ### Want to start the server yourself?
-
-The agent will run `openhop serve` on demand, so you don't have to. If you'd rather pre-start it (e.g. you want it running before you ask for the first flow, or you want it in a specific terminal):
 
 ```bash
 npx openhop serve
 ```
-
-That's the long-lived API + web UI on `:8787` / `:8788`, no starter flow. Leave it running.
 
 ### Just looking?
 
@@ -99,18 +91,12 @@ That's the long-lived API + web UI on `:8787` / `:8788`, no starter flow. Leave 
 npx openhop demo
 ```
 
-Boots the server and pushes a canonical OAuth example so you can see what a rendered flow looks like — no agent or skill install needed. Useful as a preview; the actual product is agent-driven.
-
 ### Contributors
-
-Run from source:
 
 ```bash
 git clone https://github.com/naorsabag/openhop.git
 cd openhop && npm install && npm run dev
 ```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Use cases
 
