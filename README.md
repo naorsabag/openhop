@@ -103,18 +103,26 @@ Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
 
 ```mermaid
 flowchart LR
-    skill[SKILL.md]
-    agent([Agent])
+    user([User])
     cli[CLI<br/>zod validation]
     api[Fastify API]
     web[Web UI<br/>PIXI]
     browser([Browser])
 
+    subgraph agentBlock [ ]
+        direction TB
+        agent[Agent]
+        skill([SKILL.md])
+    end
+
+    user -- prompt --> agent
     skill -- teaches --> agent
     agent -- YAML --> cli
     cli -- JSON --> api
     api --> web
     browser --> web
+
+    style agentBlock fill:transparent,stroke:none
 ```
 
 The CLI validates YAML against a zod schema (with fuzzy typo hints), posts the flow to the API,
