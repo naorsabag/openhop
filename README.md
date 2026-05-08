@@ -37,19 +37,17 @@
 
 ## Try it in 60 seconds
 
-Install the skill into your AI agent:
+Install the skill (auto-detects Claude Code, Cursor, Windsurf, Cline, Continue — for other clients see [Install](#install)):
 
 ```bash
 npx openhop init
 ```
 
-(For Codex / Gemini / Junie / Copilot / OpenCode / Goose / Antigravity, use `npx openskills install naorsabag/openhop` instead — see [Install](#install).)
-
 Open your codebase in the agent and ask:
 
 > "Walk me through the OAuth flow in this codebase."
 
-The agent generates the YAML, calls `openhop push`, and hands you back a URL with the animation playing. Done.
+The agent generates the YAML, pushes it, and returns a URL with the animation playing.
 
 ## Why
 
