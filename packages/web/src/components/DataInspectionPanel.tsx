@@ -302,15 +302,18 @@ function DataBlock({
         marginTop: separated ? 10 : 0,
         paddingTop: separated ? 8 : 0,
         borderTop: separated ? '1px dashed #2a2a4a' : undefined,
-        // Highlighted block gets a subtle accent: left bar in the same
-        // brand cyan as the inspect-header arrows + a soft background
-        // tint so it pops without screaming.
+        // Highlighted block: thick left bar in brand cyan + tinted bg +
+        // soft glow. Cranked up from a subtle accent because users said
+        // they couldn't tell what changed when they clicked a carrot.
         ...(highlighted
           ? {
-              borderLeft: '3px solid #4a9eff',
-              background: 'rgba(74,158,255,0.08)',
+              borderLeft: '4px solid #4a9eff',
+              background: 'rgba(74,158,255,0.18)',
+              boxShadow: '0 0 12px rgba(74,158,255,0.35)',
               paddingLeft: 8,
-              marginLeft: -11,
+              paddingTop: 6,
+              paddingBottom: 6,
+              marginLeft: -12,
               marginRight: -8,
               borderRadius: '0 4px 4px 0',
             }

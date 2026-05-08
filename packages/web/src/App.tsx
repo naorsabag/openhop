@@ -236,6 +236,11 @@ function App() {
     setInspectedStep(step)
     setInspectedFocusData(focusData ?? null)
     setInspectorOpen(true)
+    // When focusData is provided, the call originated from a carrot click —
+    // pause autoplay so the highlighted block doesn't get cleared by the
+    // next step's onInspectStep call (handleStepChange sets focusData=null
+    // every advance, which would make the click feel like it did nothing).
+    if (focusData) setPlaying(false)
   }, [])
 
   // Fallback: first step when nothing has been inspected

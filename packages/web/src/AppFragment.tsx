@@ -177,6 +177,9 @@ export default function AppFragment() {
     setInspectedStep(step)
     setInspectedFocusData(focusData ?? null)
     setInspectorOpen(true)
+    // Pause autoplay on carrot click so the highlight isn't immediately
+    // wiped by the next step's onInspectStep (see App.tsx for details).
+    if (focusData) setPlaying(false)
   }, [])
   const currentStep: FlowStep | null = useMemo(() => {
     if (inspectedStep) return inspectedStep
