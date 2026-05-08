@@ -5,11 +5,11 @@
   "description": "Animated data-flow diagrams your AI agent can write. Monorepo root.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/naorsabag/OpenHop.git"
+    "url": "https://github.com/naorsabag/openhop.git"
   },
-  "homepage": "https://github.com/naorsabag/OpenHop",
+  "homepage": "https://github.com/naorsabag/openhop",
   "bugs": {
-    "url": "https://github.com/naorsabag/OpenHop/issues"
+    "url": "https://github.com/naorsabag/openhop/issues"
   },
   "license": "MIT",
   "author": "Naor Sabag (https://github.com/naorsabag)",

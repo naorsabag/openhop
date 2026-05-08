@@ -4,12 +4,12 @@
   "description": "Animated data-flow diagrams your AI agent can write. CLI.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/naorsabag/OpenHop.git",
+    "url": "https://github.com/naorsabag/openhop.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/naorsabag/OpenHop#readme",
+  "homepage": "https://github.com/naorsabag/openhop#readme",
   "bugs": {
-    "url": "https://github.com/naorsabag/OpenHop/issues"
+    "url": "https://github.com/naorsabag/openhop/issues"
   },
   "license": "MIT",
   "author": "Naor Sabag (https://github.com/naorsabag)",
