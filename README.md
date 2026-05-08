@@ -27,7 +27,8 @@
 
 <p align="center">
   <a href="#try-it-in-60-seconds">Quickstart</a> ·
-  <a href="#give-your-agent-the-skill">AI skill</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a>
 </p>
@@ -37,9 +38,10 @@
 ## Why
 
 AI coding agents are great at explaining how code works — in 800-line bullet walls you can't verify.
-OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You describe
-the flow in YAML (your agent writes it for you); OpenHop renders animated data pixels traveling
-between components on a pixel-art canvas. Click any node to drill into its sub-flow.
+OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You ask in
+plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
+pixels traveling between components on a pixel-art canvas. Click any node to drill into its
+sub-flow.
 
 ## Features
 
@@ -61,38 +63,55 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 
 ## Install
 
-| Scenario                                                     | Command                                                                                                                                  |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **One-shot demo**                                            | `npx openhop demo` — boots everything and opens the browser                                                                              |
-| **Long-lived local server**                                  | `npx openhop serve` — API + web UI, no starter flow (or `npm install -g openhop` first if you'd rather have the global `openhop` binary) |
-| **Install the skill** (Claude Code, Cursor, Windsurf, Cline) | `npx openhop init` — auto-detects your AI client and drops `SKILL.md` in place                                                           |
-| **Install the skill** (Codex, Gemini, Junie, Copilot, …)     | `npx openskills install naorsabag/openhop` — universal install via OpenSkills                                                            |
-| **Run from source (contributors)**                           | `git clone https://github.com/naorsabag/openhop.git && cd openhop && npm install && npm run dev` — see [Contributing](#contributing)     |
+OpenHop is a skill — a `SKILL.md` file your AI agent reads to learn how to render flows. **Installing the skill is the only required step.** The CLI + server (which actually paints the pixels) ship in the same npm package and the agent boots them automatically the first time you ask for a flow.
 
-## Give your agent the skill
+Pick the install path that matches your AI client.
 
-OpenHop ships a skill file at [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md) that teaches any
-SKILL-compatible agent how to use OpenHop.
-
-For Claude Code, copy the skill into your skills directory:
+### Path A — Claude Code, Cursor, Windsurf, Cline, Continue
 
 ```bash
-mkdir -p ~/.claude/skills/openhop
-cp skills/openhop/SKILL.md ~/.claude/skills/openhop/
+npx openhop init
 ```
 
-Then ask your agent things like:
+### Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, … (via [OpenSkills](https://github.com/numman-ali/openskills))
 
-- _"Walk me through the OAuth flow in this codebase."_
-- _"Diagram how a request flows through this Express app."_
-- _"Show me how the checkout pipeline processes an order, end to end."_
-- _"Trace what happens when a user clicks **Submit**."_
-- _"Visualize the auth middleware — every step, every state transition."_
-- _"How does cache invalidation work in this service?"_
-- _"Diagram the WebSocket reconnection state machine."_
-- _"Walk me through what happens after `npm publish` — every step until the package is on the registry."_
+```bash
+npx openskills install naorsabag/openhop
+```
 
-The agent loads the skill, sketches the flow in YAML, calls `openhop push`, and hands you back a URL with the animation playing.
+### Want to start the server yourself?
+
+```bash
+npx openhop serve
+```
+
+### Just looking?
+
+```bash
+npx openhop demo
+```
+
+### Contributors
+
+```bash
+git clone https://github.com/naorsabag/openhop.git
+cd openhop && npm install && npm run dev
+```
+
+## Use cases
+
+Once the skill is installed, point your agent at a codebase and ask it things like:
+
+- "Walk me through the OAuth flow in this codebase."
+- "Diagram how a request flows through this Express app."
+- "Show me how the checkout pipeline processes an order, end to end."
+- "Trace what happens when a user clicks **Submit**."
+- "Visualize the auth middleware — every step, every state transition."
+- "How does cache invalidation work in this service?"
+- "Diagram the WebSocket reconnection state machine."
+- "Walk me through what happens after `npm publish` — every step until the package is on the registry."
+
+The skill activates on prompts asking your agent to **explain, walk through, trace, visualize, or diagram** how data, requests, control, auth, or state flows through code. When it recognizes that shape, it switches from prose to YAML + animation. The full trigger-phrase list lives in [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md).
 
 ## CLI
 
