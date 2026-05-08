@@ -63,43 +63,47 @@ That's it. The CLI starts the API + web UI on `localhost:8787` / `:8788`, posts 
 
 ## Install
 
-OpenHop has two pieces and they do different things:
+OpenHop is a skill — a `SKILL.md` file your AI agent reads to learn how to render flows. **Installing the skill is the only required step.** The CLI + server (which actually paints the pixels) ship in the same npm package and the agent boots them automatically the first time you ask for a flow.
 
-1. **The local CLI + server** — runs on `:8787` (API) and `:8788` (web UI). Renders flows.
-2. **The skill** — a `SKILL.md` file that lives in your AI agent's config dir. Teaches the agent how to call the CLI.
+Pick the install path that matches your AI client.
 
-You need the **CLI** to see anything render. You need the **skill** if you want your AI agent to call it for you. Most people want both.
-
-### Path A — just kicking the tires (no agent setup)
+### Path A — Claude Code, Cursor, Windsurf, Cline, Continue
 
 ```bash
-npx openhop demo
+npx openhop init
 ```
 
-Installs the CLI on first run, starts the server, pushes a canonical OAuth example, and opens it in your browser. Press Ctrl-C to stop. **This is the fastest way to see what OpenHop does**, and it's all you need if you only want to look at example flows.
+Auto-detects which of those clients you have installed and drops `SKILL.md` into each one's skills directory. Open your codebase in any of them and ask for a flow (see [Use cases](#use-cases) below).
 
-### Path B — agent-driven use (the actual product)
+### Path B — Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, Goose, Antigravity, …
 
-You need both pieces installed.
+```bash
+npx openskills install naorsabag/openhop
+```
 
-**Step 1 — install the skill** so your agent knows how to call OpenHop:
+[OpenSkills](https://github.com/numman-ali/openskills) is the universal cross-vendor installer. It knows where each of these clients keeps skills and drops `SKILL.md` in the right place. Same activation flow afterwards.
 
-| Client                                             | One-time command                           |
-| -------------------------------------------------- | ------------------------------------------ |
-| Claude Code, Cursor, Windsurf, Cline, Continue     | `npx openhop init`                         |
-| Codex CLI, Gemini CLI, Junie, Copilot, OpenCode, … | `npx openskills install naorsabag/openhop` |
+### Want to start the server yourself?
 
-**Step 2 — run the server** in a terminal you'll keep open:
+The agent will run `openhop serve` on demand, so you don't have to. If you'd rather pre-start it (e.g. you want it running before you ask for the first flow, or you want it in a specific terminal):
 
 ```bash
 npx openhop serve
 ```
 
-That's the long-lived form of `npx openhop demo` — same API + web UI, no starter flow. Leave it running.
+That's the long-lived API + web UI on `:8787` / `:8788`, no starter flow. Leave it running.
 
-**Step 3 — ask your agent for a flow** (see [Use cases](#use-cases) for prompt ideas). The agent generates YAML, pushes it via `openhop push`, hands you back a URL with the animation playing.
+### Just looking?
 
-### Path C — contributor (run from source)
+```bash
+npx openhop demo
+```
+
+Boots the server and pushes a canonical OAuth example so you can see what a rendered flow looks like — no agent or skill install needed. Useful as a preview; the actual product is agent-driven.
+
+### Contributors
+
+Run from source:
 
 ```bash
 git clone https://github.com/naorsabag/openhop.git
