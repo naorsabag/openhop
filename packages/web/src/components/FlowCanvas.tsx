@@ -363,12 +363,26 @@ function FlowCanvasInner({
     return set
   }, [manualPixels])
 
-  // Auto-drilldown: when a step with drilldown:true is detected, capture the step index
-  // and drill down after the pixel animation, preventing the parent from advancing further
+  // Auto-drilldown: when a step with drilldown:true is detected during
+  // AUTOPLAY, capture the step index and drill down after the pixel
+  // animation. Gated on `playing` so manual scrubbing past a drill-down
+  // step doesn't queue an unintended drill (which used to leak: the
+  // effect would schedule the timer on step N — a drill-down step —
+  // and the next step's effect run would early-return without canceling
+  // the pending timer, so 1500ms later the drill fired anyway).
   const drilldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastDrilldownStepRef = useRef<number>(-1)
   useEffect(() => {
-    if (!onDrilldownStep) return
+    const cancelPending = () => {
+      if (drilldownTimerRef.current) {
+        clearTimeout(drilldownTimerRef.current)
+        drilldownTimerRef.current = null
+      }
+    }
+    if (!onDrilldownStep || !playing) {
+      cancelPending()
+      return
+    }
     const step = animState.activeStep
     if (!step) return
     if (!('drilldown' in step) || !step.drilldown) return
@@ -381,7 +395,7 @@ function FlowCanvasInner({
     if (lastDrilldownStepRef.current === animState.currentStepIndex) return
     lastDrilldownStepRef.current = animState.currentStepIndex
 
-    if (drilldownTimerRef.current) clearTimeout(drilldownTimerRef.current)
+    cancelPending()
 
     // Capture the current step index NOW before the animation advances
     const capturedStepIndex = animState.currentStepIndex
@@ -394,7 +408,7 @@ function FlowCanvasInner({
       },
       1500 / (window.__flowSpeed ?? 1)
     )
-  }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep])
+  }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep, playing])
 
   const handleNodeClick = useCallback(
     (nodeId: string) => {
