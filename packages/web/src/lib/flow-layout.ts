@@ -854,6 +854,16 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
       'portAlignment.default': 'CENTER',
       'elk.spacing.nodeNode': '80',
       'elk.layered.spacing.nodeNodeBetweenLayers': '200',
+      // Pull edge corridors apart so back-edges (e.g. results → api in the
+      // orion flow) don't share a vertical lane with a forward edge between
+      // the same source-side node and a different target. Prior to bumping
+      // these, results → api routed at x=774 while api → jenkins ran at
+      // x=864 — visually two parallel roads that read as "two edges between
+      // api and jenkins."
+      'elk.spacing.edgeEdge': '40',
+      'elk.spacing.edgeNode': '40',
+      'elk.layered.spacing.edgeEdgeBetweenLayers': '40',
+      'elk.layered.spacing.edgeNodeBetweenLayers': '40',
       'elk.padding': '[top=40,left=40,bottom=40,right=40]',
       'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
       'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
