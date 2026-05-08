@@ -1,7 +1,7 @@
 <h1 align="center">OpenHop</h1>
 
 <p align="center">
-  <img src="docs/logo.png" width="600" alt="OpenHop logo" />
+  <img src="assets/logo.png" width="600" alt="OpenHop logo" />
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/order-flow.gif" width="720" alt="OpenHop animating an end-to-end order flow" />
+  <img src="assets/order-flow.gif" width="720" alt="OpenHop animating an end-to-end order flow" />
 </p>
 
 <p align="center">
@@ -101,15 +101,28 @@ Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
 
 ## How it works
 
-```
-┌─────────┐   YAML    ┌────────────┐    JSON    ┌──────────────┐
-│  Agent  │ ────────▶ │  CLI (zod) │ ─────────▶ │  Fastify API │
-└─────────┘           └────────────┘            └──────┬───────┘
-                                                       │
-                                                       ▼
-                                                ┌──────────────┐
-                                                │   Web (PIXI) │ ◀── browser
-                                                └──────────────┘
+```mermaid
+flowchart LR
+    user([User])
+    cli[CLI<br/>zod validation]
+    api[Fastify API]
+    web[Web UI<br/>PIXI]
+    browser([Browser])
+
+    subgraph agentBlock [ ]
+        direction TB
+        agent[Agent]
+        skill([SKILL.md])
+    end
+
+    user -- prompt --> agent
+    skill -- teaches --> agent
+    agent -- YAML --> cli
+    cli -- JSON --> api
+    api --> web
+    browser --> web
+
+    style agentBlock fill:transparent,stroke:none
 ```
 
 The CLI validates YAML against a zod schema (with fuzzy typo hints), posts the flow to the API,

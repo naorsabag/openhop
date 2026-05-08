@@ -77,7 +77,7 @@ The shared test suite is fully passing. The previous `patch.test.ts` "old singul
 - **Zod is source of truth.** Any schema change goes in `packages/shared/src/schema.ts` first; types and JSON-schema output are derived. Don't hand-edit `json-schema.ts` — it emits via `toJSONSchema`.
 - **Fastify shared schemas** get registered at bootstrap via `app.addSchema(...)` so recursive `$ref` resolves correctly. If you add a new emitted schema, add it to `sharedJsonSchemas` in `packages/shared/src/json-schema.ts`.
 - **React Flow edges** render via `RoadEdge`. The outline/glow is a single SVG `feMorphology` filter on the whole `.react-flow__edges` layer — per-edge shadows caused severe perf issues; don't reintroduce them.
-- **Sprites** are pixel-grid SVGs under `packages/web/public/sprites/<type>_node.svg`. Source art lives in `docs/svgs/` with `_v2/_v3` variants — pick the newest for each type.
+- **Sprites** are pixel-grid SVGs under `packages/web/public/sprites/<type>_node.svg` — that's the source of truth. Older draft variants used to live in `docs/svgs/`; they were removed (recoverable from git history if a v2/v3 retread is ever needed).
 - **Color variants** — nodes without a custom icon cycle through a 6-slot palette (`VARIANT_CYCLE` in `packages/web/src/lib/flow-layout.ts`). To add another variant, edit both `VARIANT_CYCLE` (filter) and `VARIANT_ACCENT` (label/shadow/progress-bar color) together.
 
 ## Git
