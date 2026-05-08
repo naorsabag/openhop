@@ -116,14 +116,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 Once the skill is installed, point your agent at a codebase and ask it things like:
 
-- _"Walk me through the OAuth flow in this codebase."_
-- _"Diagram how a request flows through this Express app."_
-- _"Show me how the checkout pipeline processes an order, end to end."_
-- _"Trace what happens when a user clicks **Submit**."_
-- _"Visualize the auth middleware — every step, every state transition."_
-- _"How does cache invalidation work in this service?"_
-- _"Diagram the WebSocket reconnection state machine."_
-- _"Walk me through what happens after `npm publish` — every step until the package is on the registry."_
+- "Walk me through the OAuth flow in this codebase."
+- "Diagram how a request flows through this Express app."
+- "Show me how the checkout pipeline processes an order, end to end."
+- "Trace what happens when a user clicks **Submit**."
+- "Visualize the auth middleware — every step, every state transition."
+- "How does cache invalidation work in this service?"
+- "Diagram the WebSocket reconnection state machine."
+- "Walk me through what happens after `npm publish` — every step until the package is on the registry."
 
 The shape that activates the skill is "explain / walk through / trace / visualize / diagram \_ flow". When the agent recognizes one of those patterns it switches from prose to YAML + animation.
 
