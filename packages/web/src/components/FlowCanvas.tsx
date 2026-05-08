@@ -636,6 +636,11 @@ function FlowCanvasInner({
               ariaLabel="Restart flow"
               onClick={() => {
                 onPause?.()
+                // Reset the "already drilled" memo so a re-traversal of any
+                // drill-down step actually re-fires onDrilldownStep. Without
+                // this, after Prev/Next over a drill-down step, autoplay
+                // would silently skip the drill on the second pass.
+                lastDrilldownStepRef.current = -1
                 restart()
               }}
             >
@@ -645,6 +650,7 @@ function FlowCanvasInner({
               ariaLabel="Previous step"
               onClick={() => {
                 onPause?.()
+                lastDrilldownStepRef.current = -1
                 goToStep((animState.currentStepIndex ?? 0) - 1)
               }}
               disabled={(animState.currentStepIndex ?? -1) <= 0}
@@ -658,6 +664,7 @@ function FlowCanvasInner({
               ariaLabel="Next step"
               onClick={() => {
                 onPause?.()
+                lastDrilldownStepRef.current = -1
                 goToStep((animState.currentStepIndex ?? -1) + 1)
               }}
               disabled={
