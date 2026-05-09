@@ -1,10 +1,18 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { FlowStep, FlowData } from '../types'
 
 export type DockSide = 'right' | 'bottom'
 
 interface DataInspectionPanelProps {
   step: FlowStep | null
+  /** Identifies the (from, to, data) the user clicked on the canvas, so
+   *  the matching DataBlock highlights and scrolls into view. The
+   *  triplet disambiguates:
+   *    - broadcast steps (one source, many targets, shared data ref —
+   *      `to` distinguishes which target)
+   *    - parallel steps (each sub-step has its own from/to)
+   *    - multi-data steps (`data` distinguishes which entry was clicked) */
+  focus?: { from?: string; to?: string; data?: FlowData } | null
   side: DockSide
   size: number
   onSideChange: (side: DockSide) => void
@@ -17,6 +25,7 @@ const MAX_SIZE = 800
 
 export function DataInspectionPanel({
   step,
+  focus = null,
   side,
   size,
   onSideChange,
@@ -88,7 +97,7 @@ export function DataInspectionPanel({
       />
       <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Header side={side} onSideChange={onSideChange} onClose={onClose} />
-        <StepBody step={step} />
+        <StepBody step={step} focus={focus} />
       </div>
     </aside>
   )
@@ -215,7 +224,13 @@ function normalizeData(raw: FlowStep['data']): FlowData[] {
   return [raw]
 }
 
-function StepBody({ step }: { step: FlowStep | null }) {
+function StepBody({
+  step,
+  focus,
+}: {
+  step: FlowStep | null
+  focus: { from?: string; to?: string; data?: FlowData } | null
+}) {
   if (!step) {
     return (
       <div
@@ -245,35 +260,84 @@ function StepBody({ step }: { step: FlowStep | null }) {
         color: '#e0e0e0',
       }}
     >
-      {flows.map((f, i) => (
-        <section
-          key={`${f.from}-${f.to}-${i}`}
-          style={{
-            marginTop: i > 0 ? 12 : 0,
-            paddingTop: i > 0 ? 10 : 0,
-            borderTop: i > 0 ? '1px solid #2a2a4a' : undefined,
-          }}
-        >
-          <div style={{ color: '#4a9eff', marginBottom: 6 }}>
-            {f.from} &rarr; {f.to}
-          </div>
-          {f.data.length === 0 && <div style={{ color: '#888' }}>No data.</div>}
-          {f.data.map((d, di) => (
-            <DataBlock key={di} data={d} separated={di > 0} />
-          ))}
-        </section>
-      ))}
+      {flows.map((f, i) => {
+        // A section matches focus when its from/to align (when supplied).
+        // Then within the section, only the specific data block matches.
+        // Both checks needed to disambiguate broadcast (shared data ref
+        // across targets) and parallel (per-sub-step from/to).
+        const sectionMatchesFocus =
+          !!focus &&
+          (focus.from === undefined || focus.from === f.from) &&
+          (focus.to === undefined || focus.to === f.to)
+        return (
+          <section
+            key={`${f.from}-${f.to}-${i}`}
+            style={{
+              marginTop: i > 0 ? 12 : 0,
+              paddingTop: i > 0 ? 10 : 0,
+              borderTop: i > 0 ? '1px solid #2a2a4a' : undefined,
+            }}
+          >
+            <div style={{ color: '#4a9eff', marginBottom: 6 }}>
+              {f.from} &rarr; {f.to}
+            </div>
+            {f.data.length === 0 && <div style={{ color: '#888' }}>No data.</div>}
+            {f.data.map((d, di) => (
+              <DataBlock
+                key={di}
+                data={d}
+                separated={di > 0}
+                highlighted={sectionMatchesFocus && (focus?.data === undefined || d === focus.data)}
+              />
+            ))}
+          </section>
+        )
+      })}
     </div>
   )
 }
 
-function DataBlock({ data, separated }: { data: FlowData; separated: boolean }) {
+function DataBlock({
+  data,
+  separated,
+  highlighted,
+}: {
+  data: FlowData
+  separated: boolean
+  highlighted: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  // Scroll the highlighted block into view when it changes. `block: 'nearest'`
+  // keeps the panel from over-scrolling if the block is already visible.
+  useEffect(() => {
+    if (highlighted && ref.current) {
+      ref.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [highlighted])
+
   return (
     <div
+      ref={ref}
       style={{
         marginTop: separated ? 10 : 0,
         paddingTop: separated ? 8 : 0,
         borderTop: separated ? '1px dashed #2a2a4a' : undefined,
+        // Highlighted block: thick left bar in brand cyan + tinted bg +
+        // soft glow. Cranked up from a subtle accent because users said
+        // they couldn't tell what changed when they clicked a carrot.
+        ...(highlighted
+          ? {
+              borderLeft: '4px solid #4a9eff',
+              background: 'rgba(74,158,255,0.18)',
+              boxShadow: '0 0 12px rgba(74,158,255,0.35)',
+              paddingLeft: 8,
+              paddingTop: 6,
+              paddingBottom: 6,
+              marginLeft: -12,
+              marginRight: -8,
+              borderRadius: '0 4px 4px 0',
+            }
+          : null),
       }}
     >
       {data.label && <div style={{ marginBottom: data.fields?.length ? 6 : 0 }}>{data.label}</div>}

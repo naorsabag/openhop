@@ -23,7 +23,12 @@ interface DataPixelProps {
   containerRef: React.RefObject<HTMLDivElement | null>
   isManual?: boolean
   onAnimationComplete?: () => void
-  onPixelClick?: (step: FlowStep, position: { x: number; y: number }) => void
+  /** Fired when the user clicks the carrot. The pixel only knows its
+   *  own data slice; the caller (FlowCanvas) layers in the (from, to)
+   *  identity of the edgeFlow so the inspect panel can match the
+   *  click to a specific (target, data) pair — required to disambiguate
+   *  broadcast steps where multiple targets share one data object. */
+  onPixelClick?: (focusData?: FlowData) => void
   delayMs?: number
   dataOverride?: FlowData
   /** When true, freeze the pixel mid-flight: each tick re-anchors the
@@ -52,7 +57,6 @@ export function DataPixel({
   paused = false,
 }: DataPixelProps) {
   const pixelRef = useRef<HTMLDivElement>(null)
-  const labelRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
   const lastTickTimeRef = useRef<number>(0)
@@ -76,7 +80,9 @@ export function DataPixel({
   // color from topology, keeps shadow in lockstep with sprite hue) > orange.
   const color = pixelColor ?? sourceNodeColor ?? DEFAULT_PIXEL_COLOR
 
-  const dataLabel = dataOverride
+  // Aria label only — the on-canvas label was removed; the inspect panel
+  // shows the data instead (clicking the carrot opens it).
+  const ariaDataLabel = dataOverride
     ? dataOverride.label
     : typeof step.data === 'string'
       ? step.data
@@ -134,7 +140,6 @@ export function DataPixel({
       const screenX = point.x * zoom + tx
       const screenY = point.y * zoom + ty
       const pixelSize = PIXEL_SIZE * zoom
-      const labelFontSize = 11 * zoom
 
       setPosition({ x: screenX, y: screenY })
 
@@ -143,11 +148,6 @@ export function DataPixel({
         pixelRef.current.style.height = `${pixelSize}px`
         pixelRef.current.style.transform = `translate(${screenX - pixelSize / 2}px, ${screenY - pixelSize / 2}px)`
         pixelRef.current.style.opacity = '1'
-      }
-      if (labelRef.current) {
-        labelRef.current.style.fontSize = `${labelFontSize}px`
-        labelRef.current.style.transform = `translate(${screenX + pixelSize / 2 + 4 * zoom}px, ${screenY - 6 * zoom}px)`
-        labelRef.current.style.opacity = '1'
       }
 
       // Keep ticking while paused (so zoom updates land), and while still
@@ -178,17 +178,36 @@ export function DataPixel({
     }
   }, [animate])
 
+  // Pass the carrot's specific data slice. FlowCanvas adds the from/to
+  // context; we don't pass `step` here because for parallel sub-steps
+  // it'd be the sub-step (not the parent the inspect panel needs).
+  const emitPixelClick = () => {
+    if (!onPixelClick) return
+    const focusData =
+      dataOverride ??
+      (typeof step.data === 'string'
+        ? { label: step.data }
+        : Array.isArray(step.data)
+          ? step.data[0]
+          : step.data)
+    onPixelClick(focusData)
+  }
+
   return (
     <>
       <div
         ref={pixelRef}
         data-testid={isManual ? 'data-pixel-manual' : 'data-pixel'}
-        aria-label={`Data: ${dataLabel}`}
+        aria-label={`Data: ${ariaDataLabel}`}
+        role="button"
+        tabIndex={0}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={(e) => {
-          if (onPixelClick) {
-            onPixelClick(step, { x: e.clientX, y: e.clientY })
+        onClick={emitPixelClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            emitPixelClick()
           }
         }}
         style={{
@@ -224,24 +243,6 @@ export function DataPixel({
             }}
           />
         </div>
-      </div>
-      <div
-        ref={labelRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          fontFamily: '"VT323", monospace',
-          fontSize: 11,
-          color: '#ccc',
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          textShadow: '0 0 4px #000, 0 0 2px #000',
-          opacity: 0,
-          zIndex: 1000,
-        }}
-      >
-        {dataLabel}
       </div>
       {hovered && position && (
         <DataTooltip step={step} color={color} x={position.x} y={position.y} />

@@ -11,7 +11,7 @@ import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import { useFlowMutations } from './hooks/useFlowMutations'
-import type { FlowNode, FlowStep, Flow } from './types'
+import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
 interface FlowNavItem {
   flow: { nodes: FlowNode[]; steps?: FlowStep[] }
@@ -205,6 +205,14 @@ function App() {
   // Track current step index for resume
   const currentStepRef = useRef(0)
   const [inspectedStep, setInspectedStep] = useState<FlowStep | null>(null)
+  // Identifies the (from, to, data) the user clicked, so the inspect panel
+  // can highlight the matching section. Disambiguates broadcast steps where
+  // multiple targets share one data object reference.
+  const [inspectedFocus, setInspectedFocus] = useState<{
+    from?: string
+    to?: string
+    data?: FlowData
+  } | null>(null)
   const displayFlowRef = useRef(displayFlow)
   useEffect(() => {
     displayFlowRef.current = displayFlow
@@ -212,7 +220,10 @@ function App() {
   const handleStepChange = useCallback((stepIndex: number) => {
     currentStepRef.current = stepIndex
     const steps = displayFlowRef.current?.flow.steps ?? []
-    if (steps[stepIndex]) setInspectedStep(steps[stepIndex])
+    if (steps[stepIndex]) {
+      setInspectedStep(steps[stepIndex])
+      setInspectedFocus(null)
+    }
   }, [])
 
   // Inspector panel state
@@ -223,11 +234,22 @@ function App() {
   // Reset inspected step when flow changes
   useEffect(() => {
     setInspectedStep(null)
+    setInspectedFocus(null)
   }, [selectedFlowId, flowStack.length])
 
-  const handleInspectStep = useCallback((step: FlowStep) => {
-    setInspectedStep(step)
-  }, [])
+  const handleInspectStep = useCallback(
+    (step: FlowStep, focus?: { from?: string; to?: string; data?: FlowData }) => {
+      setInspectedStep(step)
+      setInspectedFocus(focus ?? null)
+      setInspectorOpen(true)
+      // When focus is provided, the call originated from a carrot click —
+      // pause autoplay so the highlighted block doesn't get cleared by the
+      // next step's onInspectStep call (handleStepChange sets focus=null
+      // every advance, which would make the click feel like it did nothing).
+      if (focus) setPlaying(false)
+    },
+    []
+  )
 
   // Fallback: first step when nothing has been inspected
   const currentStep: FlowStep | null = useMemo(() => {
@@ -349,14 +371,6 @@ function App() {
         </div>
         {selectedFlowId && (
           <div className="flex items-center">
-            <button
-              aria-label={playing ? 'Pause flow' : 'Play flow'}
-              onClick={() => setPlaying((p) => !p)}
-              className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
-              style={{ fontSize: 10 }}
-            >
-              {playing ? '\u23F8 Pause' : '\u25B6 Play'}
-            </button>
             <InspectorToggle open={inspectorOpen} onToggle={() => setInspectorOpen((o) => !o)} />
           </div>
         )}
@@ -466,6 +480,8 @@ function App() {
                   <FlowCanvas
                     flow={displayFlow}
                     playing={playing}
+                    onTogglePlay={() => setPlaying((p) => !p)}
+                    onPause={() => setPlaying(false)}
                     onDrillDown={handleDrillDown}
                     onDrilldownStep={handleAutoDrilldown}
                     onCycleComplete={handleCycleComplete}
@@ -480,6 +496,7 @@ function App() {
           {inspectorOpen && selectedFlowId && (
             <DataInspectionPanel
               step={currentStep}
+              focus={inspectedFocus}
               side={inspectorSide}
               size={inspectorSize}
               onSideChange={setInspectorSide}

@@ -10,7 +10,7 @@ import {
 import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildShareUrl, decodeFragment } from './lib/share-url'
-import type { FlowNode, FlowStep, Flow } from './types'
+import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
 interface FlowNavItem {
   flow: { nodes: FlowNode[]; steps?: FlowStep[] }
@@ -149,6 +149,14 @@ export default function AppFragment() {
 
   const currentStepRef = useRef(0)
   const [inspectedStep, setInspectedStep] = useState<FlowStep | null>(null)
+  // (from, to, data) the user clicked, so the inspect panel can highlight
+  // the matching section. Disambiguates broadcast steps where multiple
+  // targets share one data object reference.
+  const [inspectedFocus, setInspectedFocus] = useState<{
+    from?: string
+    to?: string
+    data?: FlowData
+  } | null>(null)
   const displayFlowRef = useRef(displayFlow)
   useEffect(() => {
     displayFlowRef.current = displayFlow
@@ -156,15 +164,31 @@ export default function AppFragment() {
   const handleStepChange = useCallback((stepIndex: number) => {
     currentStepRef.current = stepIndex
     const steps = displayFlowRef.current?.flow.steps ?? []
-    if (steps[stepIndex]) setInspectedStep(steps[stepIndex])
+    if (steps[stepIndex]) {
+      setInspectedStep(steps[stepIndex])
+      setInspectedFocus(null)
+    }
   }, [])
 
   const [inspectorOpen, setInspectorOpen] = useState(true)
   const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
   const [inspectorSize, setInspectorSize] = useState(320)
-  useEffect(() => setInspectedStep(null), [hash, flowStack.length])
+  useEffect(() => {
+    setInspectedStep(null)
+    setInspectedFocus(null)
+  }, [hash, flowStack.length])
 
-  const handleInspectStep = useCallback((step: FlowStep) => setInspectedStep(step), [])
+  const handleInspectStep = useCallback(
+    (step: FlowStep, focus?: { from?: string; to?: string; data?: FlowData }) => {
+      setInspectedStep(step)
+      setInspectedFocus(focus ?? null)
+      setInspectorOpen(true)
+      // Pause autoplay on carrot click so the highlight isn't immediately
+      // wiped by the next step's onInspectStep (see App.tsx for details).
+      if (focus) setPlaying(false)
+    },
+    []
+  )
   const currentStep: FlowStep | null = useMemo(() => {
     if (inspectedStep) return inspectedStep
     const steps = currentFlowBody?.flow.steps ?? []
@@ -267,14 +291,6 @@ export default function AppFragment() {
               >
                 ✎ Edit
               </button>
-              <button
-                aria-label={playing ? 'Pause flow' : 'Play flow'}
-                onClick={() => setPlaying((p) => !p)}
-                className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
-                style={{ fontSize: 10 }}
-              >
-                {playing ? '⏸ Pause' : '▶ Play'}
-              </button>
               <InspectorToggle open={inspectorOpen} onToggle={() => setInspectorOpen((o) => !o)} />
             </>
           )}
@@ -362,6 +378,8 @@ export default function AppFragment() {
                 <FlowCanvas
                   flow={displayFlow}
                   playing={playing}
+                  onTogglePlay={() => setPlaying((p) => !p)}
+                  onPause={() => setPlaying(false)}
                   onDrillDown={handleDrillDown}
                   onDrilldownStep={handleAutoDrilldown}
                   onCycleComplete={handleCycleComplete}
@@ -375,6 +393,7 @@ export default function AppFragment() {
           {inspectorOpen && decodedFlow && (
             <DataInspectionPanel
               step={currentStep}
+              focus={inspectedFocus}
               side={inspectorSide}
               size={inspectorSize}
               onSideChange={setInspectorSide}

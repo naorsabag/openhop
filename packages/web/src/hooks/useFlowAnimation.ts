@@ -14,6 +14,14 @@ export interface ManualPixel {
   edgeId: string
   reverse: boolean
   step: FlowStep
+  /** Parent step to use when this pixel is clicked for inspection. For
+   *  parallel steps, `step` is the sub-step (correct for the visual);
+   *  the inspect panel needs the parent so all sibling sub-flows render. */
+  inspectStep: FlowStep
+  /** Source node id of the edge — used for inspect-panel section matching. */
+  fromId: string
+  /** Target node id of the edge — used for inspect-panel section matching. */
+  toId: string
   sourceNodeId: string
   sourceStepIndex: number
   sourceNodeColor?: string
@@ -240,9 +248,12 @@ export function useFlowAnimation(
 
   useEffect(() => {
     if (playing) {
-      if (phaseRef.current && pauseOffsetMsRef.current > 0) {
-        // Resuming from a pause mid-step. Re-enter the same phase with the
-        // captured offset so timer + DataPixel rAF pick up where they left off.
+      if (phaseRef.current) {
+        // Resuming inside a known phase — either pause mid-step (offset > 0)
+        // or after a manual scrub via goToStep (offset = 0). In both cases
+        // we want to continue the current phase from `offset` rather than
+        // call advanceStep, which would increment past the step the user
+        // is currently looking at.
         const phase = phaseRef.current
         const offset = pauseOffsetMsRef.current
         pauseOffsetMsRef.current = 0
@@ -325,5 +336,110 @@ export function useFlowAnimation(
     }))
   }, [])
 
-  return { ...state, fireManualPixel, removeManualPixel, setNodeStep, activateNode, deactivateNode }
+  // Manual scrub controls — used by the on-canvas Restart / Prev / Next
+  // buttons. They mutate state directly without scheduling timers; the
+  // caller is expected to keep `playing` false while scrubbing.
+  const restart = useCallback(() => {
+    clearTimers()
+    phaseRef.current = null
+    pauseOffsetMsRef.current = 0
+    stepIndexRef.current = -1
+    nodeProgressRef.current = new Map()
+    activeNodesRef.current = new Set()
+    destroyedNodesRef.current = new Set()
+    setState((prev) => ({
+      ...prev,
+      playing: false,
+      currentStepIndex: -1,
+      activeEdgeIds: new Set<string>(),
+      activeEdgeFlows: [],
+      activeFromIds: new Set<string>(),
+      activeToIds: new Set<string>(),
+      activeStep: null,
+      nodeProgress: new Map(),
+      activeNodes: new Set<string>(),
+      destroyedNodes: new Set<string>(),
+    }))
+  }, [clearTimers])
+
+  // Snap to a specific step. Replays steps 0..idx CUMULATIVELY so
+  // create/destroy effects and per-node progress match what autoplay
+  // would have produced if you'd watched up to that step. Without this
+  // replay, scrubbing past a `destroy:` step would still show the
+  // destroyed node, and `create:`-spawned nodes would persist after
+  // rewinding through their create step.
+  const goToStep = useCallback(
+    (idx: number) => {
+      if (idx < 0 || idx >= steps.length) return
+      clearTimers()
+      phaseRef.current = null
+      pauseOffsetMsRef.current = 0
+
+      // Reset cumulative refs and replay everything up to (and including)
+      // the target step.
+      nodeProgressRef.current = new Map()
+      activeNodesRef.current = new Set()
+      destroyedNodesRef.current = new Set()
+
+      const applyStepEffects = (i: number) => {
+        const step = steps[i]
+        const mapping = mappingsRef.current[i]
+        if (!step) return
+        if ('create' in step && step.create) {
+          activeNodesRef.current.add(step.create)
+          destroyedNodesRef.current.delete(step.create)
+        }
+        if ('destroy' in step && step.destroy) {
+          destroyedNodesRef.current.add(step.destroy)
+          activeNodesRef.current.delete(step.destroy)
+        }
+        if (mapping) {
+          for (const nid of mapping.fromIds) {
+            nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
+          }
+        }
+      }
+
+      for (let i = 0; i <= idx; i++) applyStepEffects(i)
+
+      stepIndexRef.current = idx
+      const mapping = mappingsRef.current[idx]
+      if (!mapping) return
+
+      // Mark the phase as 'pixel-active' so a subsequent Play takes the
+      // resume path (enterPhase('pixel-active', 0)) and the current step
+      // gets its full pixel-active duration before advancing. Without this
+      // the resume path saw phaseRef=null and fell into the fresh-start
+      // branch, which calls advanceStep() — that increments stepIndex,
+      // skipping the step the user just scrubbed to.
+      phaseRef.current = 'pixel-active'
+      phaseStartedAtRef.current = performance.now()
+
+      setState((prev) => ({
+        ...prev,
+        playing: false,
+        currentStepIndex: idx,
+        activeEdgeIds: new Set(mapping.edgeFlows.map((flow) => flow.edgeId)),
+        activeEdgeFlows: mapping.edgeFlows,
+        activeFromIds: new Set(mapping.fromIds),
+        activeToIds: new Set(mapping.toIds),
+        activeStep: mapping.step,
+        nodeProgress: new Map(nodeProgressRef.current),
+        activeNodes: new Set(activeNodesRef.current),
+        destroyedNodes: new Set(destroyedNodesRef.current),
+      }))
+    },
+    [steps, clearTimers]
+  )
+
+  return {
+    ...state,
+    fireManualPixel,
+    removeManualPixel,
+    setNodeStep,
+    activateNode,
+    deactivateNode,
+    restart,
+    goToStep,
+  }
 }

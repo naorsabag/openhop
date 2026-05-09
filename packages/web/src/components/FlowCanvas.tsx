@@ -4,6 +4,7 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  Panel,
   useReactFlow,
   type NodeTypes,
   type EdgeTypes,
@@ -12,13 +13,12 @@ import {
 } from '@xyflow/react'
 import type React from 'react'
 import '@xyflow/react/dist/style.css'
-import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { RoadEdge } from './edges/RoadEdge'
 import { useFlowAnimation, type EdgeFlowRef, type StepEdgeMapping } from '../hooks/useFlowAnimation'
 import { useFlowGraphLayout } from '../hooks/useFlowGraphLayout'
 import { DataPixel } from './DataPixel'
-import { DataPopup } from './DataPopup'
 import { buildFlowTopology } from '../lib/flow-layout'
 import { resolvePixelStyle, type ResolvedStepPixel } from '../lib/pixel-palette'
 import type { Flow, FlowStep, FlowData } from '../types'
@@ -83,18 +83,33 @@ const getTargets = (to: string | string[] | undefined) => (Array.isArray(to) ? t
 interface FlowCanvasProps {
   flow: Flow
   playing: boolean
+  /** Toggle play/pause from the on-canvas Play button. */
+  onTogglePlay?: () => void
+  /** Force playing to false. Called by Restart / Prev / Next so the
+   *  parent's `playing` state matches the hook's internal "scrubbed"
+   *  state — without this, the play button stays in Pause mode and
+   *  the DataPixel keeps animating because `paused={!playing}` is
+   *  driven by the parent prop. */
+  onPause?: () => void
   onDrillDown?: (nodeId: string) => void
   onDrilldownStep?: (nodeId: string, atStepIndex: number) => void
   onCycleComplete?: () => void
   startFromStep?: number
   onStepChange?: (stepIndex: number) => void
-  onInspectStep?: (step: FlowStep) => void
+  /** Open the inspect panel on a step. `focus` (when set) identifies
+   *  the specific (from, to, data) triplet the user clicked, so the
+   *  panel can highlight just that section — needed to disambiguate
+   *  broadcast steps (one source, many targets, shared data object)
+   *  and parallel steps (many sources/targets, distinct data). */
+  onInspectStep?: (step: FlowStep, focus?: { from?: string; to?: string; data?: FlowData }) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
 function FlowCanvasInner({
   flow,
   playing,
+  onTogglePlay,
+  onPause,
   onDrillDown,
   onDrilldownStep,
   onCycleComplete,
@@ -104,11 +119,6 @@ function FlowCanvasInner({
 }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const flowSteps = useMemo(() => flow.flow.steps ?? [], [flow.flow.steps])
-  const [pinnedEdge, setPinnedEdge] = useState<{
-    edgeId: string
-    steps: FlowStep[]
-    position: { x: number; y: number }
-  } | null>(null)
 
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
@@ -224,56 +234,6 @@ function FlowCanvasInner({
     })
   }, [flowSteps, resolveEdgeFlow])
 
-  const edgeStepsById = useMemo(() => {
-    const map = new Map<string, FlowStep[]>()
-
-    const pushStep = (edgeId: string, step: FlowStep) => {
-      const steps = map.get(edgeId) ?? []
-      if (!steps.includes(step)) steps.push(step)
-      map.set(edgeId, steps)
-    }
-
-    for (const mapping of stepMappings) {
-      for (const edgeFlow of mapping.edgeFlows) {
-        pushStep(edgeFlow.edgeId, edgeFlow.step)
-      }
-    }
-
-    return map
-  }, [stepMappings])
-
-  const handlePinPopup = useCallback(
-    (step: FlowStep, position: { x: number; y: number }, edgeId?: string) => {
-      const id = edgeId ?? '__pixel__'
-      if (pinnedEdge?.edgeId === id) {
-        setPinnedEdge(null)
-        return
-      }
-      // If the step has array data, create virtual steps (one per data object) for pagination
-      let edgeSteps: FlowStep[]
-      if (Array.isArray(step.data)) {
-        edgeSteps = step.data.map((d) => ({ ...step, data: d }))
-      } else {
-        edgeSteps = [step]
-      }
-      if (id !== '__pixel__') {
-        const relatedSteps = edgeStepsById.get(id) ?? []
-        for (const relatedStep of relatedSteps) {
-          if (relatedStep === step) continue
-          if (Array.isArray(relatedStep.data)) {
-            for (const d of relatedStep.data) {
-              edgeSteps.push({ ...relatedStep, data: d })
-            }
-          } else {
-            edgeSteps.push(relatedStep)
-          }
-        }
-      }
-      setPinnedEdge({ edgeId: id, steps: edgeSteps, position })
-    },
-    [pinnedEdge, edgeStepsById]
-  )
-
   // Build a map from node id to type and shadow color for animated pixels.
   // The shadow color comes from the topology's variant assignment so it
   // stays in lockstep with the sprite filter cycle in flow-layout — same
@@ -304,6 +264,8 @@ function FlowCanvasInner({
     setNodeStep,
     activateNode,
     deactivateNode,
+    restart,
+    goToStep,
     manualPixels,
     nodeProgress,
     activeNodes,
@@ -403,12 +365,26 @@ function FlowCanvasInner({
     return set
   }, [manualPixels])
 
-  // Auto-drilldown: when a step with drilldown:true is detected, capture the step index
-  // and drill down after the pixel animation, preventing the parent from advancing further
+  // Auto-drilldown: when a step with drilldown:true is detected during
+  // AUTOPLAY, capture the step index and drill down after the pixel
+  // animation. Gated on `playing` so manual scrubbing past a drill-down
+  // step doesn't queue an unintended drill (which used to leak: the
+  // effect would schedule the timer on step N — a drill-down step —
+  // and the next step's effect run would early-return without canceling
+  // the pending timer, so 1500ms later the drill fired anyway).
   const drilldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastDrilldownStepRef = useRef<number>(-1)
   useEffect(() => {
-    if (!onDrilldownStep) return
+    const cancelPending = () => {
+      if (drilldownTimerRef.current) {
+        clearTimeout(drilldownTimerRef.current)
+        drilldownTimerRef.current = null
+      }
+    }
+    if (!onDrilldownStep || !playing) {
+      cancelPending()
+      return
+    }
     const step = animState.activeStep
     if (!step) return
     if (!('drilldown' in step) || !step.drilldown) return
@@ -421,7 +397,7 @@ function FlowCanvasInner({
     if (lastDrilldownStepRef.current === animState.currentStepIndex) return
     lastDrilldownStepRef.current = animState.currentStepIndex
 
-    if (drilldownTimerRef.current) clearTimeout(drilldownTimerRef.current)
+    cancelPending()
 
     // Capture the current step index NOW before the animation advances
     const capturedStepIndex = animState.currentStepIndex
@@ -434,7 +410,7 @@ function FlowCanvasInner({
       },
       1500 / (window.__flowSpeed ?? 1)
     )
-  }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep])
+  }, [animState.activeStep, animState.currentStepIndex, onDrilldownStep, playing])
 
   const handleNodeClick = useCallback(
     (nodeId: string) => {
@@ -479,6 +455,9 @@ function FlowCanvasInner({
           edgeId: plan.edgeFlow.edgeId,
           reverse: plan.edgeFlow.reverse,
           step: plan.edgeFlow.step,
+          inspectStep: entry.step,
+          fromId: plan.edgeFlow.fromId,
+          toId: plan.edgeFlow.toId,
           sourceNodeId: nodeId,
           sourceStepIndex: currentProg,
           sourceNodeColor: sourceInfo.color,
@@ -642,7 +621,6 @@ function FlowCanvasInner({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeClick={(_event, node) => handleNodeClick(node.id)}
-        onPaneClick={() => setPinnedEdge(null)}
         nodesConnectable={false}
         edgesFocusable={false}
         nodesDraggable={false}
@@ -657,6 +635,66 @@ function FlowCanvasInner({
           showInteractive={false}
           style={{ background: '#0d2612', borderColor: '#1a4a22' }}
         />
+        {/* Playback controls — right side, vertical column. Restart rewinds
+            to step -1 with all progress cleared; Prev/Next snap the
+            visualization to the adjacent step (without replaying cumulative
+            create/destroy effects — press Play to advance from there). */}
+        <Panel position="top-right">
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: 6,
+              background: '#0d2612',
+              border: '1px solid #1a4a22',
+              borderRadius: 4,
+            }}
+          >
+            <PlaybackButton
+              ariaLabel="Restart flow"
+              onClick={() => {
+                onPause?.()
+                // Reset the "already drilled" memo so a re-traversal of any
+                // drill-down step actually re-fires onDrilldownStep. Without
+                // this, after Prev/Next over a drill-down step, autoplay
+                // would silently skip the drill on the second pass.
+                lastDrilldownStepRef.current = -1
+                restart()
+              }}
+            >
+              {'⏮'}
+            </PlaybackButton>
+            <PlaybackButton
+              ariaLabel="Previous step"
+              onClick={() => {
+                onPause?.()
+                lastDrilldownStepRef.current = -1
+                goToStep((animState.currentStepIndex ?? 0) - 1)
+              }}
+              disabled={(animState.currentStepIndex ?? -1) <= 0}
+            >
+              {'⏪'}
+            </PlaybackButton>
+            <PlaybackButton ariaLabel={playing ? 'Pause flow' : 'Play flow'} onClick={onTogglePlay}>
+              {playing ? '⏸' : '▶'}
+            </PlaybackButton>
+            <PlaybackButton
+              ariaLabel="Next step"
+              onClick={() => {
+                onPause?.()
+                lastDrilldownStepRef.current = -1
+                goToStep((animState.currentStepIndex ?? -1) + 1)
+              }}
+              disabled={
+                animState.currentStepIndex !== undefined &&
+                animState.currentStepIndex >= flowSteps.length - 1
+              }
+            >
+              {'⏩'}
+            </PlaybackButton>
+          </div>
+        </Panel>
       </ReactFlow>
 
       {/* Data pixel overlay — automatic. planStepPixels handles the cycling
@@ -682,7 +720,13 @@ function FlowCanvasInner({
               pixelFilter={plan.pixelFilter}
               step={edgeStep}
               containerRef={containerRef}
-              onPixelClick={(s, pos) => handlePinPopup(s, pos, edgeFlow.edgeId)}
+              onPixelClick={(focusData) =>
+                onInspectStep?.(animState.activeStep!, {
+                  from: edgeFlow.fromId,
+                  to: edgeFlow.toId,
+                  data: focusData,
+                })
+              }
               delayMs={plan.delayMs || undefined}
               dataOverride={dataObj}
               paused={!playing}
@@ -707,19 +751,52 @@ function FlowCanvasInner({
           containerRef={containerRef}
           isManual
           onAnimationComplete={() => removeManualPixel(mp.id)}
-          onPixelClick={(s, pos) => handlePinPopup(s, pos, mp.edgeId)}
+          onPixelClick={(focusData) =>
+            onInspectStep?.(mp.inspectStep, {
+              from: mp.fromId,
+              to: mp.toId,
+              data: focusData,
+            })
+          }
         />
       ))}
-
-      {/* Pinned data popup — fixed position overlay */}
-      {pinnedEdge && (
-        <DataPopup
-          steps={pinnedEdge.steps}
-          position={pinnedEdge.position}
-          onClose={() => setPinnedEdge(null)}
-        />
-      )}
     </div>
+  )
+}
+
+function PlaybackButton({
+  ariaLabel,
+  onClick,
+  disabled,
+  children,
+}: {
+  ariaLabel: string
+  onClick?: () => void
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: 28,
+        height: 28,
+        background: '#0d2612',
+        border: '1px solid #1a4a22',
+        color: disabled ? '#3a5a42' : '#7fffaa',
+        cursor: disabled ? 'default' : 'pointer',
+        fontSize: 14,
+        fontFamily: 'monospace',
+        lineHeight: 1,
+        padding: 0,
+        borderRadius: 3,
+      }}
+    >
+      {children}
+    </button>
   )
 }
 
