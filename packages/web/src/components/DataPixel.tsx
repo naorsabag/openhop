@@ -23,10 +23,12 @@ interface DataPixelProps {
   containerRef: React.RefObject<HTMLDivElement | null>
   isManual?: boolean
   onAnimationComplete?: () => void
-  /** Fired when the user clicks the carrot. Passes the carrot's specific
-   *  data slice (`dataOverride` for multi-data steps; otherwise the step's
-   *  inline data) so the inspect panel can highlight it. */
-  onPixelClick?: (step: FlowStep, focusData?: FlowData) => void
+  /** Fired when the user clicks the carrot. The pixel only knows its
+   *  own data slice; the caller (FlowCanvas) layers in the (from, to)
+   *  identity of the edgeFlow so the inspect panel can match the
+   *  click to a specific (target, data) pair — required to disambiguate
+   *  broadcast steps where multiple targets share one data object. */
+  onPixelClick?: (focusData?: FlowData) => void
   delayMs?: number
   dataOverride?: FlowData
   /** When true, freeze the pixel mid-flight: each tick re-anchors the
@@ -186,9 +188,10 @@ export function DataPixel({
         onMouseLeave={() => setHovered(false)}
         onClick={() => {
           if (onPixelClick) {
-            // Pass the carrot's specific data slice so the inspect panel
-            // can highlight it (multi-data steps fire one carrot per data
-            // entry; without this, the panel can't tell which one was clicked).
+            // Pass the carrot's specific data slice. FlowCanvas adds
+            // the from/to context; we don't pass `step` here because
+            // for parallel sub-steps it'd be the sub-step (not the
+            // parent the inspect panel needs).
             const focusData =
               dataOverride ??
               (typeof step.data === 'string'
@@ -196,7 +199,7 @@ export function DataPixel({
                 : Array.isArray(step.data)
                   ? step.data[0]
                   : step.data)
-            onPixelClick(step, focusData)
+            onPixelClick(focusData)
           }
         }}
         style={{

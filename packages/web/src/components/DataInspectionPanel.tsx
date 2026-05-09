@@ -5,10 +5,14 @@ export type DockSide = 'right' | 'bottom'
 
 interface DataInspectionPanelProps {
   step: FlowStep | null
-  /** Optional FlowData entry to highlight + scroll into view. Set when the
-   *  user clicks a single carrot of a multi-data step so they can tell
-   *  which slice of the step's data they just clicked. */
-  focusData?: FlowData | null
+  /** Identifies the (from, to, data) the user clicked on the canvas, so
+   *  the matching DataBlock highlights and scrolls into view. The
+   *  triplet disambiguates:
+   *    - broadcast steps (one source, many targets, shared data ref —
+   *      `to` distinguishes which target)
+   *    - parallel steps (each sub-step has its own from/to)
+   *    - multi-data steps (`data` distinguishes which entry was clicked) */
+  focus?: { from?: string; to?: string; data?: FlowData } | null
   side: DockSide
   size: number
   onSideChange: (side: DockSide) => void
@@ -21,7 +25,7 @@ const MAX_SIZE = 800
 
 export function DataInspectionPanel({
   step,
-  focusData = null,
+  focus = null,
   side,
   size,
   onSideChange,
@@ -93,7 +97,7 @@ export function DataInspectionPanel({
       />
       <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Header side={side} onSideChange={onSideChange} onClose={onClose} />
-        <StepBody step={step} focusData={focusData} />
+        <StepBody step={step} focus={focus} />
       </div>
     </aside>
   )
@@ -220,7 +224,13 @@ function normalizeData(raw: FlowStep['data']): FlowData[] {
   return [raw]
 }
 
-function StepBody({ step, focusData }: { step: FlowStep | null; focusData: FlowData | null }) {
+function StepBody({
+  step,
+  focus,
+}: {
+  step: FlowStep | null
+  focus: { from?: string; to?: string; data?: FlowData } | null
+}) {
   if (!step) {
     return (
       <div
@@ -250,29 +260,41 @@ function StepBody({ step, focusData }: { step: FlowStep | null; focusData: FlowD
         color: '#e0e0e0',
       }}
     >
-      {flows.map((f, i) => (
-        <section
-          key={`${f.from}-${f.to}-${i}`}
-          style={{
-            marginTop: i > 0 ? 12 : 0,
-            paddingTop: i > 0 ? 10 : 0,
-            borderTop: i > 0 ? '1px solid #2a2a4a' : undefined,
-          }}
-        >
-          <div style={{ color: '#4a9eff', marginBottom: 6 }}>
-            {f.from} &rarr; {f.to}
-          </div>
-          {f.data.length === 0 && <div style={{ color: '#888' }}>No data.</div>}
-          {f.data.map((d, di) => (
-            <DataBlock
-              key={di}
-              data={d}
-              separated={di > 0}
-              highlighted={focusData != null && d === focusData}
-            />
-          ))}
-        </section>
-      ))}
+      {flows.map((f, i) => {
+        // A section matches focus when its from/to align (when supplied).
+        // Then within the section, only the specific data block matches.
+        // Both checks needed to disambiguate broadcast (shared data ref
+        // across targets) and parallel (per-sub-step from/to).
+        const sectionMatchesFocus =
+          !!focus &&
+          (focus.from === undefined || focus.from === f.from) &&
+          (focus.to === undefined || focus.to === f.to)
+        return (
+          <section
+            key={`${f.from}-${f.to}-${i}`}
+            style={{
+              marginTop: i > 0 ? 12 : 0,
+              paddingTop: i > 0 ? 10 : 0,
+              borderTop: i > 0 ? '1px solid #2a2a4a' : undefined,
+            }}
+          >
+            <div style={{ color: '#4a9eff', marginBottom: 6 }}>
+              {f.from} &rarr; {f.to}
+            </div>
+            {f.data.length === 0 && <div style={{ color: '#888' }}>No data.</div>}
+            {f.data.map((d, di) => (
+              <DataBlock
+                key={di}
+                data={d}
+                separated={di > 0}
+                highlighted={
+                  sectionMatchesFocus && (focus?.data === undefined || d === focus.data)
+                }
+              />
+            ))}
+          </section>
+        )
+      })}
     </div>
   )
 }

@@ -96,10 +96,15 @@ interface FlowCanvasProps {
   onCycleComplete?: () => void
   startFromStep?: number
   onStepChange?: (stepIndex: number) => void
-  /** Open the inspect panel on a step. Optional `focusData` is the
-   *  specific FlowData entry to highlight + scroll into view (used when
-   *  the user clicks a single carrot of a multi-data step). */
-  onInspectStep?: (step: FlowStep, focusData?: FlowData) => void
+  /** Open the inspect panel on a step. `focus` (when set) identifies
+   *  the specific (from, to, data) triplet the user clicked, so the
+   *  panel can highlight just that section — needed to disambiguate
+   *  broadcast steps (one source, many targets, shared data object)
+   *  and parallel steps (many sources/targets, distinct data). */
+  onInspectStep?: (
+    step: FlowStep,
+    focus?: { from?: string; to?: string; data?: FlowData }
+  ) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */
@@ -453,6 +458,9 @@ function FlowCanvasInner({
           edgeId: plan.edgeFlow.edgeId,
           reverse: plan.edgeFlow.reverse,
           step: plan.edgeFlow.step,
+          inspectStep: entry.step,
+          fromId: plan.edgeFlow.fromId,
+          toId: plan.edgeFlow.toId,
           sourceNodeId: nodeId,
           sourceStepIndex: currentProg,
           sourceNodeColor: sourceInfo.color,
@@ -715,7 +723,13 @@ function FlowCanvasInner({
               pixelFilter={plan.pixelFilter}
               step={edgeStep}
               containerRef={containerRef}
-              onPixelClick={(s, focusData) => onInspectStep?.(s, focusData)}
+              onPixelClick={(focusData) =>
+                onInspectStep?.(animState.activeStep!, {
+                  from: edgeFlow.fromId,
+                  to: edgeFlow.toId,
+                  data: focusData,
+                })
+              }
               delayMs={plan.delayMs || undefined}
               dataOverride={dataObj}
               paused={!playing}
@@ -740,7 +754,13 @@ function FlowCanvasInner({
           containerRef={containerRef}
           isManual
           onAnimationComplete={() => removeManualPixel(mp.id)}
-          onPixelClick={(s, focusData) => onInspectStep?.(s, focusData)}
+          onPixelClick={(focusData) =>
+            onInspectStep?.(mp.inspectStep, {
+              from: mp.fromId,
+              to: mp.toId,
+              data: focusData,
+            })
+          }
         />
       ))}
     </div>

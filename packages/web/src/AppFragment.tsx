@@ -149,9 +149,14 @@ export default function AppFragment() {
 
   const currentStepRef = useRef(0)
   const [inspectedStep, setInspectedStep] = useState<FlowStep | null>(null)
-  // Specific FlowData entry to highlight + scroll to (set when the user
-  // clicks a single carrot of a multi-data step).
-  const [inspectedFocusData, setInspectedFocusData] = useState<FlowData | null>(null)
+  // (from, to, data) the user clicked, so the inspect panel can highlight
+  // the matching section. Disambiguates broadcast steps where multiple
+  // targets share one data object reference.
+  const [inspectedFocus, setInspectedFocus] = useState<{
+    from?: string
+    to?: string
+    data?: FlowData
+  } | null>(null)
   const displayFlowRef = useRef(displayFlow)
   useEffect(() => {
     displayFlowRef.current = displayFlow
@@ -161,7 +166,7 @@ export default function AppFragment() {
     const steps = displayFlowRef.current?.flow.steps ?? []
     if (steps[stepIndex]) {
       setInspectedStep(steps[stepIndex])
-      setInspectedFocusData(null)
+      setInspectedFocus(null)
     }
   }, [])
 
@@ -170,17 +175,20 @@ export default function AppFragment() {
   const [inspectorSize, setInspectorSize] = useState(320)
   useEffect(() => {
     setInspectedStep(null)
-    setInspectedFocusData(null)
+    setInspectedFocus(null)
   }, [hash, flowStack.length])
 
-  const handleInspectStep = useCallback((step: FlowStep, focusData?: FlowData) => {
-    setInspectedStep(step)
-    setInspectedFocusData(focusData ?? null)
-    setInspectorOpen(true)
-    // Pause autoplay on carrot click so the highlight isn't immediately
-    // wiped by the next step's onInspectStep (see App.tsx for details).
-    if (focusData) setPlaying(false)
-  }, [])
+  const handleInspectStep = useCallback(
+    (step: FlowStep, focus?: { from?: string; to?: string; data?: FlowData }) => {
+      setInspectedStep(step)
+      setInspectedFocus(focus ?? null)
+      setInspectorOpen(true)
+      // Pause autoplay on carrot click so the highlight isn't immediately
+      // wiped by the next step's onInspectStep (see App.tsx for details).
+      if (focus) setPlaying(false)
+    },
+    []
+  )
   const currentStep: FlowStep | null = useMemo(() => {
     if (inspectedStep) return inspectedStep
     const steps = currentFlowBody?.flow.steps ?? []
@@ -385,7 +393,7 @@ export default function AppFragment() {
           {inspectorOpen && decodedFlow && (
             <DataInspectionPanel
               step={currentStep}
-              focusData={inspectedFocusData}
+              focus={inspectedFocus}
               side={inspectorSide}
               size={inspectorSize}
               onSideChange={setInspectorSide}

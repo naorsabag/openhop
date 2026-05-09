@@ -14,6 +14,14 @@ export interface ManualPixel {
   edgeId: string
   reverse: boolean
   step: FlowStep
+  /** Parent step to use when this pixel is clicked for inspection. For
+   *  parallel steps, `step` is the sub-step (correct for the visual);
+   *  the inspect panel needs the parent so all sibling sub-flows render. */
+  inspectStep: FlowStep
+  /** Source node id of the edge — used for inspect-panel section matching. */
+  fromId: string
+  /** Target node id of the edge — used for inspect-panel section matching. */
+  toId: string
   sourceNodeId: string
   sourceStepIndex: number
   sourceNodeColor?: string
