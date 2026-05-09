@@ -178,28 +178,36 @@ export function DataPixel({
     }
   }, [animate])
 
+  // Pass the carrot's specific data slice. FlowCanvas adds the from/to
+  // context; we don't pass `step` here because for parallel sub-steps
+  // it'd be the sub-step (not the parent the inspect panel needs).
+  const emitPixelClick = () => {
+    if (!onPixelClick) return
+    const focusData =
+      dataOverride ??
+      (typeof step.data === 'string'
+        ? { label: step.data }
+        : Array.isArray(step.data)
+          ? step.data[0]
+          : step.data)
+    onPixelClick(focusData)
+  }
+
   return (
     <>
       <div
         ref={pixelRef}
         data-testid={isManual ? 'data-pixel-manual' : 'data-pixel'}
         aria-label={`Data: ${ariaDataLabel}`}
+        role="button"
+        tabIndex={0}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={() => {
-          if (onPixelClick) {
-            // Pass the carrot's specific data slice. FlowCanvas adds
-            // the from/to context; we don't pass `step` here because
-            // for parallel sub-steps it'd be the sub-step (not the
-            // parent the inspect panel needs).
-            const focusData =
-              dataOverride ??
-              (typeof step.data === 'string'
-                ? { label: step.data }
-                : Array.isArray(step.data)
-                  ? step.data[0]
-                  : step.data)
-            onPixelClick(focusData)
+        onClick={emitPixelClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            emitPixelClick()
           }
         }}
         style={{
