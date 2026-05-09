@@ -133,7 +133,7 @@ function FlowCanvasInner({
   )
   const fitToPane = useCallback(() => {
     if (baseNodes.length === 0) return
-    const pane = document.querySelector('.react-flow') as HTMLElement | null
+    const pane = containerRef.current?.querySelector('.react-flow') as HTMLElement | null
     if (!pane) return
     const paneW = pane.offsetWidth
     const paneH = pane.offsetHeight
@@ -173,7 +173,7 @@ function FlowCanvasInner({
   // shifts left when the sidebar collapses because the viewport keeps the
   // same world coords against a now-wider canvas.
   useEffect(() => {
-    const pane = document.querySelector('.react-flow') as HTMLElement | null
+    const pane = containerRef.current?.querySelector('.react-flow') as HTMLElement | null
     if (!pane || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(() => fitToPane())
     observer.observe(pane)
