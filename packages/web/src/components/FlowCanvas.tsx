@@ -101,10 +101,7 @@ interface FlowCanvasProps {
    *  panel can highlight just that section — needed to disambiguate
    *  broadcast steps (one source, many targets, shared data object)
    *  and parallel steps (many sources/targets, distinct data). */
-  onInspectStep?: (
-    step: FlowStep,
-    focus?: { from?: string; to?: string; data?: FlowData }
-  ) => void
+  onInspectStep?: (step: FlowStep, focus?: { from?: string; to?: string; data?: FlowData }) => void
 }
 
 /** Inner component that can use useReactFlow (needs ReactFlowProvider context) */

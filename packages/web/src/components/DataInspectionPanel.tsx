@@ -287,9 +287,7 @@ function StepBody({
                 key={di}
                 data={d}
                 separated={di > 0}
-                highlighted={
-                  sectionMatchesFocus && (focus?.data === undefined || d === focus.data)
-                }
+                highlighted={sectionMatchesFocus && (focus?.data === undefined || d === focus.data)}
               />
             ))}
           </section>
