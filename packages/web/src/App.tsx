@@ -2,11 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import YAML from 'yaml'
 import { Sidebar } from './components/Sidebar'
 import { FlowCanvas } from './components/FlowCanvas'
-import {
-  DataInspectionPanel,
-  InspectorToggle,
-  type DockSide,
-} from './components/DataInspectionPanel'
+import { DataInspectionPanel, BookmarkTab, type DockSide } from './components/DataInspectionPanel'
 import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
@@ -230,6 +226,9 @@ function App() {
   const [inspectorOpen, setInspectorOpen] = useState(true)
   const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
   const [inspectorSize, setInspectorSize] = useState(320)
+  // Sidebar (flow tree) collapsed/expanded state. Bookmark tab on the
+  // left edge of the canvas toggles it.
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   // Reset inspected step when flow changes
   useEffect(() => {
@@ -369,32 +368,50 @@ function App() {
             OpenHop
           </h1>
         </div>
-        {selectedFlowId && (
-          <div className="flex items-center">
-            <InspectorToggle open={inspectorOpen} onToggle={() => setInspectorOpen((o) => !o)} />
-          </div>
-        )}
+        {/* Inspector toggle moved to a bookmark tab on the canvas's right edge. */}
       </header>
 
       {/* Body */}
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar file explorer */}
-        <Sidebar
-          flows={flows}
-          loading={listLoading}
-          selectedFlowId={selectedFlowId}
-          onSelectFlow={selectFlow}
-          onCreateAt={handleCreateAt}
-          onEditFlow={handleEditFlow}
-          onDeleteFlow={handleDeleteFlow}
-          onDeleteFolder={handleDeleteFolder}
-        />
+        {/* Sidebar file explorer — toggled via the BookmarkTab on the
+            canvas's left edge. */}
+        {sidebarOpen && (
+          <Sidebar
+            flows={flows}
+            loading={listLoading}
+            selectedFlowId={selectedFlowId}
+            onSelectFlow={selectFlow}
+            onCreateAt={handleCreateAt}
+            onEditFlow={handleEditFlow}
+            onDeleteFlow={handleDeleteFlow}
+            onDeleteFolder={handleDeleteFolder}
+          />
+        )}
 
         {/* Canvas + Inspector */}
         <div
           className={`flex-1 min-w-0 min-h-0 flex ${inspectorSide === 'right' ? 'flex-row' : 'flex-col'}`}
         >
           <main className="flex-1 min-w-0 min-h-0 relative" style={{ background: '#0a1f0e' }}>
+            {/* Bookmark tabs — anchored to canvas edges. They sit flush
+                against an open panel's inner border, or at the viewport
+                edge when the panel is closed. */}
+            <BookmarkTab
+              edge="left"
+              open={sidebarOpen}
+              onToggle={() => setSidebarOpen((o) => !o)}
+              label="FLOWS"
+              ariaLabel={sidebarOpen ? 'Collapse flows' : 'Expand flows'}
+            />
+            {selectedFlowId && (
+              <BookmarkTab
+                edge="right"
+                open={inspectorOpen}
+                onToggle={() => setInspectorOpen((o) => !o)}
+                label="INSPECT"
+                ariaLabel={inspectorOpen ? 'Close inspector' : 'Open inspector'}
+              />
+            )}
             {!selectedFlowId ? (
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center">

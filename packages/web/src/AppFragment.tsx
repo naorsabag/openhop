@@ -2,11 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import YAML from 'yaml'
 import { parseFlowYaml } from '@openhop/shared'
 import { FlowCanvas } from './components/FlowCanvas'
-import {
-  DataInspectionPanel,
-  InspectorToggle,
-  type DockSide,
-} from './components/DataInspectionPanel'
+import { DataInspectionPanel, BookmarkTab, type DockSide } from './components/DataInspectionPanel'
 import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildShareUrl, decodeFragment } from './lib/share-url'
@@ -283,17 +279,15 @@ export default function AppFragment() {
             + New flow
           </button>
           {decodedFlow && (
-            <>
-              <button
-                onClick={handleEditFlow}
-                className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
-                style={{ fontSize: 10 }}
-              >
-                ✎ Edit
-              </button>
-              <InspectorToggle open={inspectorOpen} onToggle={() => setInspectorOpen((o) => !o)} />
-            </>
+            <button
+              onClick={handleEditFlow}
+              className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
+              style={{ fontSize: 10 }}
+            >
+              ✎ Edit
+            </button>
           )}
+          {/* Inspector toggle moved to a bookmark tab on the canvas's right edge. */}
         </div>
       </header>
 
@@ -316,6 +310,17 @@ export default function AppFragment() {
           className={`flex-1 min-w-0 min-h-0 flex ${inspectorSide === 'right' ? 'flex-row' : 'flex-col'}`}
         >
           <main className="flex-1 min-w-0 min-h-0 relative" style={{ background: '#0a1f0e' }}>
+            {/* Inspector bookmark tab — fragment mode has no sidebar, so
+                only the right tab is rendered. */}
+            {decodedFlow && (
+              <BookmarkTab
+                edge="right"
+                open={inspectorOpen}
+                onToggle={() => setInspectorOpen((o) => !o)}
+                label="INSPECT"
+                ariaLabel={inspectorOpen ? 'Close inspector' : 'Open inspector'}
+              />
+            )}
             {!decodedFlow ? (
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center max-w-md px-6">

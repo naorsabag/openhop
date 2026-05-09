@@ -376,21 +376,75 @@ function DataBlock({
   )
 }
 
-interface InspectorToggleProps {
+interface BookmarkTabProps {
   open: boolean
   onToggle: () => void
+  /** Which canvas edge the tab anchors to. */
+  edge: 'left' | 'right'
+  /** Vertical text shown on the tab (rotated 90deg). Keep ≤ 8 chars. */
+  label: string
+  ariaLabel: string
 }
 
-export function InspectorToggle({ open, onToggle }: InspectorToggleProps) {
+/**
+ * Bookmark-style toggle tab — a small vertical "tag" anchored to the
+ * inner edge of the canvas pane. Used for the sidebar (left) and the
+ * inspect panel (right). Position is `absolute` relative to the canvas
+ * `<main>`, so when its companion panel is open the tab sits flush
+ * against the panel; when closed it sits at the viewport edge.
+ */
+export function BookmarkTab({ open, onToggle, edge, label, ariaLabel }: BookmarkTabProps) {
+  // Pointer character: arrow toward the canvas when closed (would open
+  // INTO the canvas) and toward the panel when open (would close).
+  const arrow = edge === 'right' ? (open ? '›' : '‹') : open ? '‹' : '›'
   return (
     <button
+      type="button"
       onClick={onToggle}
-      aria-label={open ? 'Close inspector' : 'Open inspector'}
+      aria-label={ariaLabel}
       aria-pressed={open}
-      className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"
-      style={{ fontSize: 10, marginLeft: 8 }}
+      title={ariaLabel}
+      style={{
+        position: 'absolute',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        [edge === 'right' ? 'right' : 'left']: 0,
+        zIndex: 20,
+        width: 22,
+        minHeight: 76,
+        background: '#0d2612',
+        border: '1px solid #1a4a22',
+        // Round only the corners pointing into the canvas, so the tab
+        // visually "sticks out" from the edge like a real bookmark.
+        borderRadius: edge === 'right' ? '6px 0 0 6px' : '0 6px 6px 0',
+        [edge === 'right' ? 'borderRight' : 'borderLeft']: 'none',
+        color: '#7fffaa',
+        cursor: 'pointer',
+        padding: '8px 2px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: 9,
+        letterSpacing: 1,
+      }}
     >
-      {open ? '▤ Inspect' : '▣ Inspect'}
+      <span aria-hidden="true" style={{ fontSize: 13, lineHeight: 1 }}>
+        {arrow}
+      </span>
+      <span
+        aria-hidden="true"
+        style={{
+          // Vertical label, top-to-bottom along the tab.
+          writingMode: 'vertical-rl',
+          textOrientation: 'mixed',
+          transform: edge === 'right' ? undefined : 'rotate(180deg)',
+        }}
+      >
+        {label}
+      </span>
     </button>
   )
 }
