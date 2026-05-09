@@ -254,10 +254,22 @@ export function useFlowAnimation(
         // we want to continue the current phase from `offset` rather than
         // call advanceStep, which would increment past the step the user
         // is currently looking at.
+        // Replay cumulative effects through the current step before
+        // resuming. Manual node clicks during the paused window may have
+        // mutated nodeProgress (handleNodeClick does setNodeStep), so the
+        // per-node progress bars would otherwise stay ahead of autoplay's
+        // expectation when play resumes.
+        applyEffectsThroughStep(stepIndexRef.current)
         const phase = phaseRef.current
         const offset = pauseOffsetMsRef.current
         pauseOffsetMsRef.current = 0
-        setState((prev) => ({ ...prev, playing: true }))
+        setState((prev) => ({
+          ...prev,
+          playing: true,
+          nodeProgress: new Map(nodeProgressRef.current),
+          activeNodes: new Set(activeNodesRef.current),
+          destroyedNodes: new Set(destroyedNodesRef.current),
+        }))
         enterPhase(phase, offset)
       } else {
         // Fresh start (or a previous pause that was already past its phase).
@@ -336,6 +348,59 @@ export function useFlowAnimation(
     }))
   }, [])
 
+  // Replay cumulative effects (node progress + create/destroy) for steps
+  // 0..idx. Used by goToStep, by mount-time initialization (when
+  // startFromStep > 0, e.g. returning from a drill-down), and by the Play-
+  // resume path (so progress bars snap back to autoplay-expected after the
+  // user has clicked nodes during a pause). Resets all three refs first
+  // so the result reflects exactly the requested range.
+  const applyEffectsThroughStep = useCallback(
+    (idx: number) => {
+      nodeProgressRef.current = new Map()
+      activeNodesRef.current = new Set()
+      destroyedNodesRef.current = new Set()
+      if (idx < 0) return
+      for (let i = 0; i <= idx && i < steps.length; i++) {
+        const step = steps[i]
+        const mapping = mappingsRef.current[i]
+        if (!step) continue
+        if ('create' in step && step.create) {
+          activeNodesRef.current.add(step.create)
+          destroyedNodesRef.current.delete(step.create)
+        }
+        if ('destroy' in step && step.destroy) {
+          destroyedNodesRef.current.add(step.destroy)
+          activeNodesRef.current.delete(step.destroy)
+        }
+        if (mapping) {
+          for (const nid of mapping.fromIds) {
+            nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
+          }
+        }
+      }
+    },
+    [steps]
+  )
+
+  // Mount-time replay: when the consumer mounts us with startFromStep > 0
+  // (e.g. parent flow being remounted after a sub-flow drill-back), replay
+  // 0..startFromStep-1 so the per-node progress bars survive instead of
+  // resetting to zero. stepIndexRef was already initialized to
+  // startFromStep - 1 at useRef time; we just need to populate the
+  // cumulative refs and push them into state.
+  useEffect(() => {
+    if (stepIndexRef.current < 0) return
+    applyEffectsThroughStep(stepIndexRef.current)
+    setState((prev) => ({
+      ...prev,
+      nodeProgress: new Map(nodeProgressRef.current),
+      activeNodes: new Set(activeNodesRef.current),
+      destroyedNodes: new Set(destroyedNodesRef.current),
+    }))
+    // Run only on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Manual scrub controls — used by the on-canvas Restart / Prev / Next
   // buttons. They mutate state directly without scheduling timers; the
   // caller is expected to keep `playing` false while scrubbing.
@@ -375,32 +440,7 @@ export function useFlowAnimation(
       phaseRef.current = null
       pauseOffsetMsRef.current = 0
 
-      // Reset cumulative refs and replay everything up to (and including)
-      // the target step.
-      nodeProgressRef.current = new Map()
-      activeNodesRef.current = new Set()
-      destroyedNodesRef.current = new Set()
-
-      const applyStepEffects = (i: number) => {
-        const step = steps[i]
-        const mapping = mappingsRef.current[i]
-        if (!step) return
-        if ('create' in step && step.create) {
-          activeNodesRef.current.add(step.create)
-          destroyedNodesRef.current.delete(step.create)
-        }
-        if ('destroy' in step && step.destroy) {
-          destroyedNodesRef.current.add(step.destroy)
-          activeNodesRef.current.delete(step.destroy)
-        }
-        if (mapping) {
-          for (const nid of mapping.fromIds) {
-            nodeProgressRef.current.set(nid, (nodeProgressRef.current.get(nid) ?? 0) + 1)
-          }
-        }
-      }
-
-      for (let i = 0; i <= idx; i++) applyStepEffects(i)
+      applyEffectsThroughStep(idx)
 
       stepIndexRef.current = idx
       const mapping = mappingsRef.current[idx]
@@ -429,7 +469,7 @@ export function useFlowAnimation(
         destroyedNodes: new Set(destroyedNodesRef.current),
       }))
     },
-    [steps, clearTimers]
+    [steps.length, clearTimers, applyEffectsThroughStep]
   )
 
   return {
