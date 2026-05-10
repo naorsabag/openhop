@@ -121,6 +121,21 @@ describe('computeElkLayout', () => {
     expect(cron!.y).toBe(events!.y)
   })
 
+  it('pins actor-typed nodes to the leftmost layer even when they also appear as a target', async () => {
+    const yaml = readFileSync(new URL('../../../examples/order-flow.yaml', import.meta.url), 'utf8')
+    const parsed = parseFlowYaml(yaml)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success || !parsed.data) return
+
+    const { computeElkLayout } = await import('../src/lib/flow-layout.ts')
+    const topology = buildFlowTopology(parsed.data as Flow)
+    const layout = await computeElkLayout(topology)
+    const userPos = layout.positions.get('user')
+    expect(userPos).toBeTruthy()
+    const minX = Math.min(...[...layout.positions.values()].map((p) => p.x))
+    expect(userPos!.x).toBe(minX)
+  })
+
   it('routes the api to order-service edge clear of the rate-limit node in the real example', async () => {
     const yaml = readFileSync(new URL('../../../examples/order-flow.yaml', import.meta.url), 'utf8')
     const parsed = parseFlowYaml(yaml)

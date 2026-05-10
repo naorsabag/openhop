@@ -876,18 +876,23 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
         },
       }))
 
+      // Actors represent the human/external initiator — pin them to the
+      // leftmost layer so the flow always reads "user → system → ..." even
+      // when the actor also has incoming edges (e.g. a final response
+      // step).
+      const isActor = topology.nodeSnapshots.get(id)?.nodeType === 'actor'
+      const nodeLayoutOptions: Record<string, string> = {}
+      if (portAssignments) nodeLayoutOptions.portConstraints = 'FIXED_SIDE'
+      if (isActor) nodeLayoutOptions['elk.layered.layering.layerConstraint'] = 'FIRST'
+
       return {
         id,
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
-        ...(portAssignments
-          ? {
-              layoutOptions: {
-                portConstraints: 'FIXED_SIDE',
-              },
-              ports,
-            }
+        ...(Object.keys(nodeLayoutOptions).length > 0
+          ? { layoutOptions: nodeLayoutOptions }
           : null),
+        ...(portAssignments ? { ports } : null),
       }
     }),
     edges: topology.displayEdges.map((edge) => ({
