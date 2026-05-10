@@ -13,7 +13,7 @@ import {
 } from '@xyflow/react'
 import type React from 'react'
 import '@xyflow/react/dist/style.css'
-import { useMemo, useRef, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useCallback, useEffect, useState } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { RoadEdge } from './edges/RoadEdge'
 import { useFlowAnimation, type EdgeFlowRef, type StepEdgeMapping } from '../hooks/useFlowAnimation'
@@ -123,6 +123,18 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
+  // Playback speed multiplier. The animation hook reads the live value
+  // off `window.__flowSpeed` each tick, so updating the global is what
+  // actually affects pacing — local state just drives the button label.
+  const [speed, setSpeed] = useState<number>(() => window.__flowSpeed ?? 1)
+  const cycleSpeed = useCallback(() => {
+    const cycle = [0.5, 1, 1.5, 2]
+    const idx = cycle.indexOf(speed)
+    const next = cycle[(idx + 1) % cycle.length] ?? 1
+    window.__flowSpeed = next
+    setSpeed(next)
+  }, [speed])
+
   // Re-fit the view whenever node positions change. ELK arrives asynchronously
   // after the initial fallback layout, so the built-in `fitView` prop's single
   // on-mount run lands on the fallback; this effect catches subsequent updates
@@ -179,18 +191,6 @@ function FlowCanvasInner({
     observer.observe(pane)
     return () => observer.disconnect()
   }, [fitToPane])
-
-  // Track the last focus key so the auto-zoom effect doesn't re-issue
-  // the same camera path when the active step's geometry hasn't actually
-  // moved — re-issuing mid-animation causes a visible stutter. The key
-  // encodes both the from and to sets so swaps within a logical step
-  // (re-renders that don't change either set) are no-ops.
-  const lastFocusKeyRef = useRef<string>('')
-  // Pending setTimeout IDs for the multi-phase camera path. Cleared
-  // before scheduling a new path or returning to overview, so a paused/
-  // advanced step can't be ambushed by a stale "zoom to to-node" tick
-  // 1.2s later.
-  const cameraTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const pairEdgeMap = useMemo(() => {
     const map = new Map<string, Edge>()
@@ -310,142 +310,6 @@ function FlowCanvasInner({
     },
     [baseNodes, activeNodes, destroyedNodes]
   )
-
-  // Auto-focus the camera on the active step's nodes during playback.
-  // The path runs three phases inside the pixel-active window so the
-  // viewer's eye tracks the data as it travels: focus on the sender(s),
-  // pull back to frame both ends mid-flight, then snap onto the
-  // receiver(s) as the carrot lands. Pause returns to a full-flow
-  // overview. Uses setCenter (same API that drives the drill-down zoom)
-  // rather than fitView({nodes}), which silently no-ops when xyflow's
-  // node store hasn't measured the targets — the manual bbox math reads
-  // the layout's own positions so it always has data.
-  useEffect(() => {
-    if (baseNodes.length === 0) return
-    const pane = containerRef.current?.querySelector('.react-flow') as HTMLElement | null
-    if (!pane) return
-    const paneW = pane.offsetWidth
-    const paneH = pane.offsetHeight
-    if (paneW === 0 || paneH === 0) return
-
-    const clearTimers = () => {
-      for (const t of cameraTimersRef.current) clearTimeout(t)
-      cameraTimersRef.current = []
-    }
-
-    const computeBbox = (nodes: typeof baseNodes) => {
-      const w = nodes[0].width ?? 108
-      const h = nodes[0].height ?? 160
-      const xs = nodes.map((n) => n.position.x)
-      const ys = nodes.map((n) => n.position.y)
-      return {
-        minX: Math.min(...xs),
-        minY: Math.min(...ys),
-        maxX: Math.max(...xs) + w,
-        maxY: Math.max(...ys) + h,
-      }
-    }
-
-    const naturalZoom = (nodes: typeof baseNodes, pad: number) => {
-      if (nodes.length === 0) return 1
-      const { minX, minY, maxX, maxY } = computeBbox(nodes)
-      const contentW = maxX - minX
-      const contentH = maxY - minY
-      return Math.min(
-        paneW / (contentW * (1 + pad)),
-        paneH / (contentH * (1 + pad))
-      )
-    }
-
-    const moveTo = (
-      nodes: typeof baseNodes,
-      pad: number,
-      maxZoom: number,
-      duration: number
-    ) => {
-      if (nodes.length === 0) return
-      const { minX, minY, maxX, maxY } = computeBbox(nodes)
-      const contentW = maxX - minX
-      const contentH = maxY - minY
-      const zoom = Math.min(
-        paneW / (contentW * (1 + pad)),
-        paneH / (contentH * (1 + pad)),
-        maxZoom
-      )
-      reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration })
-    }
-
-    if (!playing) {
-      clearTimers()
-      if (lastFocusKeyRef.current === '__overview__') return
-      lastFocusKeyRef.current = '__overview__'
-      moveTo(baseNodes, 0.3, 1.5, 500)
-      return
-    }
-
-    const fromIds = Array.from(animState.activeFromIds).sort()
-    const toIds = Array.from(animState.activeToIds).sort()
-    if (fromIds.length === 0 && toIds.length === 0) return
-    const focusKey = `${fromIds.join(',')}->${toIds.join(',')}`
-    if (focusKey === lastFocusKeyRef.current) return
-
-    const fromNodes = baseNodes.filter((n) => animState.activeFromIds.has(n.id))
-    const toNodes = baseNodes.filter((n) => animState.activeToIds.has(n.id))
-    const bothNodes = baseNodes.filter(
-      (n) => animState.activeFromIds.has(n.id) || animState.activeToIds.has(n.id)
-    )
-    if (bothNodes.length === 0) return
-
-    lastFocusKeyRef.current = focusKey
-    clearTimers()
-
-    // Scale the schedule with playback speed so the camera path always
-    // finishes inside the 1800ms pixel-active window from useFlowAnimation.
-    const speed = window.__flowSpeed ?? 1
-    const at = (ms: number) => Math.max(0, ms / speed)
-
-    // Phase A: focus on sender(s). Skip the dwell if there's no distinct
-    // "from" — e.g. a destroy-only step has from but no to, in which case
-    // we want the simpler single-target framing without the bounce.
-    if (fromNodes.length > 0 && toNodes.length > 0) {
-      // Cap Phase A/C zoom at Phase B's natural zoom so a single-node
-      // sender or receiver can't zoom in tighter than the pull-back
-      // frame ever would. This makes 1-node and 2-node steps land at
-      // the same zoom — without the cap, single-node phases hit the
-      // 2.5 maxZoom while a typical 2-near-pair lands around 2.0,
-      // producing a visibly jumpier path.
-      const phaseBZoom = Math.min(naturalZoom(bothNodes, 0.5), 2.5)
-      moveTo(fromNodes, 0.5, phaseBZoom, 300 / speed)
-      // Phase B: pull back to frame both ends mid-flight.
-      cameraTimersRef.current.push(
-        setTimeout(() => moveTo(bothNodes, 0.5, 2.5, 500 / speed), at(350))
-      )
-      // Phase C: snap onto receiver(s) as the carrot arrives.
-      cameraTimersRef.current.push(
-        setTimeout(() => moveTo(toNodes, 0.5, phaseBZoom, 400 / speed), at(1200))
-      )
-    } else {
-      // Single-sided step (only from, only to, or both same set) — just
-      // frame what we have so the camera doesn't lurch to an empty bbox.
-      moveTo(bothNodes, 0.5, 2.5, 500 / speed)
-    }
-  }, [
-    playing,
-    animState.currentStepIndex,
-    animState.activeFromIds,
-    animState.activeToIds,
-    baseNodes,
-    reactFlow,
-  ])
-
-  // Cancel any pending camera timers on unmount so a teardown mid-step
-  // doesn't fire setCenter on a defunct ReactFlow instance.
-  useEffect(() => {
-    return () => {
-      for (const t of cameraTimersRef.current) clearTimeout(t)
-      cameraTimersRef.current = []
-    }
-  }, [])
 
   // Report step changes to parent
   const onStepChangeRef = useRef(onStepChange)
@@ -855,6 +719,14 @@ function FlowCanvasInner({
               }
             >
               <NextIcon />
+            </PlaybackButton>
+            <PlaybackButton
+              ariaLabel={`Playback speed ${speed}×, click to cycle`}
+              onClick={cycleSpeed}
+            >
+              <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>
+                {speed}×
+              </span>
             </PlaybackButton>
           </div>
         </Panel>
