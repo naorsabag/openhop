@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import YAML from 'yaml'
 import { Sidebar } from './components/Sidebar'
 import { FlowCanvas } from './components/FlowCanvas'
 import { DataInspectionPanel, BookmarkTab, type DockSide } from './components/DataInspectionPanel'
-import { FlowEditorModal } from './components/FlowEditorModal'
+// Lazy — see AppFragment.tsx for rationale (CodeMirror chunk weight).
+const FlowEditorModal = lazy(() =>
+  import('./components/FlowEditorModal').then((m) => ({ default: m.FlowEditorModal }))
+)
 import { buildStarterYaml } from './lib/starter-yaml'
 import { isMobileViewport } from './lib/mobile'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
@@ -536,16 +539,22 @@ function App() {
         </div>
       </div>
 
-      {/* Editor modal — overlays everything when open */}
-      <FlowEditorModal
-        open={editor.mode !== 'closed'}
-        title={editor.mode === 'edit' ? 'Edit flow' : 'New flow'}
-        initialYaml={editor.mode === 'closed' ? '' : editor.initialYaml}
-        saving={mutations.inFlight}
-        serverError={mutations.error}
-        onSave={handleEditorSave}
-        onCancel={handleEditorCancel}
-      />
+      {/* Editor modal — overlays everything when open. Mount-on-open
+          so the lazy chunk only downloads when the user actually opens
+          the editor. */}
+      {editor.mode !== 'closed' && (
+        <Suspense fallback={null}>
+          <FlowEditorModal
+            open
+            title={editor.mode === 'edit' ? 'Edit flow' : 'New flow'}
+            initialYaml={editor.initialYaml}
+            saving={mutations.inFlight}
+            serverError={mutations.error}
+            onSave={handleEditorSave}
+            onCancel={handleEditorCancel}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

@@ -1,9 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import YAML from 'yaml'
 import { parseFlowYaml } from '@openhop/shared'
 import { FlowCanvas } from './components/FlowCanvas'
 import { DataInspectionPanel, BookmarkTab, type DockSide } from './components/DataInspectionPanel'
-import { FlowEditorModal } from './components/FlowEditorModal'
+// FlowEditorModal pulls in CodeMirror + the YAML language pack — together
+// the heaviest unused chunk on first paint. Defer the import until the
+// user actually opens the editor (+ New flow / Edit). React.lazy needs a
+// default export; the .then() unwraps the named export.
+const FlowEditorModal = lazy(() =>
+  import('./components/FlowEditorModal').then((m) => ({ default: m.FlowEditorModal }))
+)
 import { Sidebar } from './components/Sidebar'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildShareUrl, decodeFragment, encodeFragment } from './lib/share-url'
@@ -498,16 +504,25 @@ export default function AppFragment() {
         </div>
       </div>
 
-      <FlowEditorModal
-        open={editor.mode !== 'closed'}
-        title={editor.mode === 'edit' ? 'Edit flow (copy share URL)' : 'New flow (copy share URL)'}
-        initialYaml={editor.mode === 'closed' ? '' : editor.initialYaml}
-        saving={copying}
-        serverError={null}
-        onSave={handleEditorSave}
-        onCancel={handleEditorCancel}
-        mode="fragment"
-      />
+      {/* Mount the modal only when actually open — keeps the lazy
+          chunk request on the click, not on first paint. Suspense is a
+          no-op fallback because the modal is opaque while loading. */}
+      {editor.mode !== 'closed' && (
+        <Suspense fallback={null}>
+          <FlowEditorModal
+            open
+            title={
+              editor.mode === 'edit' ? 'Edit flow (copy share URL)' : 'New flow (copy share URL)'
+            }
+            initialYaml={editor.initialYaml}
+            saving={copying}
+            serverError={null}
+            onSave={handleEditorSave}
+            onCancel={handleEditorCancel}
+            mode="fragment"
+          />
+        </Suspense>
+      )}
 
       {toast && (
         <div
