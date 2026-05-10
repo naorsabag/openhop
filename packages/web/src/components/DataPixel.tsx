@@ -183,12 +183,20 @@ export function DataPixel({
   // Pass the carrot's specific data slice. FlowCanvas adds the from/to
   // context; we don't pass `step` here because for parallel sub-steps
   // it'd be the sub-step (not the parent the inspect panel needs).
+  //
+  // For string-data steps we deliberately pass `undefined` instead of
+  // synthesizing a `{ label: step.data }` object: the inspector
+  // highlights via reference equality (`d === focus.data`), and a
+  // freshly-constructed wrapper would never match the wrapper
+  // normalizeData() builds on the inspector side. Passing undefined
+  // makes the highlight fall back to from/to-only matching, which is
+  // exactly what we want for string data (only one block per section).
   const emitPixelClick = () => {
     if (!onPixelClick) return
     const focusData =
       dataOverride ??
       (typeof step.data === 'string'
-        ? { label: step.data }
+        ? undefined
         : Array.isArray(step.data)
           ? step.data[0]
           : step.data)
