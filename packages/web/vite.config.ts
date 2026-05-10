@@ -34,6 +34,29 @@ export default defineConfig({
     // in the browser bundle, so we mark it external to keep rolldown happy.
     rollupOptions: {
       external: ['web-worker'],
+      output: {
+        // Split heavy vendor deps out of the entry bundle so the app
+        // shell hits the network as fewer bytes and the browser can
+        // parallelize downloads. The single-chunk build shipped
+        // ~2.5 MB on first paint; splitting drops the entry chunk and
+        // moves rarely-changing vendor code into separate
+        // cache-friendly chunks. CodeMirror is also lazy-loaded at
+        // the React layer (see App*.tsx), so its chunk only fetches
+        // when the editor opens.
+        //
+        // Function form because rolldown's `manualChunks` doesn't
+        // accept the object form the older rollup API used.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          if (id.includes('/elkjs/') || id.includes('/@xyflow/')) return 'flow'
+          if (id.includes('/@codemirror/') || id.includes('/@uiw/react-codemirror/'))
+            return 'codemirror'
+          if (id.includes('/yaml/') || id.includes('/lz-string/')) return 'yaml'
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/'))
+            return 'react'
+          return undefined
+        },
+      },
     },
   },
 })
