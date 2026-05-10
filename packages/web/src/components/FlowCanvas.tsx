@@ -350,12 +350,25 @@ function FlowCanvasInner({
       nodes: typeof baseNodes,
       pad: number,
       maxZoom: number,
-      duration: number
+      duration: number,
+      // When true, treat tiny bboxes (single-node steps) as if they
+      // covered two side-by-side nodes. Without this, a one-node phase
+      // zooms in tighter than the natural framing of an adjacent pair
+      // (e.g. user → react ui), which feels too close. The reference
+      // dimensions match a typical layered-layout pair so single-node
+      // and two-node phases land at the same zoom.
+      stableSingleZoom = false
     ) => {
       if (nodes.length === 0) return
       const { minX, minY, maxX, maxY } = computeBbox(nodes)
-      const contentW = maxX - minX
-      const contentH = maxY - minY
+      let contentW = maxX - minX
+      let contentH = maxY - minY
+      if (stableSingleZoom && nodes.length === 1) {
+        const w = nodes[0].width ?? 108
+        const h = nodes[0].height ?? 160
+        contentW = Math.max(contentW, 2.5 * w)
+        contentH = Math.max(contentH, h)
+      }
       const zoom = Math.min(
         paneW / (contentW * (1 + pad)),
         paneH / (contentH * (1 + pad)),
@@ -397,19 +410,19 @@ function FlowCanvasInner({
     // "from" — e.g. a destroy-only step has from but no to, in which case
     // we want the simpler single-target framing without the bounce.
     if (fromNodes.length > 0 && toNodes.length > 0) {
-      moveTo(fromNodes, 0.5, 2.5, 300 / speed)
+      moveTo(fromNodes, 0.5, 2.5, 300 / speed, true)
       // Phase B: pull back to frame both ends mid-flight.
       cameraTimersRef.current.push(
         setTimeout(() => moveTo(bothNodes, 0.5, 2.5, 500 / speed), at(350))
       )
       // Phase C: snap onto receiver(s) as the carrot arrives.
       cameraTimersRef.current.push(
-        setTimeout(() => moveTo(toNodes, 0.5, 2.5, 400 / speed), at(1200))
+        setTimeout(() => moveTo(toNodes, 0.5, 2.5, 400 / speed, true), at(1200))
       )
     } else {
       // Single-sided step (only from, only to, or both same set) — just
       // frame what we have so the camera doesn't lurch to an empty bbox.
-      moveTo(bothNodes, 0.5, 2.5, 500 / speed)
+      moveTo(bothNodes, 0.5, 2.5, 500 / speed, true)
     }
   }, [
     playing,
