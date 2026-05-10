@@ -357,7 +357,15 @@ function App() {
       {/* Header */}
       <header
         className="flex items-center justify-between px-4 py-2 shrink-0"
-        style={{ background: '#0d2612', borderBottom: '2px solid #1a4a22' }}
+        style={{
+          background: '#0d2612',
+          borderBottom: '2px solid #1a4a22',
+          // Sit above the data pixels (z=1000) so a carrot mid-flight
+          // doesn't paint over the chrome when the canvas pane lets it
+          // bleed beyond its bounds.
+          position: 'relative',
+          zIndex: 1001,
+        }}
       >
         <div className="flex items-center gap-4">
           <h1

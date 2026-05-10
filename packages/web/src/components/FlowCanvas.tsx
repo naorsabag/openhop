@@ -678,7 +678,7 @@ function FlowCanvasInner({
                 restart()
               }}
             >
-              {'⏮'}
+              <RestartIcon />
             </PlaybackButton>
             <PlaybackButton
               ariaLabel="Previous step"
@@ -689,10 +689,10 @@ function FlowCanvasInner({
               }}
               disabled={(animState.currentStepIndex ?? -1) <= 0}
             >
-              {'⏪'}
+              <PrevIcon />
             </PlaybackButton>
             <PlaybackButton ariaLabel={playing ? 'Pause flow' : 'Play flow'} onClick={onTogglePlay}>
-              {playing ? '⏸' : '▶'}
+              {playing ? <PauseIcon /> : <PlayIcon />}
             </PlaybackButton>
             <PlaybackButton
               ariaLabel="Next step"
@@ -706,7 +706,7 @@ function FlowCanvasInner({
                 animState.currentStepIndex >= flowSteps.length - 1
               }
             >
-              {'⏩'}
+              <NextIcon />
             </PlaybackButton>
           </div>
         </Panel>
@@ -803,15 +803,90 @@ function PlaybackButton({
         border: '1px solid #1a4a22',
         color: disabled ? '#3a5a42' : '#7fffaa',
         cursor: disabled ? 'default' : 'pointer',
-        fontSize: 14,
-        fontFamily: 'monospace',
-        lineHeight: 1,
         padding: 0,
         borderRadius: 3,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       {children}
     </button>
+  )
+}
+
+// Inline SVG icons keep the playback chrome monochrome — emoji glyphs
+// (⏮ ⏪ ▶ ⏸ ⏩) get rendered in the platform's color emoji font on most
+// systems, ignoring the button's color and showing as Apple-blue or
+// Win11-pink depending on the OS. SVG with currentColor + a sharp 16px
+// viewBox keeps the buttons in the green accent the rest of the chrome
+// uses.
+
+function ICON_FRAME(children: React.ReactNode) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={14}
+      height={14}
+      fill="currentColor"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  )
+}
+
+function RestartIcon() {
+  // Counter-clockwise circular arrow with an arrowhead at the tail —
+  // unambiguous "start over" affordance instead of the skip-back glyph
+  // (⏮) the emoji set used.
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={14}
+      height={14}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden="true"
+    >
+      <path d="M3 8 A5 5 0 1 0 5 4" />
+      <path d="M5 1.5 L5 4 L7.5 4" fill="currentColor" />
+    </svg>
+  )
+}
+
+function PrevIcon() {
+  return ICON_FRAME(
+    <>
+      <path d="M7 3 L3 8 L7 13 Z" />
+      <path d="M13 3 L9 8 L13 13 Z" />
+    </>
+  )
+}
+
+function NextIcon() {
+  return ICON_FRAME(
+    <>
+      <path d="M3 3 L7 8 L3 13 Z" />
+      <path d="M9 3 L13 8 L9 13 Z" />
+    </>
+  )
+}
+
+function PlayIcon() {
+  return ICON_FRAME(<path d="M4 3 L13 8 L4 13 Z" />)
+}
+
+function PauseIcon() {
+  return ICON_FRAME(
+    <>
+      <rect x={4} y={3} width={3} height={10} />
+      <rect x={9} y={3} width={3} height={10} />
+    </>
   )
 }
 

@@ -72,6 +72,11 @@ export function DataInspectionPanel({
     width: side === 'right' ? size : '100%',
     height: side === 'bottom' ? size : '100%',
     flexShrink: 0,
+    // Sit above DataPixel (z=1000) so a carrot mid-flight can't paint
+    // over the inspector when the canvas pane lets it bleed past its
+    // bounds.
+    position: 'relative',
+    zIndex: 1001,
   }
 
   const handleStyle: React.CSSProperties = {
@@ -409,7 +414,10 @@ export function BookmarkTab({ open, onToggle, edge, label, ariaLabel }: Bookmark
         top: '50%',
         transform: 'translateY(-50%)',
         [edge === 'right' ? 'right' : 'left']: 0,
-        zIndex: 20,
+        // Above DataPixel (z=1000) — same reason the header/sidebars
+        // sit above carrots: pixels in mid-flight can extend past the
+        // canvas pane bounds.
+        zIndex: 1001,
         width: 24,
         minWidth: 24,
         minHeight: 76,
