@@ -180,10 +180,17 @@ function FlowCanvasInner({
     return () => observer.disconnect()
   }, [fitToPane])
 
-  // Track the last set of focused node IDs so the auto-zoom effect doesn't
-  // re-issue the same setCenter call when the active step's geometry hasn't
-  // actually moved — re-issuing mid-animation causes a visible stutter.
+  // Track the last focus key so the auto-zoom effect doesn't re-issue
+  // the same camera path when the active step's geometry hasn't actually
+  // moved — re-issuing mid-animation causes a visible stutter. The key
+  // encodes both the from and to sets so swaps within a logical step
+  // (re-renders that don't change either set) are no-ops.
   const lastFocusKeyRef = useRef<string>('')
+  // Pending setTimeout IDs for the multi-phase camera path. Cleared
+  // before scheduling a new path or returning to overview, so a paused/
+  // advanced step can't be ambushed by a stale "zoom to to-node" tick
+  // 1.2s later.
+  const cameraTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const pairEdgeMap = useMemo(() => {
     const map = new Map<string, Edge>()
@@ -304,13 +311,15 @@ function FlowCanvasInner({
     [baseNodes, activeNodes, destroyedNodes]
   )
 
-  // Auto-focus the camera on the active step's nodes during playback so
-  // viewers don't have to chase the carrot across a large flow. When
-  // paused, glide back to the full-flow overview. Uses setCenter (same
-  // API that drives the drill-down zoom) rather than fitView({nodes}),
-  // which silently no-ops if xyflow's internal node store hasn't
-  // measured the targets — the manual bbox math here reads the layout's
-  // own positions so it always has data.
+  // Auto-focus the camera on the active step's nodes during playback.
+  // The path runs three phases inside the pixel-active window so the
+  // viewer's eye tracks the data as it travels: focus on the sender(s),
+  // pull back to frame both ends mid-flight, then snap onto the
+  // receiver(s) as the carrot lands. Pause returns to a full-flow
+  // overview. Uses setCenter (same API that drives the drill-down zoom)
+  // rather than fitView({nodes}), which silently no-ops when xyflow's
+  // node store hasn't measured the targets — the manual bbox math reads
+  // the layout's own positions so it always has data.
   useEffect(() => {
     if (baseNodes.length === 0) return
     const pane = containerRef.current?.querySelector('.react-flow') as HTMLElement | null
@@ -318,6 +327,11 @@ function FlowCanvasInner({
     const paneW = pane.offsetWidth
     const paneH = pane.offsetHeight
     if (paneW === 0 || paneH === 0) return
+
+    const clearTimers = () => {
+      for (const t of cameraTimersRef.current) clearTimeout(t)
+      cameraTimersRef.current = []
+    }
 
     const computeBbox = (nodes: typeof baseNodes) => {
       const w = nodes[0].width ?? 108
@@ -332,41 +346,71 @@ function FlowCanvasInner({
       }
     }
 
-    if (!playing) {
-      if (lastFocusKeyRef.current === '__overview__') return
-      lastFocusKeyRef.current = '__overview__'
-      const { minX, minY, maxX, maxY } = computeBbox(baseNodes)
+    const moveTo = (
+      nodes: typeof baseNodes,
+      pad: number,
+      maxZoom: number,
+      duration: number
+    ) => {
+      if (nodes.length === 0) return
+      const { minX, minY, maxX, maxY } = computeBbox(nodes)
       const contentW = maxX - minX
       const contentH = maxY - minY
-      const pad = 0.3
       const zoom = Math.min(
         paneW / (contentW * (1 + pad)),
         paneH / (contentH * (1 + pad)),
-        1.5
+        maxZoom
       )
-      reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
+      reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration })
+    }
+
+    if (!playing) {
+      clearTimers()
+      if (lastFocusKeyRef.current === '__overview__') return
+      lastFocusKeyRef.current = '__overview__'
+      moveTo(baseNodes, 0.3, 1.5, 500)
       return
     }
-    const activeIds = new Set<string>()
-    animState.activeFromIds.forEach((id) => activeIds.add(id))
-    animState.activeToIds.forEach((id) => activeIds.add(id))
-    if (activeIds.size === 0) return
-    const sortedIds = Array.from(activeIds).sort()
-    const focusKey = sortedIds.join('|')
+
+    const fromIds = Array.from(animState.activeFromIds).sort()
+    const toIds = Array.from(animState.activeToIds).sort()
+    if (fromIds.length === 0 && toIds.length === 0) return
+    const focusKey = `${fromIds.join(',')}->${toIds.join(',')}`
     if (focusKey === lastFocusKeyRef.current) return
-    const focusNodes = baseNodes.filter((n) => activeIds.has(n.id))
-    if (focusNodes.length === 0) return
-    lastFocusKeyRef.current = focusKey
-    const { minX, minY, maxX, maxY } = computeBbox(focusNodes)
-    const contentW = maxX - minX
-    const contentH = maxY - minY
-    const pad = 0.5
-    const zoom = Math.min(
-      paneW / (contentW * (1 + pad)),
-      paneH / (contentH * (1 + pad)),
-      2.5
+
+    const fromNodes = baseNodes.filter((n) => animState.activeFromIds.has(n.id))
+    const toNodes = baseNodes.filter((n) => animState.activeToIds.has(n.id))
+    const bothNodes = baseNodes.filter(
+      (n) => animState.activeFromIds.has(n.id) || animState.activeToIds.has(n.id)
     )
-    reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
+    if (bothNodes.length === 0) return
+
+    lastFocusKeyRef.current = focusKey
+    clearTimers()
+
+    // Scale the schedule with playback speed so the camera path always
+    // finishes inside the 1800ms pixel-active window from useFlowAnimation.
+    const speed = window.__flowSpeed ?? 1
+    const at = (ms: number) => Math.max(0, ms / speed)
+
+    // Phase A: focus on sender(s). Skip the dwell if there's no distinct
+    // "from" — e.g. a destroy-only step has from but no to, in which case
+    // we want the simpler single-target framing without the bounce.
+    if (fromNodes.length > 0 && toNodes.length > 0) {
+      moveTo(fromNodes, 0.5, 2.5, 300 / speed)
+      // Phase B: pull back to frame both ends mid-flight.
+      cameraTimersRef.current.push(
+        setTimeout(() => moveTo(bothNodes, 0.5, 2.5, 500 / speed), at(350))
+      )
+      // Phase C: snap onto receiver(s) as the carrot arrives.
+      cameraTimersRef.current.push(
+        setTimeout(() => moveTo(toNodes, 0.5, 2.5, 400 / speed), at(1200))
+      )
+    } else {
+      // Single-sided step (only from, only to, or both same set) — just
+      // frame what we have so the camera doesn't lurch to an empty bbox.
+      moveTo(bothNodes, 0.5, 2.5, 500 / speed)
+    }
   }, [
     playing,
     animState.currentStepIndex,
@@ -375,6 +419,15 @@ function FlowCanvasInner({
     baseNodes,
     reactFlow,
   ])
+
+  // Cancel any pending camera timers on unmount so a teardown mid-step
+  // doesn't fire setCenter on a defunct ReactFlow instance.
+  useEffect(() => {
+    return () => {
+      for (const t of cameraTimersRef.current) clearTimeout(t)
+      cameraTimersRef.current = []
+    }
+  }, [])
 
   // Report step changes to parent
   const onStepChangeRef = useRef(onStepChange)
