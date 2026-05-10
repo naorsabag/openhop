@@ -351,7 +351,15 @@ function chooseOrthogonalCorner(
   return { x: next.x, y: current.y }
 }
 
-function orthogonalizeRoutePoints(points: RoutePoint[]): RoutePoint[] {
+// Sub-pixel epsilon for orthogonality checks. After shiftRoutesAfterSnap,
+// two points that should share a coordinate can drift by ~1 ULP (3e-15) due
+// to float arithmetic. Without this tolerance, orthogonalize inserts a
+// phantom corner and inferPortAssignmentsFromRoutes then treats a tiny dy
+// as the dominant axis — picking 'bottom' for what should be a flat
+// 'left' entry. (Seen on claude-router → mongodb in the orion main flow.)
+const ORTHOGONAL_EPSILON = 0.5
+
+export function orthogonalizeRoutePoints(points: RoutePoint[]): RoutePoint[] {
   const route: RoutePoint[] = []
 
   for (let index = 0; index < points.length; index++) {
@@ -363,7 +371,10 @@ function orthogonalizeRoutePoints(points: RoutePoint[]): RoutePoint[] {
       continue
     }
 
-    if (current.x !== point.x && current.y !== point.y) {
+    if (
+      Math.abs(current.x - point.x) > ORTHOGONAL_EPSILON &&
+      Math.abs(current.y - point.y) > ORTHOGONAL_EPSILON
+    ) {
       const corner = chooseOrthogonalCorner(
         route[route.length - 2],
         current,

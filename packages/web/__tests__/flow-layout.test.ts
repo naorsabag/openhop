@@ -12,6 +12,7 @@ import {
   NODE_WIDTH,
   SELF_LOOP_HEIGHT,
   SELF_LOOP_WIDTH,
+  orthogonalizeRoutePoints,
 } from '../src/lib/flow-layout.ts'
 
 const orderFlow = {
@@ -285,6 +286,54 @@ describe('buildOrthogonalPath', () => {
 })
 
 describe('inferPortAssignmentsFromRoutes', () => {
+  it('treats sub-pixel y differences as flat (e.g. claude-router → mongodb in orion-main)', () => {
+    // After shiftRoutesAfterSnap, two endpoints that should share y can
+    // drift by ~1 ULP due to float arithmetic. Without epsilon-tolerant
+    // orthogonalization this triggers a phantom vertical corner; that 3rd
+    // point makes the final segment a tiny vertical, and
+    // inferPortAssignmentsFromRoutes then runs targetHandleFromSegment on
+    // (0, ~3e-15), where |dx|=0 < |dy|=3e-15, so it falls into the
+    // vertical branch and picks 'bottom' instead of 'left'. Regression:
+    // the road visibly dove past the database into empty space.
+    //
+    // Run through orthogonalizeRoutePoints first so we exercise the same
+    // pipeline computeElkLayout uses (orthogonalize → infer); without that
+    // step the test would already pass on broken code because the raw
+    // 2-point route biases the horizontal-dominant branch.
+    const topology = buildFlowTopology({
+      flow: {
+        nodes: [
+          { id: 'a', label: 'A', type: 'service' },
+          { id: 'b', label: 'B', type: 'database' },
+        ],
+        steps: [{ from: 'a', to: 'b' }],
+      },
+    } as Flow)
+
+    const edge = topology.displayEdges[0]
+    const positions = new Map([
+      ['a', { x: 0, y: 0 }],
+      ['b', { x: 200, y: 0 }],
+    ])
+    // The two y values differ at the last bit of float precision.
+    const rawNoisyRoute = [
+      { x: 100, y: 80.00000000000001 },
+      { x: 200, y: 80 },
+    ]
+    const orthogonalized = orthogonalizeRoutePoints(rawNoisyRoute)
+    // With the epsilon fix, orthogonalize keeps the 2-point route and
+    // doesn't fabricate a corner. (Without the fix, it would expand to
+    // three points with a phantom near-zero vertical at the end.)
+    expect(orthogonalized).toHaveLength(2)
+
+    const assignments = inferPortAssignmentsFromRoutes(
+      topology,
+      positions,
+      new Map([[edge.id, orthogonalized]])
+    )
+    expect(assignments.get(edge.id)).toMatchObject({ source: 'right', target: 'left' })
+  })
+
   it('chooses the closest routed side from the first and last orthogonal segments', () => {
     const assignments = inferPortAssignmentsFromRoutes(
       buildFlowTopology(orderFlow),
