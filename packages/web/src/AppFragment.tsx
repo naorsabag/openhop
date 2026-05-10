@@ -4,9 +4,11 @@ import { parseFlowYaml } from '@openhop/shared'
 import { FlowCanvas } from './components/FlowCanvas'
 import { DataInspectionPanel, BookmarkTab, type DockSide } from './components/DataInspectionPanel'
 import { FlowEditorModal } from './components/FlowEditorModal'
+import { Sidebar } from './components/Sidebar'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildShareUrl, decodeFragment, encodeFragment } from './lib/share-url'
 import { EXAMPLE_FLOWS } from './lib/example-flows'
+import type { FlowListItem } from './hooks/useFlowPolling'
 import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
 interface FlowNavItem {
@@ -16,16 +18,29 @@ interface FlowNavItem {
   resumeFromStep?: number
 }
 
+// Static FlowListItem[] derived from EXAMPLE_FLOWS so the same Sidebar
+// component the local app uses can render examples on Pages. version
+// and updatedAt are placeholders — Pages mode never re-fetches, and
+// the Sidebar only reads them for the local-app's update indicator.
+const EXAMPLE_FLOW_LIST: FlowListItem[] = EXAMPLE_FLOWS.map((ex) => ({
+  id: ex.id,
+  title: ex.title,
+  description: ex.description,
+  path: ex.path,
+  version: 0,
+  updatedAt: '',
+}))
+
 /**
  * Fragment-mode app shell — used by the GitHub Pages deploy. There is no API
  * server, so:
  *   - The flow is decoded from `location.hash` (lz-compressed YAML).
  *   - "Save" doesn't POST anywhere; it builds a share URL and copies it to
  *     the clipboard.
- *   - There's no sidebar / flow list — Pages serves one flow per URL.
+ *   - The left sidebar is read-only and lists the bundled example flows;
+ *     clicking one swaps `location.hash` to its encoded YAML.
  *
- * The empty state ("no fragment, no flow") shows a "+ New flow" CTA. Invalid
- * fragments surface as a banner with an empty editor below.
+ * Invalid fragments surface as a banner with an empty editor below.
  */
 export default function AppFragment() {
   // Re-decode whenever the hash changes (deep-link, browser back, paste).
@@ -170,6 +185,28 @@ export default function AppFragment() {
   const [inspectorOpen, setInspectorOpen] = useState(true)
   const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
   const [inspectorSize, setInspectorSize] = useState(320)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  // Match the current hash against each example's encoded form so the
+  // sidebar can highlight the active example. Stable across re-renders
+  // because EXAMPLE_FLOWS is a module-level const.
+  const selectedExampleId = useMemo<string | null>(() => {
+    if (!hash) return null
+    for (const ex of EXAMPLE_FLOWS) {
+      if (encodeFragment(ex.yaml) === hash) return ex.id
+    }
+    return null
+  }, [hash])
+
+  const handleSelectExample = useCallback((id: string | null) => {
+    if (id === null) {
+      window.location.hash = ''
+      return
+    }
+    const ex = EXAMPLE_FLOWS.find((e) => e.id === id)
+    if (!ex) return
+    window.location.hash = encodeFragment(ex.yaml)
+  }, [])
   useEffect(() => {
     setInspectedStep(null)
     setInspectedFocus(null)
@@ -312,12 +349,32 @@ export default function AppFragment() {
       )}
 
       <div className="flex flex-1 min-h-0">
+        {/* Examples sidebar — read-only on Pages (no create / edit / delete);
+            clicking an entry swaps location.hash to that example's encoded
+            YAML so the existing decode pipeline takes over. */}
+        {sidebarOpen && (
+          <Sidebar
+            flows={EXAMPLE_FLOW_LIST}
+            loading={false}
+            selectedFlowId={selectedExampleId}
+            onSelectFlow={handleSelectExample}
+          />
+        )}
+
         <div
           className={`flex-1 min-w-0 min-h-0 flex ${inspectorSide === 'right' ? 'flex-row' : 'flex-col'}`}
         >
           <main className="flex-1 min-w-0 min-h-0 relative" style={{ background: '#0a1f0e' }}>
-            {/* Inspector bookmark tab — fragment mode has no sidebar, so
-                only the right tab is rendered. */}
+            {/* FLOWS bookmark tab on the left edge — same UX as the local
+                app. Always rendered (even on the empty state) so the sidebar
+                can be toggled. */}
+            <BookmarkTab
+              edge="left"
+              open={sidebarOpen}
+              onToggle={() => setSidebarOpen((o) => !o)}
+              label="FLOWS"
+              ariaLabel={sidebarOpen ? 'Collapse flows' : 'Expand flows'}
+            />
             {decodedFlow && (
               <BookmarkTab
                 edge="right"
@@ -329,36 +386,14 @@ export default function AppFragment() {
             )}
             {!decodedFlow ? (
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center max-w-lg px-6">
+                <div className="text-center max-w-md px-6">
                   <p className="font-pixel text-text/60 mb-2" style={{ fontSize: 14 }}>
                     {decodeError ? 'No flow loaded' : 'No flow shared'}
                   </p>
-                  <p className="font-terminal text-text/40 text-sm mb-6">
-                    Open a flow by visiting a share URL, click "+ New flow" above, or pick a
-                    pre-built example:
+                  <p className="font-terminal text-text/40 text-sm">
+                    Pick an example from the sidebar, paste a share URL, or click "+ New flow"
+                    above.
                   </p>
-                  <ul className="flex flex-col gap-2 text-left">
-                    {EXAMPLE_FLOWS.map((ex) => (
-                      <li key={ex.id}>
-                        <button
-                          onClick={() => {
-                            // Setting hash to the encoded YAML triggers the
-                            // existing decode → render path. The ?example=<id>
-                            // is purely cosmetic so the URL bar reads
-                            // recognizably; the example loads from the hash.
-                            window.location.hash = encodeFragment(ex.yaml)
-                          }}
-                          className="w-full text-left px-3 py-2 border border-border hover:border-accent hover:text-accent transition-colors font-terminal text-sm"
-                          style={{ background: '#0d2612', color: '#7fffaa' }}
-                        >
-                          <div className="font-pixel mb-1" style={{ fontSize: 11 }}>
-                            {ex.title}
-                          </div>
-                          <div className="text-text/50 text-xs">{ex.description}</div>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               </div>
             ) : displayFlow ? (
