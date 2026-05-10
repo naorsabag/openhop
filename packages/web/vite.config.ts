@@ -32,6 +32,17 @@ export default defineConfig({
   build: {
     // elkjs ships an optional `web-worker` import for node usage; not needed
     // in the browser bundle, so we mark it external to keep rolldown happy.
+    modulePreload: {
+      // Without this filter, Vite emits <link rel="modulepreload"> for
+      // every named chunk including the lazy `codemirror` chunk — which
+      // defeats the React.lazy on FlowEditorModal (browser preloads
+      // CodeMirror on first paint, exactly what we're trying to avoid).
+      // Strip the codemirror chunk from preloads so it only fetches on
+      // the actual dynamic import.
+      resolveDependencies(_filename, deps) {
+        return deps.filter((d) => !/\/codemirror-[A-Za-z0-9_-]+\.js$/.test(d))
+      },
+    },
     rollupOptions: {
       external: ['web-worker'],
       output: {
