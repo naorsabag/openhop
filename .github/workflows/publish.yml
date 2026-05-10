@@ -69,6 +69,7 @@ jobs:
 
       # Publish web first — the CLI's package.json depends on the web version.
       - name: Publish @openhop/web
+        id: publish_web
         if: steps.web_status.outputs.publish == 'true'
         working-directory: packages/web
         run: npm publish --tag beta --access public
@@ -76,6 +77,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish openhop CLI
+        id: publish_cli
         if: steps.cli_status.outputs.publish == 'true'
         working-directory: packages/cli
         run: npm publish --tag beta --access public
@@ -90,15 +92,22 @@ jobs:
       #   cli only → cli/v$CLI_VERSION
       #   web only → web/v$WEB_VERSION
       - name: Create tag + GitHub Release
+        # Gate on actual step outcomes, not the pre-check intent — a failed
+        # `npm publish` (network, auth, registry rejection) shouldn't still
+        # produce a "successful publish" release record. `always()` keeps
+        # this step eligible to run even though the upstream publish step
+        # may have been conditionally skipped.
         if: |
-          steps.web_status.outputs.publish == 'true' ||
-          steps.cli_status.outputs.publish == 'true'
+          always() && (
+            steps.publish_web.outcome == 'success' ||
+            steps.publish_cli.outcome == 'success'
+          )
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WEB_VERSION: ${{ steps.versions.outputs.web }}
           CLI_VERSION: ${{ steps.versions.outputs.cli }}
-          WEB_PUBLISHED: ${{ steps.web_status.outputs.publish }}
-          CLI_PUBLISHED: ${{ steps.cli_status.outputs.publish }}
+          WEB_PUBLISHED: ${{ steps.publish_web.outcome == 'success' }}
+          CLI_PUBLISHED: ${{ steps.publish_cli.outcome == 'success' }}
         run: |
           if [ "$WEB_PUBLISHED" = "true" ] && [ "$CLI_PUBLISHED" = "true" ]; then
             tag="v$CLI_VERSION"
