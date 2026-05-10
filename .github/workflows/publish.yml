@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # tag + release creation
   id-token: write
 
 concurrency:
@@ -69,6 +69,7 @@ jobs:
 
       # Publish web first — the CLI's package.json depends on the web version.
       - name: Publish @openhop/web
+        id: publish_web
         if: steps.web_status.outputs.publish == 'true'
         working-directory: packages/web
         run: npm publish --tag beta --access public
@@ -76,8 +77,73 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish openhop CLI
+        id: publish_cli
         if: steps.cli_status.outputs.publish == 'true'
         working-directory: packages/cli
         run: npm publish --tag beta --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Tag + GitHub Release whenever ANY publish happened. Tag scheme
+      # branches on what actually shipped so a web-only bump can't collide
+      # with a CLI tag from a prior run:
+      #   both → v$CLI_VERSION         (combined release; CLI is the
+      #                                  user-facing handle for `npx`)
+      #   cli only → cli/v$CLI_VERSION
+      #   web only → web/v$WEB_VERSION
+      - name: Create tag + GitHub Release
+        # Gate on actual step outcomes, not the pre-check intent — a failed
+        # `npm publish` (network, auth, registry rejection) shouldn't still
+        # produce a "successful publish" release record. `always()` keeps
+        # this step eligible to run even though the upstream publish step
+        # may have been conditionally skipped.
+        if: |
+          always() && (
+            steps.publish_web.outcome == 'success' ||
+            steps.publish_cli.outcome == 'success'
+          )
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WEB_VERSION: ${{ steps.versions.outputs.web }}
+          CLI_VERSION: ${{ steps.versions.outputs.cli }}
+          WEB_PUBLISHED: ${{ steps.publish_web.outcome == 'success' }}
+          CLI_PUBLISHED: ${{ steps.publish_cli.outcome == 'success' }}
+        run: |
+          if [ "$WEB_PUBLISHED" = "true" ] && [ "$CLI_PUBLISHED" = "true" ]; then
+            tag="v$CLI_VERSION"
+          elif [ "$CLI_PUBLISHED" = "true" ]; then
+            tag="cli/v$CLI_VERSION"
+          else
+            tag="web/v$WEB_VERSION"
+          fi
+
+          # If THIS tag already exists (re-run of a workflow whose tag
+          # already landed), skip cleanly. Per-package tags mean we never
+          # check for an unrelated tag.
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "::notice::release $tag already exists, skipping"
+            exit 0
+          fi
+
+          {
+            echo "## Published to npm (\`beta\` tag)"
+            if [ "$WEB_PUBLISHED" = "true" ]; then
+              echo "- [\`@openhop/web@$WEB_VERSION\`](https://www.npmjs.com/package/@openhop/web/v/$WEB_VERSION)"
+            fi
+            if [ "$CLI_PUBLISHED" = "true" ]; then
+              echo "- [\`openhop@$CLI_VERSION\`](https://www.npmjs.com/package/openhop/v/$CLI_VERSION)"
+            fi
+            echo
+            echo "## Try it"
+            echo '```sh'
+            echo "npx openhop@beta demo"
+            echo '```'
+            echo
+            echo "Auto-generated notes (commit history) below."
+          } > /tmp/release-body.md
+
+          gh release create "$tag" \
+            --title "$tag" \
+            --notes-file /tmp/release-body.md \
+            --generate-notes \
+            --target "$GITHUB_SHA"
