@@ -82,10 +82,13 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # Tag + GitHub Release whenever ANY publish happened. The tag tracks
-      # the CLI version since that's the user-visible artifact (`npx
-      # openhop@beta …`); the release notes list whatever shipped this run
-      # so a web-only or cli-only bump is still recorded.
+      # Tag + GitHub Release whenever ANY publish happened. Tag scheme
+      # branches on what actually shipped so a web-only bump can't collide
+      # with a CLI tag from a prior run:
+      #   both → v$CLI_VERSION         (combined release; CLI is the
+      #                                  user-facing handle for `npx`)
+      #   cli only → cli/v$CLI_VERSION
+      #   web only → web/v$WEB_VERSION
       - name: Create tag + GitHub Release
         if: |
           steps.web_status.outputs.publish == 'true' ||
@@ -97,9 +100,17 @@ jobs:
           WEB_PUBLISHED: ${{ steps.web_status.outputs.publish }}
           CLI_PUBLISHED: ${{ steps.cli_status.outputs.publish }}
         run: |
-          tag="v$CLI_VERSION"
-          # If the tag already exists (rare — re-running a workflow on a
-          # commit whose CLI version was already tagged), skip cleanly.
+          if [ "$WEB_PUBLISHED" = "true" ] && [ "$CLI_PUBLISHED" = "true" ]; then
+            tag="v$CLI_VERSION"
+          elif [ "$CLI_PUBLISHED" = "true" ]; then
+            tag="cli/v$CLI_VERSION"
+          else
+            tag="web/v$WEB_VERSION"
+          fi
+
+          # If THIS tag already exists (re-run of a workflow whose tag
+          # already landed), skip cleanly. Per-package tags mean we never
+          # check for an unrelated tag.
           if gh release view "$tag" > /dev/null 2>&1; then
             echo "::notice::release $tag already exists, skipping"
             exit 0
