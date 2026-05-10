@@ -1,12 +1,14 @@
 name: publish
 
-# Publishes @openhop/web and the openhop CLI to npm whenever the version in
-# either package.json on master differs from what's already on the registry
-# under the `beta` tag. Lets us ship a release just by merging a "chore: bump"
-# PR — no manual `npm publish` step in someone's terminal.
+# Publishes @openhop/server, @openhop/web, and the openhop CLI to npm whenever
+# the version in any of their package.json files on master differs from what's
+# already on the registry under the `beta` tag. Lets us ship a release just by
+# merging a "chore: bump" PR — no manual `npm publish` step in someone's
+# terminal.
 #
-# Web is published before CLI because the CLI's package.json depends on the
-# web version. If only one bumped, only that one runs (the other is a no-op).
+# Order matters: server + web ship before the CLI because the CLI's
+# package.json depends on both. If only one bumped, only that one runs (the
+# others are no-ops).
 
 on:
   push:
@@ -42,10 +44,22 @@ jobs:
       - name: Resolve target versions
         id: versions
         run: |
+          server_version=$(node -p "require('./packages/server/package.json').version")
           web_version=$(node -p "require('./packages/web/package.json').version")
           cli_version=$(node -p "require('./packages/cli/package.json').version")
+          echo "server=$server_version" >> "$GITHUB_OUTPUT"
           echo "web=$web_version" >> "$GITHUB_OUTPUT"
           echo "cli=$cli_version" >> "$GITHUB_OUTPUT"
+
+      - name: Check if @openhop/server@${{ steps.versions.outputs.server }} is already on npm
+        id: server_status
+        run: |
+          if npm view "@openhop/server@${{ steps.versions.outputs.server }}" version > /dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::@openhop/server@${{ steps.versions.outputs.server }} already on registry, skipping"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Check if @openhop/web@${{ steps.versions.outputs.web }} is already on npm
         id: web_status
@@ -67,7 +81,15 @@ jobs:
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # Publish web first — the CLI's package.json depends on the web version.
+      # Server + web ship before the CLI — the CLI's package.json pins both.
+      - name: Publish @openhop/server
+        id: publish_server
+        if: steps.server_status.outputs.publish == 'true'
+        working-directory: packages/server
+        run: npm publish --tag beta --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish @openhop/web
         id: publish_web
         if: steps.web_status.outputs.publish == 'true'
@@ -85,12 +107,14 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Tag + GitHub Release whenever ANY publish happened. Tag scheme
-      # branches on what actually shipped so a web-only bump can't collide
-      # with a CLI tag from a prior run:
-      #   both → v$CLI_VERSION         (combined release; CLI is the
-      #                                  user-facing handle for `npx`)
-      #   cli only → cli/v$CLI_VERSION
-      #   web only → web/v$WEB_VERSION
+      # branches on what actually shipped so a one-package bump can't
+      # collide with a stale tag from a prior multi-package run:
+      #   cli shipped → v$CLI_VERSION         (CLI is the user-facing handle
+      #                                         for `npx openhop@beta`, so its
+      #                                         version anchors the combined
+      #                                         release name)
+      #   server only → server/v$SERVER_VERSION
+      #   web only    → web/v$WEB_VERSION
       - name: Create tag + GitHub Release
         # Gate on actual step outcomes, not the pre-check intent — a failed
         # `npm publish` (network, auth, registry rejection) shouldn't still
@@ -99,27 +123,29 @@ jobs:
         # may have been conditionally skipped.
         if: |
           always() && (
+            steps.publish_server.outcome == 'success' ||
             steps.publish_web.outcome == 'success' ||
             steps.publish_cli.outcome == 'success'
           )
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVER_VERSION: ${{ steps.versions.outputs.server }}
           WEB_VERSION: ${{ steps.versions.outputs.web }}
           CLI_VERSION: ${{ steps.versions.outputs.cli }}
+          SERVER_PUBLISHED: ${{ steps.publish_server.outcome == 'success' }}
           WEB_PUBLISHED: ${{ steps.publish_web.outcome == 'success' }}
           CLI_PUBLISHED: ${{ steps.publish_cli.outcome == 'success' }}
         run: |
-          if [ "$WEB_PUBLISHED" = "true" ] && [ "$CLI_PUBLISHED" = "true" ]; then
+          if [ "$CLI_PUBLISHED" = "true" ]; then
             tag="v$CLI_VERSION"
-          elif [ "$CLI_PUBLISHED" = "true" ]; then
-            tag="cli/v$CLI_VERSION"
-          else
+          elif [ "$WEB_PUBLISHED" = "true" ]; then
             tag="web/v$WEB_VERSION"
+          else
+            tag="server/v$SERVER_VERSION"
           fi
 
           # If THIS tag already exists (re-run of a workflow whose tag
-          # already landed), skip cleanly. Per-package tags mean we never
-          # check for an unrelated tag.
+          # already landed), skip cleanly.
           if gh release view "$tag" > /dev/null 2>&1; then
             echo "::notice::release $tag already exists, skipping"
             exit 0
@@ -127,6 +153,9 @@ jobs:
 
           {
             echo "## Published to npm (\`beta\` tag)"
+            if [ "$SERVER_PUBLISHED" = "true" ]; then
+              echo "- [\`@openhop/server@$SERVER_VERSION\`](https://www.npmjs.com/package/@openhop/server/v/$SERVER_VERSION)"
+            fi
             if [ "$WEB_PUBLISHED" = "true" ]; then
               echo "- [\`@openhop/web@$WEB_VERSION\`](https://www.npmjs.com/package/@openhop/web/v/$WEB_VERSION)"
             fi
