@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
@@ -44,7 +45,7 @@ export type FlowNodeData = {
 
 type FlowNodeType = Node<FlowNodeData, 'flowNode'>
 
-export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
+function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
   const {
     label,
     nodeType,
@@ -314,3 +315,16 @@ export function FlowNodeComponent({ data, id }: NodeProps<FlowNodeType>) {
     </div>
   )
 }
+
+// React Flow doesn't memoize custom node components — every viewport
+// change (pan / zoom) emits a store update that re-renders every
+// node. With 60+ nodes (e.g. the type-variants showcase flow), that
+// reconciler churn dominates the frame budget. memo() short-circuits
+// on shallow-equal data so renders only happen when the node's actual
+// state changes (active, currentStep, isDynamic transitions, etc).
+//
+// Caveat: works because FlowCanvas's `nodes` useMemo holds data
+// references stable across viewport changes — its deps list excludes
+// the viewport. If we ever spread `node.data` from a non-memoized
+// source, this becomes a no-op.
+export const FlowNodeComponent = memo(FlowNodeComponentInner)

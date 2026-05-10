@@ -20,7 +20,21 @@ export function SpriteBuilding({
 
   return (
     <div
-      style={{ position: 'relative', width: SPRITE_SIZE, height: SPRITE_SIZE, overflow: 'visible' }}
+      style={{
+        position: 'relative',
+        width: SPRITE_SIZE,
+        height: SPRITE_SIZE,
+        overflow: 'visible',
+        // Promote the sprite to its own compositor layer so the
+        // rasterized image is cached. Without this, every zoom level
+        // change re-rasterizes the (large) SVG source through the CPU
+        // for each visible node — on flows with many nodes the cost
+        // compounds and pan/zoom drops frames. translate3d forces the
+        // layer on engines that need both hints; will-change tells
+        // Chrome we're about to transform so it pre-promotes.
+        willChange: 'transform',
+        transform: 'translate3d(0, 0, 0)',
+      }}
     >
       <img
         src={src}
