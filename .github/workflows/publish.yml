@@ -109,12 +109,17 @@ jobs:
       # Tag + GitHub Release whenever ANY publish happened. Tag scheme
       # branches on what actually shipped so a one-package bump can't
       # collide with a stale tag from a prior multi-package run:
-      #   cli shipped → v$CLI_VERSION         (CLI is the user-facing handle
-      #                                         for `npx openhop@beta`, so its
-      #                                         version anchors the combined
-      #                                         release name)
-      #   server only → server/v$SERVER_VERSION
-      #   web only    → web/v$WEB_VERSION
+      #   cli shipped         → v$CLI_VERSION         (CLI is the user-facing
+      #                                                 handle for `npx
+      #                                                 openhop@beta`, so its
+      #                                                 version anchors the
+      #                                                 combined release)
+      #   server (± web)      → server/v$SERVER_VERSION (server is the lowest
+      #                                                   layer and a more
+      #                                                   meaningful anchor
+      #                                                   than web when both
+      #                                                   ship together)
+      #   web only            → web/v$WEB_VERSION
       - name: Create tag + GitHub Release
         # Gate on actual step outcomes, not the pre-check intent — a failed
         # `npm publish` (network, auth, registry rejection) shouldn't still
@@ -138,10 +143,11 @@ jobs:
         run: |
           if [ "$CLI_PUBLISHED" = "true" ]; then
             tag="v$CLI_VERSION"
-          elif [ "$WEB_PUBLISHED" = "true" ]; then
-            tag="web/v$WEB_VERSION"
-          else
+          elif [ "$SERVER_PUBLISHED" = "true" ]; then
+            # Covers server-only AND server+web combined runs.
             tag="server/v$SERVER_VERSION"
+          else
+            tag="web/v$WEB_VERSION"
           fi
 
           # If THIS tag already exists (re-run of a workflow whose tag

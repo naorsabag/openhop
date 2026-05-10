@@ -3,7 +3,9 @@ import { useViewport } from '@xyflow/react'
 import type { FlowStep, FlowData } from '../types'
 import { DataTooltip } from './DataTooltip'
 
-const CARROT_SPRITE = '/sprites/carrot_pixels.svg'
+// Use Vite's BASE_URL so the sprite resolves under the project base on
+// the Pages deploy (`/openhop/sprites/...`) and at the root in dev (`/`).
+const CARROT_SPRITE = `${import.meta.env.BASE_URL}sprites/carrot_pixels.svg`
 const DEFAULT_PIXEL_COLOR = '#ff8a4a' // VARIANT_ACCENT[0] — sprite's original orange.
 
 interface DataPixelProps {
