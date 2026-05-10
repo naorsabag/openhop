@@ -37,9 +37,9 @@
 
 ## Why
 
-AI coding agents are great at explaining how code works — in 800-line bullet walls you can't verify.
-OpenHop is a skill that lets your agent emit **animated data-flow diagrams** instead. You ask in
-plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
+AI coding agents are great at explaining how code works — in 800-line bullet walls and complicated diagrams you can't verify.
+OpenHop is a skill that lets your agent emit **animated data-flow diagrams**, making it much easier to understand what it’s actually yapping about.
+You ask in plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
 pixels traveling between components on a pixel-art canvas. Click any node to drill into its
 sub-flow.
 
