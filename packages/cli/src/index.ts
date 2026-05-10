@@ -50,7 +50,7 @@ if (process.argv.includes('--api-version')) {
 
 const program = new Command()
 
-program.name('openhop').description('OpenHop — Data Flow Visualization CLI').version('0.1.0-beta.5')
+program.name('openhop').description('OpenHop — Data Flow Visualization CLI').version('0.1.0-beta.6')
 
 // --- serve ---
 //
