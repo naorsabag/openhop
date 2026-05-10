@@ -13,7 +13,7 @@ import {
 } from '@xyflow/react'
 import type React from 'react'
 import '@xyflow/react/dist/style.css'
-import { useMemo, useRef, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useCallback, useEffect, useState } from 'react'
 import { FlowNodeComponent, type FlowNodeData } from './nodes/FlowNode'
 import { RoadEdge } from './edges/RoadEdge'
 import { useFlowAnimation, type EdgeFlowRef, type StepEdgeMapping } from '../hooks/useFlowAnimation'
@@ -123,6 +123,18 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
+  // Playback speed multiplier. The animation hook reads the live value
+  // off `window.__flowSpeed` each tick, so updating the global is what
+  // actually affects pacing — local state just drives the button label.
+  const [speed, setSpeed] = useState<number>(() => window.__flowSpeed ?? 1)
+  const cycleSpeed = useCallback(() => {
+    const cycle = [0.5, 1, 1.5, 2]
+    const idx = cycle.indexOf(speed)
+    const next = cycle[(idx + 1) % cycle.length] ?? 1
+    window.__flowSpeed = next
+    setSpeed(next)
+  }, [speed])
+
   // Re-fit the view whenever node positions change. ELK arrives asynchronously
   // after the initial fallback layout, so the built-in `fitView` prop's single
   // on-mount run lands on the fallback; this effect catches subsequent updates
@@ -179,6 +191,10 @@ function FlowCanvasInner({
     observer.observe(pane)
     return () => observer.disconnect()
   }, [fitToPane])
+
+  // Auto-zoom guard: tracks the last focus key so the same step doesn't
+  // re-issue setCenter mid-animation (which stutters).
+  const lastFocusKeyRef = useRef<string>('')
 
   const pairEdgeMap = useMemo(() => {
     const map = new Map<string, Edge>()
@@ -298,6 +314,71 @@ function FlowCanvasInner({
     },
     [baseNodes, activeNodes, destroyedNodes]
   )
+
+  // Auto-zoom: while playing, glide the camera to frame the active
+  // step's sender + receiver(s). When paused, glide back to the
+  // full-flow overview. One smooth setCenter per step — no extra
+  // mid-flight pull-back, since the constant motion read as fighting
+  // the eye more than helping. Single-node steps fall back to the
+  // bbox math's natural zoom (capped) so they don't punch in tighter
+  // than a multi-node step in the same flow.
+  useEffect(() => {
+    if (baseNodes.length === 0) return
+    const pane = containerRef.current?.querySelector('.react-flow') as HTMLElement | null
+    if (!pane) return
+    const paneW = pane.offsetWidth
+    const paneH = pane.offsetHeight
+    if (paneW === 0 || paneH === 0) return
+
+    const computeBbox = (nodes: typeof baseNodes) => {
+      const w = nodes[0].width ?? 108
+      const h = nodes[0].height ?? 160
+      const xs = nodes.map((n) => n.position.x)
+      const ys = nodes.map((n) => n.position.y)
+      return {
+        minX: Math.min(...xs),
+        minY: Math.min(...ys),
+        maxX: Math.max(...xs) + w,
+        maxY: Math.max(...ys) + h,
+      }
+    }
+
+    const moveTo = (nodes: typeof baseNodes, pad: number, maxZoom: number) => {
+      if (nodes.length === 0) return
+      const { minX, minY, maxX, maxY } = computeBbox(nodes)
+      const contentW = maxX - minX
+      const contentH = maxY - minY
+      const zoom = Math.min(paneW / (contentW * (1 + pad)), paneH / (contentH * (1 + pad)), maxZoom)
+      reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
+    }
+
+    if (!playing) {
+      if (lastFocusKeyRef.current === '__overview__') return
+      lastFocusKeyRef.current = '__overview__'
+      moveTo(baseNodes, 0.3, 1.5)
+      return
+    }
+
+    const fromIds = Array.from(animState.activeFromIds).sort()
+    const toIds = Array.from(animState.activeToIds).sort()
+    if (fromIds.length === 0 && toIds.length === 0) return
+    const focusKey = `${fromIds.join(',')}->${toIds.join(',')}`
+    if (focusKey === lastFocusKeyRef.current) return
+
+    const focusNodes = baseNodes.filter(
+      (n) => animState.activeFromIds.has(n.id) || animState.activeToIds.has(n.id)
+    )
+    if (focusNodes.length === 0) return
+    lastFocusKeyRef.current = focusKey
+    moveTo(focusNodes, 0.5, 1.8)
+  }, [
+    playing,
+    animState.currentStepIndex,
+    animState.activeFromIds,
+    animState.activeToIds,
+    baseNodes,
+    reactFlow,
+  ])
 
   // Report step changes to parent
   const onStepChangeRef = useRef(onStepChange)
@@ -707,6 +788,12 @@ function FlowCanvasInner({
               }
             >
               <NextIcon />
+            </PlaybackButton>
+            <PlaybackButton
+              ariaLabel={`Playback speed ${speed}×, click to cycle`}
+              onClick={cycleSpeed}
+            >
+              <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>{speed}×</span>
             </PlaybackButton>
           </div>
         </Panel>
