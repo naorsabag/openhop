@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # tag + release creation
   id-token: write
 
 concurrency:
@@ -81,3 +81,49 @@ jobs:
         run: npm publish --tag beta --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Tag + GitHub Release whenever ANY publish happened. The tag tracks
+      # the CLI version since that's the user-visible artifact (`npx
+      # openhop@beta …`); the release notes list whatever shipped this run
+      # so a web-only or cli-only bump is still recorded.
+      - name: Create tag + GitHub Release
+        if: |
+          steps.web_status.outputs.publish == 'true' ||
+          steps.cli_status.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WEB_VERSION: ${{ steps.versions.outputs.web }}
+          CLI_VERSION: ${{ steps.versions.outputs.cli }}
+          WEB_PUBLISHED: ${{ steps.web_status.outputs.publish }}
+          CLI_PUBLISHED: ${{ steps.cli_status.outputs.publish }}
+        run: |
+          tag="v$CLI_VERSION"
+          # If the tag already exists (rare — re-running a workflow on a
+          # commit whose CLI version was already tagged), skip cleanly.
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "::notice::release $tag already exists, skipping"
+            exit 0
+          fi
+
+          {
+            echo "## Published to npm (\`beta\` tag)"
+            if [ "$WEB_PUBLISHED" = "true" ]; then
+              echo "- [\`@openhop/web@$WEB_VERSION\`](https://www.npmjs.com/package/@openhop/web/v/$WEB_VERSION)"
+            fi
+            if [ "$CLI_PUBLISHED" = "true" ]; then
+              echo "- [\`openhop@$CLI_VERSION\`](https://www.npmjs.com/package/openhop/v/$CLI_VERSION)"
+            fi
+            echo
+            echo "## Try it"
+            echo '```sh'
+            echo "npx openhop@beta demo"
+            echo '```'
+            echo
+            echo "Auto-generated notes (commit history) below."
+          } > /tmp/release-body.md
+
+          gh release create "$tag" \
+            --title "$tag" \
+            --notes-file /tmp/release-body.md \
+            --generate-notes \
+            --target "$GITHUB_SHA"
