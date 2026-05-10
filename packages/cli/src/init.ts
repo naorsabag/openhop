@@ -259,6 +259,24 @@ export function runInit(
   return { results, sourceMissing: false }
 }
 
+/**
+ * True iff `init` should print the OpenSkills fallback hint pointing the user
+ * at Tier-2 clients (Codex / Gemini / Junie / ...). The hint is only useful
+ * when no Tier-1 client has the skill — either none were detected or the only
+ * detection was advisory-only (Continue.dev). On a re-run where Tier-1 is
+ * already installed, the user already has the skill and the hint is misleading.
+ *
+ * "Tier-1 received the skill" covers: installed this run, would-install (dry
+ * run), and skipped-as-already-installed. Failed installs early-exit before
+ * the caller reaches this check, so they're intentionally not represented.
+ */
+export function shouldPrintOpenSkillsFallback(results: InstallResult[]): boolean {
+  const hasTier1ReceivedSkill = results.some(
+    (r) => r.status !== 'advisory' && !(r.status === 'skipped' && r.reason === 'not detected')
+  )
+  return !hasTier1ReceivedSkill
+}
+
 /** Render results as a small fixed-width table. Pure function; testable. */
 export function renderTable(results: InstallResult[]): string {
   const rows = [
@@ -338,7 +356,7 @@ export function registerInit(program: Command): void {
         (r) => !(r.status === 'skipped' && r.reason === 'not detected')
       ).length
 
-      if (!opts.json && installed.length === 0 && wouldInstall.length === 0) {
+      if (!opts.json && shouldPrintOpenSkillsFallback(results)) {
         process.stderr.write(
           'No Tier-1 client received the skill. For Codex CLI / Gemini CLI / Junie / Copilot / OpenCode / Goose / Antigravity, run:\n' +
             '  npx openskills install naorsabag/openhop\n'

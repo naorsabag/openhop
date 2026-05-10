@@ -10,7 +10,15 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { buildClients, runInit, renderTable, type ClientSpec, type FsLike } from '../src/init.js'
+import {
+  buildClients,
+  runInit,
+  renderTable,
+  shouldPrintOpenSkillsFallback,
+  type ClientSpec,
+  type FsLike,
+  type InstallResult,
+} from '../src/init.js'
 
 /** Build an in-memory fs-like surface for tests. */
 function makeFs(initial: { dirs?: string[]; files?: string[] } = {}): FsLike & {
@@ -212,6 +220,54 @@ describe('JSON summary shape', () => {
     expect(installed.map((r) => r.client)).toContain('cursor')
     expect(skipped.map((r) => r.client)).toContain('claude-code')
     expect(failed).toEqual([])
+  })
+})
+
+describe('shouldPrintOpenSkillsFallback', () => {
+  it('fires when no Tier-1 client is detected', () => {
+    const results: InstallResult[] = [
+      { client: 'claude-code', status: 'skipped', reason: 'not detected' },
+      { client: 'cursor', status: 'skipped', reason: 'not detected' },
+      { client: 'windsurf', status: 'skipped', reason: 'not detected' },
+      { client: 'cline', status: 'skipped', reason: 'not detected' },
+      { client: 'continue', status: 'skipped', reason: 'not detected' },
+    ]
+    expect(shouldPrintOpenSkillsFallback(results)).toBe(true)
+  })
+
+  it('fires when only an advisory client (Continue.dev) is detected', () => {
+    const results: InstallResult[] = [
+      { client: 'claude-code', status: 'skipped', reason: 'not detected' },
+      { client: 'continue', status: 'advisory', reason: 'no native skills surface' },
+    ]
+    expect(shouldPrintOpenSkillsFallback(results)).toBe(true)
+  })
+
+  it('does NOT fire on re-run when a Tier-1 client is already installed', () => {
+    const results: InstallResult[] = [
+      {
+        client: 'claude-code',
+        status: 'skipped',
+        reason: 'already installed (use --force to overwrite)',
+      },
+      { client: 'cursor', status: 'skipped', reason: 'not detected' },
+    ]
+    expect(shouldPrintOpenSkillsFallback(results)).toBe(false)
+  })
+
+  it('does NOT fire when at least one Tier-1 client was installed this run', () => {
+    const results: InstallResult[] = [
+      { client: 'claude-code', status: 'installed', path: '/home/u/.claude/skills/openhop' },
+      { client: 'cursor', status: 'skipped', reason: 'not detected' },
+    ]
+    expect(shouldPrintOpenSkillsFallback(results)).toBe(false)
+  })
+
+  it('does NOT fire on dry-run when at least one Tier-1 would install', () => {
+    const results: InstallResult[] = [
+      { client: 'claude-code', status: 'would-install', path: '/home/u/.claude/skills/openhop' },
+    ]
+    expect(shouldPrintOpenSkillsFallback(results)).toBe(false)
   })
 })
 
