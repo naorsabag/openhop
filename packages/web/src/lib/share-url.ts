@@ -28,7 +28,7 @@ export function decodeFragment(fragment: string): string | null {
 
 /**
  * Build the full sharable URL for a flow's YAML. Uses Vite's `BASE_URL` so the
- * Pages deploy at `/OpenHop/` and dev at `/` both produce correct links.
+ * Pages deploy at `/openhop/` and dev at `/` both produce correct links.
  */
 export function buildShareUrl(yamlText: string, origin: string, baseUrl: string): string {
   const fragment = encodeFragment(yamlText)
