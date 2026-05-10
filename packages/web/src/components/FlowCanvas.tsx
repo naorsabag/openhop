@@ -180,6 +180,18 @@ function FlowCanvasInner({
     }
   }, [layoutKey, fitToPane])
 
+  // Auto-zoom guard: tracks the last focus key so the same step doesn't
+  // re-issue setCenter mid-animation (which stutters).
+  const lastFocusKeyRef = useRef<string>('')
+
+  // Bumped by the ResizeObserver below so the auto-zoom effect re-runs
+  // after the pane changes width (e.g. user toggles FLOWS / INSPECT).
+  // Without this, fitToPane() snaps to overview on resize and the
+  // auto-zoom effect skips re-applying the active-step focus because
+  // its focusKey hasn't changed — playback would visibly drop back to
+  // overview until the next step advance.
+  const [paneResizeTick, setPaneResizeTick] = useState(0)
+
   // Re-fit when the canvas pane resizes (e.g. user toggles sidebar /
   // inspector via the bookmark tabs). Without this, the diagram visibly
   // shifts left when the sidebar collapses because the viewport keeps the
@@ -187,14 +199,18 @@ function FlowCanvasInner({
   useEffect(() => {
     const pane = containerRef.current?.querySelector('.react-flow') as HTMLElement | null
     if (!pane || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => fitToPane())
+    const observer = new ResizeObserver(() => {
+      fitToPane()
+      // Force the auto-zoom effect to re-apply: clear the focus guard
+      // and bump the tick that the effect depends on. Together they
+      // make resize-triggered fitToPane() not the last word during
+      // playback.
+      lastFocusKeyRef.current = ''
+      setPaneResizeTick((t) => t + 1)
+    })
     observer.observe(pane)
     return () => observer.disconnect()
   }, [fitToPane])
-
-  // Auto-zoom guard: tracks the last focus key so the same step doesn't
-  // re-issue setCenter mid-animation (which stutters).
-  const lastFocusKeyRef = useRef<string>('')
 
   const pairEdgeMap = useMemo(() => {
     const map = new Map<string, Edge>()
@@ -378,6 +394,10 @@ function FlowCanvasInner({
     animState.activeToIds,
     baseNodes,
     reactFlow,
+    // paneResizeTick: re-runs this effect after a sidebar/inspector
+    // toggle so the camera re-locks onto the active step instead of
+    // staying at the overview fitToPane() applied.
+    paneResizeTick,
   ])
 
   // Report step changes to parent
