@@ -12,10 +12,10 @@ on:
   push:
     branches: [master]
     paths:
-      - 'packages/web/package.json'
-      - 'packages/cli/package.json'
-      - 'packages/cli/src/index.ts'
-      - 'packages/server/package.json'
+      - "packages/web/package.json"
+      - "packages/cli/package.json"
+      - "packages/cli/src/index.ts"
+      - "packages/server/package.json"
   workflow_dispatch:
 
 permissions:
