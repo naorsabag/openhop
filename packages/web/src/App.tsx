@@ -5,6 +5,7 @@ import { FlowCanvas } from './components/FlowCanvas'
 import { DataInspectionPanel, BookmarkTab, type DockSide } from './components/DataInspectionPanel'
 import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
+import { isMobileViewport } from './lib/mobile'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import { useFlowMutations } from './hooks/useFlowMutations'
 import type { FlowNode, FlowStep, FlowData, Flow } from './types'
@@ -222,13 +223,16 @@ function App() {
     }
   }, [])
 
-  // Inspector panel state
-  const [inspectorOpen, setInspectorOpen] = useState(true)
+  // Inspector panel state. Starts collapsed on mobile-sized viewports
+  // (Tailwind `md` breakpoint, 768px) so the canvas gets full width on
+  // phones; on desktop it stays open as before.
+  const [inspectorOpen, setInspectorOpen] = useState(() => !isMobileViewport())
   const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
   const [inspectorSize, setInspectorSize] = useState(320)
   // Sidebar (flow tree) collapsed/expanded state. Bookmark tab on the
-  // left edge of the canvas toggles it.
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  // left edge of the canvas toggles it. Same mobile-default rule as
+  // the inspector.
+  const [sidebarOpen, setSidebarOpen] = useState(() => !isMobileViewport())
 
   // Reset inspected step when flow changes
   useEffect(() => {
