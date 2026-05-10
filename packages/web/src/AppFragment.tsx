@@ -8,6 +8,7 @@ import { Sidebar } from './components/Sidebar'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildShareUrl, decodeFragment, encodeFragment } from './lib/share-url'
 import { EXAMPLE_FLOWS } from './lib/example-flows'
+import { isMobileViewport } from './lib/mobile'
 import type { FlowListItem } from './hooks/useFlowPolling'
 import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
@@ -204,10 +205,12 @@ export default function AppFragment() {
     }
   }, [])
 
-  const [inspectorOpen, setInspectorOpen] = useState(true)
+  // Both side panels start collapsed on narrow viewports so the canvas
+  // gets full width on phones; on desktop they stay open as before.
+  const [inspectorOpen, setInspectorOpen] = useState(() => !isMobileViewport())
   const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
   const [inspectorSize, setInspectorSize] = useState(320)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => !isMobileViewport())
 
   // Match the current hash against each example's encoded form so the
   // sidebar can highlight the active example. Stable across re-renders
