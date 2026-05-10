@@ -47,12 +47,12 @@ describe('share-url encode/decode', () => {
     expect(decodeFragment('!!!~~~')).toBeNull()
   })
 
-  it('buildShareUrl uses Vite BASE_URL so dev (/) and Pages (/OpenHop/) both work', () => {
+  it('buildShareUrl uses Vite BASE_URL so dev (/) and Pages (/openhop/) both work', () => {
     const dev = buildShareUrl(SAMPLE_YAML, 'http://localhost:8788', '/')
     expect(dev).toMatch(/^http:\/\/localhost:8788\/#[A-Za-z0-9_+\-$.]+$/)
 
-    const pages = buildShareUrl(SAMPLE_YAML, 'https://naorsabag.github.io', '/OpenHop/')
-    expect(pages).toMatch(/^https:\/\/naorsabag\.github\.io\/OpenHop\/#[A-Za-z0-9_+\-$.]+$/)
+    const pages = buildShareUrl(SAMPLE_YAML, 'https://naorsabag.github.io', '/openhop/')
+    expect(pages).toMatch(/^https:\/\/naorsabag\.github\.io\/openhop\/#[A-Za-z0-9_+\-$.]+$/)
 
     // Hash content matches encodeFragment for both URLs (proves the BASE_URL
     // only affects the path, never the encoded payload).

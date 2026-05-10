@@ -1,0 +1,83 @@
+name: publish
+
+# Publishes @openhop/web and the openhop CLI to npm whenever the version in
+# either package.json on master differs from what's already on the registry
+# under the `beta` tag. Lets us ship a release just by merging a "chore: bump"
+# PR — no manual `npm publish` step in someone's terminal.
+#
+# Web is published before CLI because the CLI's package.json depends on the
+# web version. If only one bumped, only that one runs (the other is a no-op).
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "packages/web/package.json"
+      - "packages/cli/package.json"
+      - "packages/cli/src/index.ts"
+      - "packages/server/package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+          cache: npm
+
+      - run: npm ci
+
+      - name: Resolve target versions
+        id: versions
+        run: |
+          web_version=$(node -p "require('./packages/web/package.json').version")
+          cli_version=$(node -p "require('./packages/cli/package.json').version")
+          echo "web=$web_version" >> "$GITHUB_OUTPUT"
+          echo "cli=$cli_version" >> "$GITHUB_OUTPUT"
+
+      - name: Check if @openhop/web@${{ steps.versions.outputs.web }} is already on npm
+        id: web_status
+        run: |
+          if npm view "@openhop/web@${{ steps.versions.outputs.web }}" version > /dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::@openhop/web@${{ steps.versions.outputs.web }} already on registry, skipping"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check if openhop@${{ steps.versions.outputs.cli }} is already on npm
+        id: cli_status
+        run: |
+          if npm view "openhop@${{ steps.versions.outputs.cli }}" version > /dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::openhop@${{ steps.versions.outputs.cli }} already on registry, skipping"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Publish web first — the CLI's package.json depends on the web version.
+      - name: Publish @openhop/web
+        if: steps.web_status.outputs.publish == 'true'
+        working-directory: packages/web
+        run: npm publish --tag beta --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish openhop CLI
+        if: steps.cli_status.outputs.publish == 'true'
+        working-directory: packages/cli
+        run: npm publish --tag beta --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

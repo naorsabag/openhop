@@ -1,8 +1,9 @@
 name: pages
 
 # Builds the @openhop/web bundle in fragment mode (no API server, flows in
-# the URL hash) and deploys to GitHub Pages. Repo Settings → Pages must be
-# set to "Source: GitHub Actions" for the deploy to succeed.
+# the URL hash) and deploys to GitHub Pages. The workflow auto-enables Pages
+# (with the GitHub Actions source) on first run via `enablement: true`, so
+# fresh clones don't have to flip the toggle in repo Settings → Pages.
 
 on:
   push:
@@ -33,9 +34,13 @@ jobs:
       - name: Build web (fragment mode)
         run: npm run build -w @openhop/web
         env:
-          VITE_BASE: /OpenHop/
+          # Repo is naorsabag/openhop (lowercase). The Pages site URL —
+          # https://naorsabag.github.io/openhop/ — is the asset base path.
+          VITE_BASE: /openhop/
           VITE_FRAGMENT_MODE: "1"
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/web/dist
