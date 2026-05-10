@@ -348,11 +348,7 @@ function FlowCanvasInner({
       const { minX, minY, maxX, maxY } = computeBbox(nodes)
       const contentW = maxX - minX
       const contentH = maxY - minY
-      const zoom = Math.min(
-        paneW / (contentW * (1 + pad)),
-        paneH / (contentH * (1 + pad)),
-        maxZoom
-      )
+      const zoom = Math.min(paneW / (contentW * (1 + pad)), paneH / (contentH * (1 + pad)), maxZoom)
       reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
     }
 
@@ -797,9 +793,7 @@ function FlowCanvasInner({
               ariaLabel={`Playback speed ${speed}×, click to cycle`}
               onClick={cycleSpeed}
             >
-              <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>
-                {speed}×
-              </span>
+              <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>{speed}×</span>
             </PlaybackButton>
           </div>
         </Panel>
