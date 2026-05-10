@@ -51,6 +51,20 @@ export default function AppFragment() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
+  // First-visit autoload: if the user lands on the Pages site without
+  // any hash, route them to the first example so the canvas isn't
+  // empty. We use `replace` (not assign) so the empty URL doesn't
+  // clutter back/forward history. EXAMPLE_FLOWS[0] is what the user
+  // sees; reorder there if you want a different default.
+  useEffect(() => {
+    if (window.location.hash) return
+    const first = EXAMPLE_FLOWS[0]
+    if (!first) return
+    const fragment = encodeFragment(first.yaml)
+    history.replaceState(null, '', `${window.location.pathname}#${fragment}`)
+    setHash(fragment)
+  }, [])
+
   // Decode → parse. Both layers' failures collapse into `decodeError` for
   // the user-visible banner; the typed flow is `null` in the error case.
   const { decodedFlow, decodeError } = useMemo<{
