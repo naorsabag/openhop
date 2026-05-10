@@ -180,6 +180,11 @@ function FlowCanvasInner({
     return () => observer.disconnect()
   }, [fitToPane])
 
+  // Track the last set of focused node IDs so the auto-zoom effect doesn't
+  // re-issue the same setCenter call when the active step's geometry hasn't
+  // actually moved — re-issuing mid-animation causes a visible stutter.
+  const lastFocusKeyRef = useRef<string>('')
+
   const pairEdgeMap = useMemo(() => {
     const map = new Map<string, Edge>()
     for (const edge of baseEdges) {
@@ -298,6 +303,78 @@ function FlowCanvasInner({
     },
     [baseNodes, activeNodes, destroyedNodes]
   )
+
+  // Auto-focus the camera on the active step's nodes during playback so
+  // viewers don't have to chase the carrot across a large flow. When
+  // paused, glide back to the full-flow overview. Uses setCenter (same
+  // API that drives the drill-down zoom) rather than fitView({nodes}),
+  // which silently no-ops if xyflow's internal node store hasn't
+  // measured the targets — the manual bbox math here reads the layout's
+  // own positions so it always has data.
+  useEffect(() => {
+    if (baseNodes.length === 0) return
+    const pane = containerRef.current?.querySelector('.react-flow') as HTMLElement | null
+    if (!pane) return
+    const paneW = pane.offsetWidth
+    const paneH = pane.offsetHeight
+    if (paneW === 0 || paneH === 0) return
+
+    const computeBbox = (nodes: typeof baseNodes) => {
+      const w = nodes[0].width ?? 108
+      const h = nodes[0].height ?? 160
+      const xs = nodes.map((n) => n.position.x)
+      const ys = nodes.map((n) => n.position.y)
+      return {
+        minX: Math.min(...xs),
+        minY: Math.min(...ys),
+        maxX: Math.max(...xs) + w,
+        maxY: Math.max(...ys) + h,
+      }
+    }
+
+    if (!playing) {
+      if (lastFocusKeyRef.current === '__overview__') return
+      lastFocusKeyRef.current = '__overview__'
+      const { minX, minY, maxX, maxY } = computeBbox(baseNodes)
+      const contentW = maxX - minX
+      const contentH = maxY - minY
+      const pad = 0.3
+      const zoom = Math.min(
+        paneW / (contentW * (1 + pad)),
+        paneH / (contentH * (1 + pad)),
+        1.5
+      )
+      reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
+      return
+    }
+    const activeIds = new Set<string>()
+    animState.activeFromIds.forEach((id) => activeIds.add(id))
+    animState.activeToIds.forEach((id) => activeIds.add(id))
+    if (activeIds.size === 0) return
+    const sortedIds = Array.from(activeIds).sort()
+    const focusKey = sortedIds.join('|')
+    if (focusKey === lastFocusKeyRef.current) return
+    const focusNodes = baseNodes.filter((n) => activeIds.has(n.id))
+    if (focusNodes.length === 0) return
+    lastFocusKeyRef.current = focusKey
+    const { minX, minY, maxX, maxY } = computeBbox(focusNodes)
+    const contentW = maxX - minX
+    const contentH = maxY - minY
+    const pad = 0.5
+    const zoom = Math.min(
+      paneW / (contentW * (1 + pad)),
+      paneH / (contentH * (1 + pad)),
+      2.5
+    )
+    reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
+  }, [
+    playing,
+    animState.currentStepIndex,
+    animState.activeFromIds,
+    animState.activeToIds,
+    baseNodes,
+    reactFlow,
+  ])
 
   // Report step changes to parent
   const onStepChangeRef = useRef(onStepChange)
