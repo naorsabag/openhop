@@ -2,9 +2,12 @@ name: publish
 
 # Publishes @openhop/server, @openhop/web, and the openhop CLI to npm whenever
 # the version in any of their package.json files on master differs from what's
-# already on the registry under the `beta` tag. Lets us ship a release just by
-# merging a "chore: bump" PR — no manual `npm publish` step in someone's
-# terminal.
+# already on the registry. Lets us ship a release just by merging a
+# "chore: bump" PR — no manual `npm publish` step in someone's terminal.
+#
+# `npm publish` (no --tag) sets the `latest` dist-tag, so the npmjs.com
+# page + `npm install <pkg>` (no @beta suffix) get the new version on every
+# successful publish — no separate dist-tag promote step needed.
 #
 # Order matters: server + web ship before the CLI because the CLI's
 # package.json depends on both. If only one bumped, only that one runs (the
@@ -86,7 +89,7 @@ jobs:
         id: publish_server
         if: steps.server_status.outputs.publish == 'true'
         working-directory: packages/server
-        run: npm publish --tag beta --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -94,7 +97,7 @@ jobs:
         id: publish_web
         if: steps.web_status.outputs.publish == 'true'
         working-directory: packages/web
-        run: npm publish --tag beta --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -102,7 +105,7 @@ jobs:
         id: publish_cli
         if: steps.cli_status.outputs.publish == 'true'
         working-directory: packages/cli
-        run: npm publish --tag beta --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -111,7 +114,7 @@ jobs:
       # collide with a stale tag from a prior multi-package run:
       #   cli shipped         → v$CLI_VERSION         (CLI is the user-facing
       #                                                 handle for `npx
-      #                                                 openhop@beta`, so its
+      #                                                 openhop`, so its
       #                                                 version anchors the
       #                                                 combined release)
       #   server (± web)      → server/v$SERVER_VERSION (server is the lowest
@@ -158,7 +161,7 @@ jobs:
           fi
 
           {
-            echo "## Published to npm (\`beta\` tag)"
+            echo "## Published to npm"
             if [ "$SERVER_PUBLISHED" = "true" ]; then
               echo "- [\`@openhop/server@$SERVER_VERSION\`](https://www.npmjs.com/package/@openhop/server/v/$SERVER_VERSION)"
             fi
@@ -171,7 +174,7 @@ jobs:
             echo
             echo "## Try it"
             echo '```sh'
-            echo "npx openhop@beta demo"
+            echo "npx openhop demo"
             echo '```'
             echo
             echo "Auto-generated notes (commit history) below."
