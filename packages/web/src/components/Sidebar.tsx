@@ -479,7 +479,13 @@ export function Sidebar({
   return (
     <aside
       className="shrink-0 flex flex-col overflow-hidden"
-      style={{ width: 260, background: '#141428', borderRight: '2px solid #2a2a4a' }}
+      style={{
+        width: 260,
+        background: '#141428',
+        borderRight: '2px solid #2a2a4a',
+        position: 'relative',
+        zIndex: 1001,
+      }}
       aria-label="File explorer"
     >
       {/* Search */}

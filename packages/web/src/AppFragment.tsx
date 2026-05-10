@@ -262,7 +262,12 @@ export default function AppFragment() {
     >
       <header
         className="flex items-center justify-between px-4 py-2 shrink-0"
-        style={{ background: '#0d2612', borderBottom: '2px solid #1a4a22' }}
+        style={{
+          background: '#0d2612',
+          borderBottom: '2px solid #1a4a22',
+          position: 'relative',
+          zIndex: 1001,
+        }}
       >
         <div className="flex items-center gap-4">
           <h1 className="font-pixel text-accent" style={{ fontSize: 14 }}>
