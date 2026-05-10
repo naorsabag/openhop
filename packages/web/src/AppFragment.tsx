@@ -56,12 +56,20 @@ export default function AppFragment() {
   // empty. We use `replace` (not assign) so the empty URL doesn't
   // clutter back/forward history. EXAMPLE_FLOWS[0] is what the user
   // sees; reorder there if you want a different default.
+  //
+  // Edge cases handled:
+  //   - A lone `#` with nothing after counts as empty (browsers report
+  //     it as `'#'`, not `''`).
+  //   - Preserve `?query=…` in the rewritten URL so any params the
+  //     user pasted alongside the URL aren't silently dropped.
   useEffect(() => {
-    if (window.location.hash) return
+    const currentHash = window.location.hash
+    if (currentHash && currentHash !== '#') return
     const first = EXAMPLE_FLOWS[0]
     if (!first) return
     const fragment = encodeFragment(first.yaml)
-    history.replaceState(null, '', `${window.location.pathname}#${fragment}`)
+    const { pathname, search } = window.location
+    history.replaceState(null, '', `${pathname}${search}#${fragment}`)
     setHash(fragment)
   }, [])
 
