@@ -337,6 +337,14 @@ export function registerInit(program: Command): void {
       const detectedCount = results.filter(
         (r) => !(r.status === 'skipped' && r.reason === 'not detected')
       ).length
+
+      if (!opts.json && installed.length === 0 && wouldInstall.length === 0) {
+        process.stderr.write(
+          'No Tier-1 client received the skill. For Codex CLI / Gemini CLI / Junie / Copilot / OpenCode / Goose / Antigravity, run:\n' +
+            '  npx openskills install naorsabag/openhop\n'
+        )
+      }
+
       if (detectedCount === 0) process.exit(EXIT_NOT_FOUND)
       process.exit(EXIT_OK)
     })
