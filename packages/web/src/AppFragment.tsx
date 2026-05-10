@@ -5,7 +5,8 @@ import { FlowCanvas } from './components/FlowCanvas'
 import { DataInspectionPanel, BookmarkTab, type DockSide } from './components/DataInspectionPanel'
 import { FlowEditorModal } from './components/FlowEditorModal'
 import { buildStarterYaml } from './lib/starter-yaml'
-import { buildShareUrl, decodeFragment } from './lib/share-url'
+import { buildShareUrl, decodeFragment, encodeFragment } from './lib/share-url'
+import { EXAMPLE_FLOWS } from './lib/example-flows'
 import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
 interface FlowNavItem {
@@ -328,13 +329,36 @@ export default function AppFragment() {
             )}
             {!decodedFlow ? (
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center max-w-md px-6">
+                <div className="text-center max-w-lg px-6">
                   <p className="font-pixel text-text/60 mb-2" style={{ fontSize: 14 }}>
                     {decodeError ? 'No flow loaded' : 'No flow shared'}
                   </p>
-                  <p className="font-terminal text-text/40 text-sm mb-4">
-                    Open a flow by visiting a share URL, or click "+ New flow" above to create one.
+                  <p className="font-terminal text-text/40 text-sm mb-6">
+                    Open a flow by visiting a share URL, click "+ New flow" above, or pick a
+                    pre-built example:
                   </p>
+                  <ul className="flex flex-col gap-2 text-left">
+                    {EXAMPLE_FLOWS.map((ex) => (
+                      <li key={ex.id}>
+                        <button
+                          onClick={() => {
+                            // Setting hash to the encoded YAML triggers the
+                            // existing decode → render path. The ?example=<id>
+                            // is purely cosmetic so the URL bar reads
+                            // recognizably; the example loads from the hash.
+                            window.location.hash = encodeFragment(ex.yaml)
+                          }}
+                          className="w-full text-left px-3 py-2 border border-border hover:border-accent hover:text-accent transition-colors font-terminal text-sm"
+                          style={{ background: '#0d2612', color: '#7fffaa' }}
+                        >
+                          <div className="font-pixel mb-1" style={{ fontSize: 11 }}>
+                            {ex.title}
+                          </div>
+                          <div className="text-text/50 text-xs">{ex.description}</div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             ) : displayFlow ? (
