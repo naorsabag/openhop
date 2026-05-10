@@ -346,29 +346,27 @@ function FlowCanvasInner({
       }
     }
 
+    const naturalZoom = (nodes: typeof baseNodes, pad: number) => {
+      if (nodes.length === 0) return 1
+      const { minX, minY, maxX, maxY } = computeBbox(nodes)
+      const contentW = maxX - minX
+      const contentH = maxY - minY
+      return Math.min(
+        paneW / (contentW * (1 + pad)),
+        paneH / (contentH * (1 + pad))
+      )
+    }
+
     const moveTo = (
       nodes: typeof baseNodes,
       pad: number,
       maxZoom: number,
-      duration: number,
-      // When true, treat tiny bboxes (single-node steps) as if they
-      // covered two side-by-side nodes. Without this, a one-node phase
-      // zooms in tighter than the natural framing of an adjacent pair
-      // (e.g. user → react ui), which feels too close. The reference
-      // dimensions match a typical layered-layout pair so single-node
-      // and two-node phases land at the same zoom.
-      stableSingleZoom = false
+      duration: number
     ) => {
       if (nodes.length === 0) return
       const { minX, minY, maxX, maxY } = computeBbox(nodes)
-      let contentW = maxX - minX
-      let contentH = maxY - minY
-      if (stableSingleZoom && nodes.length === 1) {
-        const w = nodes[0].width ?? 108
-        const h = nodes[0].height ?? 160
-        contentW = Math.max(contentW, 2.5 * w)
-        contentH = Math.max(contentH, h)
-      }
+      const contentW = maxX - minX
+      const contentH = maxY - minY
       const zoom = Math.min(
         paneW / (contentW * (1 + pad)),
         paneH / (contentH * (1 + pad)),
@@ -410,19 +408,26 @@ function FlowCanvasInner({
     // "from" — e.g. a destroy-only step has from but no to, in which case
     // we want the simpler single-target framing without the bounce.
     if (fromNodes.length > 0 && toNodes.length > 0) {
-      moveTo(fromNodes, 0.5, 2.5, 300 / speed, true)
+      // Cap Phase A/C zoom at Phase B's natural zoom so a single-node
+      // sender or receiver can't zoom in tighter than the pull-back
+      // frame ever would. This makes 1-node and 2-node steps land at
+      // the same zoom — without the cap, single-node phases hit the
+      // 2.5 maxZoom while a typical 2-near-pair lands around 2.0,
+      // producing a visibly jumpier path.
+      const phaseBZoom = Math.min(naturalZoom(bothNodes, 0.5), 2.5)
+      moveTo(fromNodes, 0.5, phaseBZoom, 300 / speed)
       // Phase B: pull back to frame both ends mid-flight.
       cameraTimersRef.current.push(
         setTimeout(() => moveTo(bothNodes, 0.5, 2.5, 500 / speed), at(350))
       )
       // Phase C: snap onto receiver(s) as the carrot arrives.
       cameraTimersRef.current.push(
-        setTimeout(() => moveTo(toNodes, 0.5, 2.5, 400 / speed, true), at(1200))
+        setTimeout(() => moveTo(toNodes, 0.5, phaseBZoom, 400 / speed), at(1200))
       )
     } else {
       // Single-sided step (only from, only to, or both same set) — just
       // frame what we have so the camera doesn't lurch to an empty bbox.
-      moveTo(bothNodes, 0.5, 2.5, 500 / speed, true)
+      moveTo(bothNodes, 0.5, 2.5, 500 / speed)
     }
   }, [
     playing,
