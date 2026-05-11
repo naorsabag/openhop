@@ -320,13 +320,21 @@ function FlowCanvasInner({
     ...animState
   } = useFlowAnimation(flowSteps, stepMappings, playing, onCycleComplete, startFromStep)
 
-  // Helper: check if a node is currently alive (static nodes always are, dynamic nodes need to be in activeNodes and not destroyed)
+  // Helper: check if a node is currently alive.
+  //
+  // - `destroyedNodes` always wins. Any node — static or dynamic — that
+  //   the playback has reached a `destroy:` step for is gone. (Earlier
+  //   versions short-circuited to `alive` for static nodes so destroy
+  //   silently no-op'd unless the node was created via `create:`.)
+  // - Dynamic nodes (spawned via `create:`) additionally need to be in
+  //   `activeNodes` — they're invisible before their create step fires.
   const isNodeAlive = useCallback(
     (nodeId: string) => {
+      if (destroyedNodes.has(nodeId)) return false
       const node = baseNodes.find((n) => n.id === nodeId)
       const isDynamic = node?.data?.isDynamic ?? false
       if (!isDynamic) return true
-      return activeNodes.has(nodeId) && !destroyedNodes.has(nodeId)
+      return activeNodes.has(nodeId)
     },
     [baseNodes, activeNodes, destroyedNodes]
   )
@@ -627,7 +635,11 @@ function FlowCanvasInner({
   const nodes: Node<FlowNodeData>[] = useMemo(() => {
     return baseNodes.map((node) => {
       const isDynamic = node.data?.isDynamic ?? false
-      const isAlive = !isDynamic || (activeNodes.has(node.id) && !destroyedNodes.has(node.id))
+      // Mirror isNodeAlive() above — destroyedNodes overrides everything,
+      // including static nodes (a `destroy:` step on a static node makes
+      // the node disappear from the canvas just like it does for a
+      // create'd one).
+      const isAlive = !destroyedNodes.has(node.id) && (!isDynamic || activeNodes.has(node.id))
 
       return {
         ...node,
