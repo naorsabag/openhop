@@ -866,7 +866,13 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
   // not another actor.
   const incomingFromActor = new Set<string>()
   for (const e of topology.displayEdges) {
-    if (topology.nodeSnapshots.get(e.source)?.nodeType === 'actor') {
+    // Self-loop (source === target) doesn't introduce a second
+    // FIRST-pinned node, so it can't trigger the ELK error this guard
+    // protects against — exclude it.
+    if (
+      e.source !== e.target &&
+      topology.nodeSnapshots.get(e.source)?.nodeType === 'actor'
+    ) {
       incomingFromActor.add(e.target)
     }
   }
