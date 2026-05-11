@@ -10,6 +10,10 @@
 </p>
 
 <p align="center">
+  <sub><i>Mermaid for diagrams · Excalidraw for whiteboards · <b>OpenHop for animated agent-authored flows.</b></i></sub>
+</p>
+
+<p align="center">
   <b>Local-first. Your code never leaves your machine. No telemetry.</b>
 </p>
 
