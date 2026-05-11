@@ -123,8 +123,9 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
-  // Live-tunable maxZoom for the canvas. Lives as state so changing it
-  // triggers a re-render and React Flow picks up the new scaleExtent.
+  // Live-tunable maxZoom for the canvas. State drives the JSX prop —
+  // @xyflow/react v12 makes maxZoom reactive, so updating state alone
+  // updates d3-zoom's scaleExtent on the next render.
   // Exposed on `window.__setMaxZoom` for browser-console tuning.
   const [maxZoom, setMaxZoomState] = useState<number>(4)
   useEffect(() => {
