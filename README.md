@@ -32,8 +32,7 @@
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a> ·
-  <a href="docs/">Docs</a> ·
-  <a href="https://discord.gg/8RD2fKfXJG">Discord</a>
+  <a href="docs/">Docs</a>
 </p>
 
 <p align="center">
