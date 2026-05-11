@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import type { FlowListItem } from '../hooks/useFlowPolling'
+import { ResizeHandle } from './ResizeHandle'
+
+const SIDEBAR_WIDTH_KEY = 'openhop:sidebar:width'
+const SIDEBAR_MIN_WIDTH = 180
+const SIDEBAR_MAX_WIDTH = 480
+const SIDEBAR_DEFAULT_WIDTH = 260
+
+function loadSidebarWidth(): number {
+  if (typeof window === 'undefined') return SIDEBAR_DEFAULT_WIDTH
+  const raw = window.localStorage.getItem(SIDEBAR_WIDTH_KEY)
+  if (!raw) return SIDEBAR_DEFAULT_WIDTH
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed)) return SIDEBAR_DEFAULT_WIDTH
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, parsed))
+}
 
 interface TreeNode {
   name: string
@@ -220,7 +235,8 @@ function TreeItem({
               >
                 {'/'}
               </span>
-              <span className="truncate text-text/90">{headerLabel}</span>
+              {/* Root label intentionally empty: icon-slot slash already identifies the row. */}
+              <span className="truncate text-text/90" title="/" />
             </div>
           ) : (
             <button
@@ -231,7 +247,9 @@ function TreeItem({
               <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center' }}>
                 {expanded ? '\u25BE' : '\u25B8'}
               </span>
-              <span className="truncate">{headerLabel}</span>
+              <span className="truncate" title={node.name}>
+                {headerLabel}
+              </span>
             </button>
           )}
           <div
@@ -341,7 +359,9 @@ function TreeItem({
         <span className="shrink-0 text-xs" style={{ width: 16, textAlign: 'center', opacity: 0.5 }}>
           {'\u25C7'}
         </span>
-        <span className="truncate">{node.name}</span>
+        <span className="truncate" title={node.name}>
+          {node.name}
+        </span>
       </button>
       {flowId && (onEditFlow || onDeleteFlow) && (
         <div
@@ -428,6 +448,16 @@ export function Sidebar({
   )
   const [search, setSearch] = useState('')
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => new Set())
+  const [width, setWidth] = useState<number>(loadSidebarWidth)
+
+  const handleResize = useCallback((next: number) => {
+    setWidth(next)
+    try {
+      window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(Math.round(next)))
+    } catch {
+      // localStorage may be unavailable (private mode, quota); width still applies for this session.
+    }
+  }, [])
 
   const tree = useMemo(() => buildTree(flows), [flows])
 
@@ -480,7 +510,7 @@ export function Sidebar({
     <aside
       className="shrink-0 flex flex-col overflow-hidden"
       style={{
-        width: 260,
+        width,
         background: '#141428',
         borderRight: '2px solid #2a2a4a',
         position: 'relative',
@@ -529,6 +559,23 @@ export function Sidebar({
           </ul>
         )}
       </div>
+      <ResizeHandle
+        orientation="vertical"
+        size={width}
+        min={SIDEBAR_MIN_WIDTH}
+        max={SIDEBAR_MAX_WIDTH}
+        onSizeChange={handleResize}
+        direction="forward"
+        ariaLabel="Resize sidebar"
+        testId="sidebar-resize-handle"
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          height: '100%',
+        }}
+      />
     </aside>
   )
 }

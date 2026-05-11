@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { FlowStep, FlowData } from '../types'
+import { ResizeHandle } from './ResizeHandle'
 
 export type DockSide = 'right' | 'bottom'
 
@@ -32,37 +33,6 @@ export function DataInspectionPanel({
   onSizeChange,
   onClose,
 }: DataInspectionPanelProps) {
-  const dragState = useRef<{ startPos: number; startSize: number } | null>(null)
-
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault()
-      dragState.current = {
-        startPos: side === 'right' ? e.clientX : e.clientY,
-        startSize: size,
-      }
-      ;(e.target as Element).setPointerCapture(e.pointerId)
-    },
-    [side, size]
-  )
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!dragState.current) return
-      const pos = side === 'right' ? e.clientX : e.clientY
-      const delta = pos - dragState.current.startPos
-      const next =
-        side === 'right' ? dragState.current.startSize - delta : dragState.current.startSize - delta
-      onSizeChange(Math.min(MAX_SIZE, Math.max(MIN_SIZE, next)))
-    },
-    [side, onSizeChange]
-  )
-
-  const onPointerUp = useCallback((e: React.PointerEvent) => {
-    dragState.current = null
-    ;(e.target as Element).releasePointerCapture(e.pointerId)
-  }, [])
-
   const containerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: side === 'right' ? 'row' : 'column',
@@ -79,26 +49,19 @@ export function DataInspectionPanel({
     zIndex: 1001,
   }
 
-  const handleStyle: React.CSSProperties = {
-    cursor: side === 'right' ? 'ew-resize' : 'ns-resize',
-    background: 'transparent',
-    flexShrink: 0,
-    ...(side === 'right' ? { width: 6 } : { height: 6 }),
-  }
-
   return (
     <aside
       data-testid="data-inspection-panel"
       aria-label="Data inspection panel"
       style={containerStyle}
     >
-      <div
-        role="separator"
-        aria-orientation={side === 'right' ? 'vertical' : 'horizontal'}
-        style={handleStyle}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
+      <ResizeHandle
+        orientation={side === 'right' ? 'vertical' : 'horizontal'}
+        size={size}
+        min={MIN_SIZE}
+        max={MAX_SIZE}
+        onSizeChange={onSizeChange}
+        direction="inverse"
       />
       <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Header side={side} onSideChange={onSideChange} onClose={onClose} />
