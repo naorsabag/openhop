@@ -408,7 +408,7 @@ export default function AppFragment() {
             />
             {decodedFlow && (
               <BookmarkTab
-                edge="right"
+                edge={inspectorSide === 'right' ? 'right' : 'bottom'}
                 open={inspectorOpen}
                 onToggle={() => setInspectorOpen((o) => !o)}
                 label="INSPECT"

@@ -348,23 +348,28 @@ interface BookmarkTabProps {
   open: boolean
   onToggle: () => void
   /** Which canvas edge the tab anchors to. */
-  edge: 'left' | 'right'
-  /** Vertical text shown on the tab (rotated 90deg). Keep ≤ 8 chars. */
+  edge: 'left' | 'right' | 'bottom'
+  /** Label shown on the tab. Vertical (rotated) for left/right; horizontal for bottom. Keep ≤ 8 chars. */
   label: string
   ariaLabel: string
 }
 
 /**
- * Bookmark-style toggle tab — a small vertical "tag" anchored to the
- * inner edge of the canvas pane. Used for the sidebar (left) and the
- * inspect panel (right). Position is `absolute` relative to the canvas
- * `<main>`, so when its companion panel is open the tab sits flush
- * against the panel; when closed it sits at the viewport edge.
+ * Bookmark-style toggle tab — a "tag" anchored to the inner edge of the
+ * canvas pane. Used for the sidebar (left) and the inspect panel
+ * (right when right-docked, bottom when bottom-docked). Position is
+ * `absolute` relative to the canvas `<main>` so the tab tracks the
+ * panel's leading edge regardless of dock side.
  */
 export function BookmarkTab({ open, onToggle, edge, label, ariaLabel }: BookmarkTabProps) {
-  // Pointer character: arrow toward the canvas when closed (would open
-  // INTO the canvas) and toward the panel when open (would close).
-  const arrow = edge === 'right' ? (open ? '›' : '‹') : open ? '‹' : '›'
+  const isVertical = edge === 'left' || edge === 'right'
+  // Arrow points TOWARD where the click will move the panel:
+  //   closed → arrow points away from the panel (clicking opens it INTO the canvas)
+  //   open   → arrow points toward the panel (clicking closes it back)
+  let arrow: string
+  if (edge === 'right') arrow = open ? '›' : '‹'
+  else if (edge === 'left') arrow = open ? '‹' : '›'
+  else arrow = open ? '▾' : '▴'
   return (
     <button
       type="button"
@@ -374,27 +379,32 @@ export function BookmarkTab({ open, onToggle, edge, label, ariaLabel }: Bookmark
       title={ariaLabel}
       style={{
         position: 'absolute',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        [edge === 'right' ? 'right' : 'left']: 0,
+        ...(isVertical
+          ? { top: '50%', transform: 'translateY(-50%)', [edge]: 0 }
+          : { left: '50%', transform: 'translateX(-50%)', bottom: 0 }),
         // Above DataPixel (z=1000) — same reason the header/sidebars
         // sit above carrots: pixels in mid-flight can extend past the
         // canvas pane bounds.
         zIndex: 1001,
-        width: 24,
-        minWidth: 24,
-        minHeight: 76,
+        ...(isVertical
+          ? { width: 24, minWidth: 24, minHeight: 76 }
+          : { height: 24, minHeight: 24, minWidth: 76 }),
         background: '#0d2612',
         border: '1px solid #1a4a22',
         // Round only the corners pointing into the canvas, so the tab
-        // visually "sticks out" from the edge like a real bookmark.
-        borderRadius: edge === 'right' ? '6px 0 0 6px' : '0 6px 6px 0',
-        [edge === 'right' ? 'borderRight' : 'borderLeft']: 'none',
+        // visually "sticks out" from the panel's leading edge.
+        borderRadius:
+          edge === 'right' ? '6px 0 0 6px' : edge === 'left' ? '0 6px 6px 0' : '6px 6px 0 0',
+        ...(edge === 'right'
+          ? { borderRight: 'none' }
+          : edge === 'left'
+            ? { borderLeft: 'none' }
+            : { borderBottom: 'none' }),
         color: '#7fffaa',
         cursor: 'pointer',
-        padding: '8px 2px',
+        padding: isVertical ? '8px 2px' : '2px 8px',
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: isVertical ? 'column' : 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
@@ -408,12 +418,15 @@ export function BookmarkTab({ open, onToggle, edge, label, ariaLabel }: Bookmark
       </span>
       <span
         aria-hidden="true"
-        style={{
-          // Vertical label, top-to-bottom along the tab.
-          writingMode: 'vertical-rl',
-          textOrientation: 'mixed',
-          transform: edge === 'right' ? undefined : 'rotate(180deg)',
-        }}
+        style={
+          isVertical
+            ? {
+                writingMode: 'vertical-rl',
+                textOrientation: 'mixed',
+                transform: edge === 'right' ? undefined : 'rotate(180deg)',
+              }
+            : undefined
+        }
       >
         {label}
       </span>
