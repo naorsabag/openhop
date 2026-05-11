@@ -63,7 +63,7 @@ export interface StepEdgeMapping {
 
 // Speed can be overridden via window.__flowSpeed (for testing)
 const getSpeed = () => window.__flowSpeed ?? 1
-const STEP_DURATION_BASE = 2500
+const STEP_DURATION_BASE = 2900
 const PIXEL_DURATION_BASE = 1800
 
 export function useFlowAnimation(
