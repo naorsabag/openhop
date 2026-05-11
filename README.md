@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <b>Local-first. Your code never leaves your machine. No telemetry.</b>
+</p>
+
+<p align="center">
   <a href="https://github.com/naorsabag/openhop/actions/workflows/ci.yml"><img src="https://github.com/naorsabag/openhop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://www.npmjs.com/package/openhop"><img src="https://img.shields.io/npm/v/openhop.svg?color=cb3837&label=npm" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
@@ -30,7 +34,9 @@
   <a href="#install-options">Install</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#examples">Examples</a>
+  <a href="#examples">Examples</a> ·
+  <a href="https://naorsabag.github.io/openhop/">Docs</a> ·
+  <a href="https://discord.gg/openhop">Discord</a>
 </p>
 
 ---
@@ -88,6 +94,17 @@ npx openhop init
 npx openskills install naorsabag/openhop
 ```
 
+**Path C — Claude Code native plugin install**
+
+```text
+/plugin install naorsabag/openhop
+```
+
+Uses Claude Code's in-app plugin browser. Prompts on whether to also install the local CLI (`[Y/n]`, default `Y`).
+
+- `--yes` — skip the prompt, install both skill + CLI.
+- `--skip-cli` — install only the skill (you'll need `npx openhop serve` running separately).
+
 **Want to start the server yourself?**
 
 ```bash
@@ -106,6 +123,14 @@ npx openhop demo
 git clone https://github.com/naorsabag/openhop.git
 cd openhop && npm install && npm run dev
 ```
+
+> [!IMPORTANT]
+> **Architecture note — OpenHop v0.1 is local-first.**
+> The CLI runs entirely on your machine. There's no hosted backend, no flow
+> storage, no servers we keep running. Sharing today = sharing the YAML file
+> (or the URL-fragment share link from the [hosted playground](https://naorsabag.github.io/openhop/),
+> which compresses the flow into the URL hash — still no server-side
+> storage).
 
 ## Use cases
 
