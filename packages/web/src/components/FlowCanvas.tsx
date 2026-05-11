@@ -6,6 +6,7 @@ import {
   Controls,
   Panel,
   useReactFlow,
+  useStoreApi,
   type NodeTypes,
   type EdgeTypes,
   type Node,
@@ -123,21 +124,25 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
-  // Live-tunable maxZoom for the canvas. State drives the JSX prop —
-  // @xyflow/react v12 makes maxZoom reactive, so updating state alone
-  // updates d3-zoom's scaleExtent on the next render.
+  // Live-tunable maxZoom for the canvas. State drives the JSX prop;
+  // we also dispatch into the React Flow store directly because v12's
+  // prop-reactivity for maxZoom didn't update d3-zoom's scaleExtent on
+  // its own in this app's setup.
   // Exposed on `window.__setMaxZoom` for browser-console tuning.
+  const storeApi = useStoreApi()
   const [maxZoom, setMaxZoomState] = useState<number>(4)
   useEffect(() => {
     window.__setMaxZoom = (n: number) => {
       setMaxZoomState(n)
+      const state = storeApi.getState() as { setMaxZoom?: (z: number) => void }
+      state.setMaxZoom?.(n)
       // eslint-disable-next-line no-console
       console.log('[openhop] maxZoom =', n)
     }
     return () => {
       delete window.__setMaxZoom
     }
-  }, [])
+  }, [storeApi])
 
   // Playback speed multiplier. The animation hook reads the live value
   // off `window.__flowSpeed` each tick, so updating the global is what
