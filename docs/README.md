@@ -5,12 +5,12 @@ new, start with the [project README](../README.md) and `npx openhop demo`.
 
 ## Contents
 
-| Doc | What's in it |
-|---|---|
-| [install.md](install.md) | Every install path — `npx openhop init`, OpenSkills, the Claude Code `/plugin` command, and the manual file-drop layout for each supported client. |
-| [yaml.md](yaml.md) | YAML schema reference. Every step kind, every data shape, every keyword the skill is allowed to emit. |
-| [cli.md](cli.md) | Full CLI reference — every command, every flag, every exit code. |
-| [architecture.md](architecture.md) | What runs where, why it's local-first, and the wire shape between the agent, the CLI, the API, and the web renderer. |
+| Doc                                | What's in it                                                                                                                                       |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [install.md](install.md)           | Every install path — `npx openhop init`, OpenSkills, the Claude Code `/plugin` command, and the manual file-drop layout for each supported client. |
+| [yaml.md](yaml.md)                 | YAML schema reference. Every step kind, every data shape, every keyword the skill is allowed to emit.                                              |
+| [cli.md](cli.md)                   | Full CLI reference — every command, every flag, every exit code.                                                                                   |
+| [architecture.md](architecture.md) | What runs where, why it's local-first, and the wire shape between the agent, the CLI, the API, and the web renderer.                               |
 
 The animated playground lives at <https://naorsabag.github.io/openhop/>. It
 loads the same renderer used locally — same sprites, same animation, same

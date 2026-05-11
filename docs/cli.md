@@ -17,12 +17,12 @@ openhop serve -p 9000          # override API port
 openhop serve --web-port 9001  # override web port
 ```
 
-| Flag | Default | Description |
-|---|---|---|
-| `-p, --port <port>` | `8787` | API port. |
-| `--web-port <port>` | `8788` | Web UI port. |
-| `--no-web` | — | Start API only; skip the web UI. |
-| `--no-wait-ready` | — | Don't print the machine-parseable `openhop: ready api=…` line on stdout. |
+| Flag                | Default | Description                                                              |
+| ------------------- | ------- | ------------------------------------------------------------------------ |
+| `-p, --port <port>` | `8787`  | API port.                                                                |
+| `--web-port <port>` | `8788`  | Web UI port.                                                             |
+| `--no-web`          | —       | Start API only; skip the web UI.                                         |
+| `--no-wait-ready`   | —       | Don't print the machine-parseable `openhop: ready api=…` line on stdout. |
 
 When both come up, the ready line is:
 
@@ -59,20 +59,20 @@ openhop init --client claude-code  # one client only
 openhop init --json                # JSON summary on stdout
 ```
 
-| Flag | Description |
-|---|---|
-| `--dry-run` | Print what would be written; don't touch disk. |
-| `--force` | Overwrite an existing skill instead of skipping. |
+| Flag            | Description                                                      |
+| --------------- | ---------------------------------------------------------------- |
+| `--dry-run`     | Print what would be written; don't touch disk.                   |
+| `--force`       | Overwrite an existing skill instead of skipping.                 |
 | `--client <id>` | One of `claude-code`, `cursor`, `windsurf`, `cline`, `continue`. |
-| `--json` | Machine-readable summary. |
+| `--json`        | Machine-readable summary.                                        |
 
 Exit codes:
 
-| Code | Meaning |
-|---|---|
-| 0 | At least one client was processed (installed, skipped already-installed, or advisory). |
-| 4 | No clients detected — nothing to do. |
-| 5 | At least one install failed. |
+| Code | Meaning                                                                                |
+| ---- | -------------------------------------------------------------------------------------- |
+| 0    | At least one client was processed (installed, skipped already-installed, or advisory). |
+| 4    | No clients detected — nothing to do.                                                   |
+| 5    | At least one install failed.                                                           |
 
 ## `openhop push <file>`
 
@@ -84,10 +84,10 @@ openhop push - < ./flow.yaml            # stdin
 openhop push --json examples/order-flow.yaml
 ```
 
-| Flag | Default | Description |
-|---|---|---|
-| `-s, --server <url>` | `http://localhost:8787` | Server URL. |
-| `--json` | — | Emit JSON on stdout. |
+| Flag                 | Default                 | Description          |
+| -------------------- | ----------------------- | -------------------- |
+| `-s, --server <url>` | `http://localhost:8787` | Server URL.          |
+| `--json`             | —                       | Emit JSON on stdout. |
 
 Stdout format (text mode): `https://localhost:8788/flow/<id>`. Stderr carries
 validation errors / fuzzy-typo hints when the YAML is invalid (exit 2).
@@ -103,10 +103,10 @@ openhop patch f_a8b3 ./patch.yaml
 openhop patch f_a8b3 --json ./patch.yaml
 ```
 
-| Flag | Default | Description |
-|---|---|---|
-| `-s, --server <url>` | `http://localhost:8787` | Server URL. |
-| `--json` | — | Emit JSON on stdout. |
+| Flag                 | Default                 | Description          |
+| -------------------- | ----------------------- | -------------------- |
+| `-s, --server <url>` | `http://localhost:8787` | Server URL.          |
+| `--json`             | —                       | Emit JSON on stdout. |
 
 ## `openhop list`
 
@@ -120,13 +120,13 @@ openhop list --search auth --limit 10        # cap results
 openhop list --json
 ```
 
-| Flag | Default | Description |
-|---|---|---|
-| `-s, --server <url>` | `http://localhost:8787` | Server URL. |
-| `--tree` | — | Render as a directory tree instead of a flat table. |
-| `--search <query>` | — | Substring + fuzzy match across title, path, description, id. |
-| `--limit <n>` | `50` | Max search results. |
-| `--json` | — | Machine-readable summary. |
+| Flag                 | Default                 | Description                                                  |
+| -------------------- | ----------------------- | ------------------------------------------------------------ |
+| `-s, --server <url>` | `http://localhost:8787` | Server URL.                                                  |
+| `--tree`             | —                       | Render as a directory tree instead of a flat table.          |
+| `--search <query>`   | —                       | Substring + fuzzy match across title, path, description, id. |
+| `--limit <n>`        | `50`                    | Max search results.                                          |
+| `--json`             | —                       | Machine-readable summary.                                    |
 
 ## `openhop remove <flow-id>`
 
@@ -137,10 +137,10 @@ openhop remove f_a8b3
 openhop remove f_a8b3 --json
 ```
 
-| Flag | Default | Description |
-|---|---|---|
-| `-s, --server <url>` | `http://localhost:8787` | Server URL. |
-| `--json` | — | Emit JSON on stdout. |
+| Flag                 | Default                 | Description          |
+| -------------------- | ----------------------- | -------------------- |
+| `-s, --server <url>` | `http://localhost:8787` | Server URL.          |
+| `--json`             | —                       | Emit JSON on stdout. |
 
 ## `openhop --version` / `openhop --api-version`
 

@@ -4,11 +4,11 @@ What runs where, and why "local-first" is the load-bearing word in the README.
 
 ## The three packages
 
-| Package | Where it runs | What it does |
-|---|---|---|
-| `openhop` (CLI) | your laptop | Validates YAML, talks HTTP to the API. Entry point for `init` / `demo` / `serve` / `push` / `patch` / `list` / `remove`. |
-| `@openhop/server` | your laptop | Fastify API on `:8787`. Owns flow storage (in-memory plus a JSON-on-disk fallback at `~/.openhop/`). Exposes REST routes + Swagger at `/docs`. |
-| `@openhop/web` | your browser | PIXI-rendered web UI on `:8788`. Subscribes to flow updates, runs the pixel-art animation. |
+| Package           | Where it runs | What it does                                                                                                                                   |
+| ----------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openhop` (CLI)   | your laptop   | Validates YAML, talks HTTP to the API. Entry point for `init` / `demo` / `serve` / `push` / `patch` / `list` / `remove`.                       |
+| `@openhop/server` | your laptop   | Fastify API on `:8787`. Owns flow storage (in-memory plus a JSON-on-disk fallback at `~/.openhop/`). Exposes REST routes + Swagger at `/docs`. |
+| `@openhop/web`    | your browser  | PIXI-rendered web UI on `:8788`. Subscribes to flow updates, runs the pixel-art animation.                                                     |
 
 ## Wire shape
 

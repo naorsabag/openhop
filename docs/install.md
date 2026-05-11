@@ -13,13 +13,13 @@ npx openhop init
 
 Supported by `init`:
 
-| Client | Skills directory | Notes |
-|---|---|---|
-| Claude Code | `~/.claude/skills/openhop/` | Native. |
-| Cursor (v2.4+) | `~/.cursor/skills/openhop/` | Native. Also auto-discovers `~/.agents/skills/`. |
-| Windsurf (Cascade) | `~/.codeium/windsurf/skills/openhop/` | Native. |
-| Cline (3.48+) | `~/.cline/skills/openhop/` | Requires one-time toggle: **VS Code → Settings → Cline → Features → Enable Skills (experimental)**. |
-| Continue.dev | (advisory) | No native skills surface; the rules system at `~/.continue/rules/` is too small for a full `SKILL.md`. Tracked for a condensed-rule translator. |
+| Client             | Skills directory                      | Notes                                                                                                                                           |
+| ------------------ | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code        | `~/.claude/skills/openhop/`           | Native.                                                                                                                                         |
+| Cursor (v2.4+)     | `~/.cursor/skills/openhop/`           | Native. Also auto-discovers `~/.agents/skills/`.                                                                                                |
+| Windsurf (Cascade) | `~/.codeium/windsurf/skills/openhop/` | Native.                                                                                                                                         |
+| Cline (3.48+)      | `~/.cline/skills/openhop/`            | Requires one-time toggle: **VS Code → Settings → Cline → Features → Enable Skills (experimental)**.                                             |
+| Continue.dev       | (advisory)                            | No native skills surface; the rules system at `~/.continue/rules/` is too small for a full `SKILL.md`. Tracked for a condensed-rule translator. |
 
 Flags: see [cli.md#openhop-init](cli.md#openhop-init).
 

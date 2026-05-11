@@ -19,33 +19,33 @@ flow:
 
 ## Node
 
-| Field   | Required | Notes |
-|---------|----------|-------|
-| `id`    | yes      | alphanumeric + `-` + `_` only. Referenced from `steps` by id. |
+| Field   | Required | Notes                                                                                               |
+| ------- | -------- | --------------------------------------------------------------------------------------------------- |
+| `id`    | yes      | alphanumeric + `-` + `_` only. Referenced from `steps` by id.                                       |
 | `label` | yes      | display name, **≤ 4 words** so it fits the fixed-width label slot. Longer labels truncate with `…`. |
-| `type`  | no       | **closed enum** — see table below. Defaults to `service` if omitted. |
-| `icon`  | no       | Iconify icon ID (e.g. `logos:postgresql`). Browse at <https://icon-sets.iconify.design/logos/>. |
-| `color` | no       | hex color override (e.g. `#336791`). |
-| `flow`  | no       | nested sub-flow `{ nodes, steps }`. Makes the node expandable — click to drill in. |
+| `type`  | no       | **closed enum** — see table below. Defaults to `service` if omitted.                                |
+| `icon`  | no       | Iconify icon ID (e.g. `logos:postgresql`). Browse at <https://icon-sets.iconify.design/logos/>.     |
+| `color` | no       | hex color override (e.g. `#336791`).                                                                |
+| `flow`  | no       | nested sub-flow `{ nodes, steps }`. Makes the node expandable — click to drill in.                  |
 
 ### `type` is a category, `label` is the name
 
 The 12 type values pick the sprite + accent the renderer draws (database = barrel, cache = lightning, queue = stack, etc.). **Never** put a variant name (`redis`, `stripe`, `postgres`) in `type` — that's a label.
 
-| `type`     | Common labels |
-|------------|---|
-| `actor`    | user, admin, customer, operator, agent, bot, service-account |
-| `endpoint` | rest-api, graphql, grpc, webhook, websocket, sse |
-| `auth`     | oauth, jwt, session, api-key, saml, ldap, mfa |
-| `database` | postgres, mysql, mongodb, sqlite, cassandra, dynamodb |
-| `external` | stripe, twilio, sendgrid, github, slack, openai, anthropic |
-| `cache`    | redis, memcached, cdn, ram, http-cache |
-| `queue`    | kafka, rabbitmq, sqs, pubsub, nats, kinesis, celery |
-| `service`  | microservice, worker, gateway, proxy, loadbalancer |
-| `docker`   | container, sidecar, init-container, compose-service |
-| `k8s`      | pod, deployment, statefulset, daemonset, job, cronjob |
-| `scheduler`| cron, airflow, temporal, celery-beat, sidekiq |
-| `custom`   | anything — also set `icon` + `color` |
+| `type`      | Common labels                                                |
+| ----------- | ------------------------------------------------------------ |
+| `actor`     | user, admin, customer, operator, agent, bot, service-account |
+| `endpoint`  | rest-api, graphql, grpc, webhook, websocket, sse             |
+| `auth`      | oauth, jwt, session, api-key, saml, ldap, mfa                |
+| `database`  | postgres, mysql, mongodb, sqlite, cassandra, dynamodb        |
+| `external`  | stripe, twilio, sendgrid, github, slack, openai, anthropic   |
+| `cache`     | redis, memcached, cdn, ram, http-cache                       |
+| `queue`     | kafka, rabbitmq, sqs, pubsub, nats, kinesis, celery          |
+| `service`   | microservice, worker, gateway, proxy, loadbalancer           |
+| `docker`    | container, sidecar, init-container, compose-service          |
+| `k8s`       | pod, deployment, statefulset, daemonset, job, cronjob        |
+| `scheduler` | cron, airflow, temporal, celery-beat, sidekiq                |
+| `custom`    | anything — also set `icon` + `color`                         |
 
 Anything outside that list fails validation. When nothing fits, use `custom`.
 
