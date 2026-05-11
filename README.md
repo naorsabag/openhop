@@ -35,7 +35,7 @@
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a> ·
-  <a href="https://naorsabag.github.io/openhop/">Docs</a> ·
+  <a href="docs/">Docs</a> ·
   <a href="https://discord.gg/openhop">Discord</a>
 </p>
 
@@ -99,11 +99,6 @@ npx openskills install naorsabag/openhop
 ```text
 /plugin install naorsabag/openhop
 ```
-
-Uses Claude Code's in-app plugin browser. Prompts on whether to also install the local CLI (`[Y/n]`, default `Y`).
-
-- `--yes` — skip the prompt, install both skill + CLI.
-- `--skip-cli` — install only the skill (you'll need `npx openhop serve` running separately).
 
 **Want to start the server yourself?**
 
