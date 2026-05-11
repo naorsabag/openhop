@@ -25,14 +25,14 @@ flow:
   steps:
     - from: browser
       to: app
-      data: GET /login
+      data: The user clicks "Sign in"; the browser asks the app server for the start of the login flow.
     - from: app
       to: oauth
-      data: Redirect to Google
+      data: The app sends the browser over to Google so the user can sign in with their Google account.
     - from: oauth
       to: app
       data:
-        label: OAuth callback
+        label: Google bounces the browser back to the app with a one-time authorization code and the original state value so the app can prove this came from the same login attempt.
         fields:
           - name: code
             type: string
@@ -40,11 +40,11 @@ flow:
             type: string
     - from: app
       to: oauth
-      data: Exchange code for token
+      data: The app trades the one-time code with Google for the real tokens that represent the signed-in user.
     - from: oauth
       to: app
       data:
-        label: Token response
+        label: Google answers with the user's access token, identity token, and email address so the app knows who just signed in.
         fields:
           - name: access_token
           - name: id_token
@@ -52,18 +52,18 @@ flow:
             added: true
     - from: app
       to: [db, cache]
-      data: Store user + session
+      data: The app saves the user record in the database and opens a session in the cache so subsequent requests don't have to re-authenticate.
     - parallel:
         - from: db
           to: app
-          data: user_id
+          data: The database confirms the write and hands the app this user's stable identifier.
         - from: cache
           to: app
-          data: session_id
+          data: The session cache returns the session identifier the app will use as the cookie value.
     - from: app
       to: browser
       data:
-        label: Set cookie + redirect
+        label: The app sets a session cookie on the browser and redirects the user to their original destination.
         fields:
           - name: session_id
           - name: redirect_to

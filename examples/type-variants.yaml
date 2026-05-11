@@ -92,6 +92,11 @@ flow:
   steps:
     # Minimal connective tissue so nodes aren't orphans and ELK has something
     # to lay out. Chain the first of each type to the next type's first.
+    #
+    # NOTE: The `data: "→"` placeholders below are deliberately NOT the
+    # verbose plain-English narration the skill recommends for real flows
+    # — this file is a sprite/type showcase, not a narrative walkthrough.
+    # Don't copy this terse style into a story-driven flow.
     - { from: actor-1, to: endpoint-1, data: "→" }
     - { from: endpoint-1, to: auth-1, data: "→" }
     - { from: auth-1, to: db-1, data: "→" }

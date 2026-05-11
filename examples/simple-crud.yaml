@@ -18,13 +18,13 @@ flow:
   steps:
     - from: client
       to: api
-      data: POST /items
+      data: The client submits a new item with its name and quantity to the REST API.
     - from: api
       to: db
-      data: INSERT item
+      data: The API translates the incoming request into an insert and writes a new row.
     - from: db
       to: api
-      data: created item
+      data: The database returns the newly created row along with its generated identifier.
     - from: api
       to: client
-      data: "201 Created"
+      data: The API confirms back to the client that the item was created successfully.

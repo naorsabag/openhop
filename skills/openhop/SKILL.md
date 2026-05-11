@@ -67,16 +67,16 @@ flow:
   steps:
     - from: browser
       to: api
-      data: request
+      data: The user opens the home page; the browser sends the initial page request to the API server.
     - from: api
       to: db
-      data: query
+      data: The API asks the database for the rows it needs to render the page for this user.
     - from: db
       to: api
-      data: rows
+      data: The database returns the matching rows along with the row count.
     - from: api
       to: browser
-      data: response
+      data: The API renders the page and sends the finished HTML back to the browser.
 ```
 
 Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin). Parse the JSON response and return the `url` field to the user.
@@ -89,6 +89,30 @@ Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin)
 - **Node `label` must be ≤ 4 words.** Labels render under each node in a fixed-width box; longer labels truncate with "…" and read poorly. Pick the shortest noun phrase that identifies the component. ✓ `Order Service`, `Auth API`, `Stripe`. ✗ `Order Processing Service With Retries`, `User Authentication and Authorization API`.
 
 If the validator rejects your flow, **read the error path** — it tells you exactly which field is wrong.
+
+## Voice — short on node names, verbose on step text
+
+The two text channels in a flow carry opposite weights and should be written in opposite voices.
+
+- **Node labels are billboards.** They're short, noun-phrase, identity-only. ≤ 4 words. **No code names.** ✓ `Order Service`, `Auth API`, `Postgres`, `Stripe`. ✗ `order_service_v2`, `OrderProcessingHandler`, `auth-jwt-mw`.
+- **Step `data` labels are the narration.** The user reads them on hover and follows them through playback. Be verbose. Use plain English. Explain **what is happening in the world**, not the wire format. **No code names**, no HTTP verbs, no SQL, no method signatures.
+
+The agent's job here is to **narrate** the flow, not annotate the protocol. The user is asking "walk me through what happens" — answer that question in sentences, not in routes.
+
+**Write step data labels like this:**
+
+| ✗ Too terse, code-flavored   | ✓ Verbose, plain English narration                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST /orders`               | `The user submits a new order with their cart items and shipping details.`                   |
+| `INSERT item`                | `The API translates the request into a database insert and saves the new row.`               |
+| `SELECT * WHERE user_id = ?` | `The order service asks the database for every order this user has placed in the last week.` |
+| `query`                      | `The API asks the database to look up the matching record.`                                  |
+| `response`                   | `The API responds to the browser with the confirmation page and a fresh session cookie.`     |
+| `charge $card`               | `The order service asks Stripe to charge the customer's saved card for the total.`           |
+| `auth ok`                    | `The auth service confirms the token is valid and tells the API who the user is.`            |
+| `redis.get(session)`         | `The API checks the session cache to see if this user is already signed in.`                 |
+
+The rule applies whether `data` is the string shorthand (`data: "..."`) or the object form's `label:` field. The `fields:` array still uses code-flavored names + types (`{ name: items, type: list[OrderItem] }`) — that's a schema, not narration, so it stays technical.
 
 ## Before Creating Flows
 

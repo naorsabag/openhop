@@ -24,22 +24,22 @@ flow:
   steps:
     - from: client
       to: api
-      data: POST /jobs
+      data: The client submits a new background job to the API gateway and asks it to be queued.
 
     # Self-loop with multiple data payloads sent at once — three independent
     # checks fire on the same internal step.
     - from: api
       to: api
       data:
-        - label: schema validation
+        - label: The API runs schema validation on the incoming body to make sure the request is well-formed.
           fields:
             - name: body
               type: JSON
-        - label: auth check
+        - label: The API verifies the caller's token to confirm they're allowed to enqueue this job.
           fields:
             - name: token
               type: JWT
-        - label: rate limit
+        - label: The API checks its rate-limit bucket for this caller so a single client can't overwhelm the workers.
           fields:
             - name: bucket
               type: string
@@ -47,20 +47,20 @@ flow:
     # Broadcast: API fans out to both worker and cache in a single step.
     - from: api
       to: [worker, cache]
-      data: enqueued job
+      data: The API hands the job to a worker for processing and stashes a pending record in the cache for fast status lookups.
 
     # Self-loop with multi-data: worker reports retry + metric in parallel.
     - from: worker
       to: worker
       data:
-        - label: process batch (retry x3)
+        - label: The worker processes the batch, retrying up to three times with exponential backoff if a step fails.
           fields:
             - name: attempt
               type: int
               changed: true
             - name: backoff_ms
               type: int
-        - label: emit metrics
+        - label: While processing, the worker emits internal timing and throughput metrics for the observability stack.
           fields:
             - name: latency_ms
               type: float
@@ -70,12 +70,12 @@ flow:
     # Broadcast write: worker writes to db and invalidates cache at once.
     - from: worker
       to: [db, cache]
-      data: write result
+      data: The worker writes the final result to the database and invalidates the cache entry so the next reader gets the fresh data.
 
     # Self-loop on the database: trigger fires a follow-up update.
     - from: db
       to: db
-      data: trigger update_audit_log
+      data: A database trigger fires automatically and updates the audit log to record this change.
 
     # Multiple sources delivering to the same node at once — worker reports
     # completion while cache confirms invalidation; api receives both in parallel.
@@ -83,7 +83,7 @@ flow:
         - from: worker
           to: api
           data:
-            label: job complete
+            label: The worker tells the API the job has finished and reports how long it took.
             fields:
               - name: job_id
                 type: uuid
@@ -92,10 +92,10 @@ flow:
         - from: cache
           to: api
           data:
-            label: cache invalidated
+            label: The cache confirms back to the API how many stale entries were evicted as part of the invalidation.
             fields:
               - name: keys_evicted
                 type: int
     - from: api
       to: client
-      data: "200 OK"
+      data: The API tells the client the job completed successfully and returns a 200.
