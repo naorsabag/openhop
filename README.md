@@ -25,9 +25,9 @@
 </p>
 
 <p align="center">
-  <a href="https://docs.anthropic.com/en/docs/claude-code/skills"><img src="https://img.shields.io/badge/Claude%20Code-✓-262626?style=flat-square" alt="Claude Code" /></a>
-  <a href="https://cursor.com/docs/skills"><img src="https://img.shields.io/badge/Cursor-✓-262626?style=flat-square" alt="Cursor" /></a>
-  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex-✓-262626?style=flat-square" alt="OpenAI Codex" /></a>
+  <a href="https://docs.anthropic.com/en/docs/claude-code/skills"><img src="https://img.shields.io/badge/Claude%20Code-✓-D97757?style=flat-square" alt="Claude Code" /></a>
+  <a href="https://cursor.com/docs/skills"><img src="https://img.shields.io/badge/Cursor-✓-3B82F6?style=flat-square" alt="Cursor" /></a>
+  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex-✓-10A37F?style=flat-square" alt="OpenAI Codex" /></a>
 </p>
 
 <p align="center">
