@@ -16,7 +16,7 @@ flow:
     # Step 1: Queue feeds a job to the dispatcher.
     - from: queue
       to: dispatcher
-      data: dequeued job
+      data: The dispatcher pulls the next pending job off the queue to process it.
 
     # Step 2: Dispatcher spawns a Worker for this job. The Worker
     # node doesn't exist in `nodes` above — `create:` brings it
@@ -29,7 +29,7 @@ flow:
         label: Worker
         type: service
       data:
-        label: spawn
+        label: The dispatcher spins up a brand new worker process and hands it this job to handle.
         fields:
           - name: job_id
             type: string
@@ -38,7 +38,7 @@ flow:
     - from: worker
       to: dispatcher
       data:
-        label: result
+        label: The worker finishes the job and reports the outcome back to the dispatcher.
         fields:
           - name: status
             type: string

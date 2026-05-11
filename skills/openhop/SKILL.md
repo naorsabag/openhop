@@ -40,6 +40,7 @@ Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match w
 | "diagram a minimal CRUD service"                          | `examples/simple-crud.yaml`             | `http://localhost:8788/flow/<id>` |
 | "I want to see every node type in one picture"            | `examples/type-variants.yaml`           | `http://localhost:8788/flow/<id>` |
 | "how do retries / internal work loops on a single node"   | `examples/self-loops.yaml`              | `http://localhost:8788/flow/<id>` |
+| "show me two things happening at the same time"           | `examples/parallel.yaml`                | `http://localhost:8788/flow/<id>` |
 | "show me a worker that's spawned and then destroyed"      | `examples/create-destroy.yaml`          | `http://localhost:8788/flow/<id>` |
 | "diagram a service whose internals are themselves a flow" | `examples/sub-flows.yaml`               | `http://localhost:8788/flow/<id>` |
 | "visualize a three-tier app (browser → API → DB)"         | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
@@ -67,16 +68,16 @@ flow:
   steps:
     - from: browser
       to: api
-      data: request
+      data: The user opens the home page; the browser sends the initial page request to the API server.
     - from: api
       to: db
-      data: query
+      data: The API asks the database for the rows it needs to render the page for this user.
     - from: db
       to: api
-      data: rows
+      data: The database returns the matching rows along with the row count.
     - from: api
       to: browser
-      data: response
+      data: The API renders the page and sends the finished HTML back to the browser.
 ```
 
 Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin). Parse the JSON response and return the `url` field to the user.
@@ -89,6 +90,30 @@ Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin)
 - **Node `label` must be ≤ 4 words.** Labels render under each node in a fixed-width box; longer labels truncate with "…" and read poorly. Pick the shortest noun phrase that identifies the component. ✓ `Order Service`, `Auth API`, `Stripe`. ✗ `Order Processing Service With Retries`, `User Authentication and Authorization API`.
 
 If the validator rejects your flow, **read the error path** — it tells you exactly which field is wrong.
+
+## Voice — short on node names, verbose on step text
+
+The two text channels in a flow carry opposite weights and should be written in opposite voices.
+
+- **Node labels are billboards.** They're short, noun-phrase, identity-only. ≤ 4 words. **No code names.** ✓ `Order Service`, `Auth API`, `Postgres`, `Stripe`. ✗ `order_service_v2`, `OrderProcessingHandler`, `auth-jwt-mw`.
+- **Step `data` labels are the narration.** The user reads them on hover and follows them through playback. Be verbose. Use plain English. Explain **what is happening in the world**, not the wire format. **No code names**, no HTTP verbs, no SQL, no method signatures.
+
+The agent's job here is to **narrate** the flow, not annotate the protocol. The user is asking "walk me through what happens" — answer that question in sentences, not in routes.
+
+**Write step data labels like this:**
+
+| ✗ Too terse, code-flavored   | ✓ Verbose, plain English narration                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST /orders`               | `The user submits a new order with their cart items and shipping details.`                   |
+| `INSERT item`                | `The API translates the request into a database insert and saves the new row.`               |
+| `SELECT * WHERE user_id = ?` | `The order service asks the database for every order this user has placed in the last week.` |
+| `query`                      | `The API asks the database to look up the matching record.`                                  |
+| `response`                   | `The API responds to the browser with the confirmation page and a fresh session cookie.`     |
+| `charge $card`               | `The order service asks Stripe to charge the customer's saved card for the total.`           |
+| `auth ok`                    | `The auth service confirms the token is valid and tells the API who the user is.`            |
+| `redis.get(session)`         | `The API checks the session cache to see if this user is already signed in.`                 |
+
+The rule applies whether `data` is the string shorthand (`data: "..."`) or the object form's `label:` field. The `fields:` array still uses code-flavored names + types (`{ name: items, type: list[OrderItem] }`) — that's a schema, not narration, so it stays technical.
 
 ## Before Creating Flows
 
@@ -299,7 +324,7 @@ Each node type has common real-world variants. Use them to choose an accurate `l
 Either a move step, parallel, create, or destroy:
 
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
-- Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick. Each sub-step is itself a move (`from`/`to`/`data`). See [`examples/self-loops.yaml`](../../examples/self-loops.yaml) and [`examples/order-flow.yaml`](../../examples/order-flow.yaml) for in-context use.
+- Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick. Each sub-step is itself a move (`from`/`to`/`data`). See [`examples/parallel.yaml`](../../examples/parallel.yaml) for an isolated demo and [`examples/self-loops.yaml`](../../examples/self-loops.yaml) / [`examples/order-flow.yaml`](../../examples/order-flow.yaml) for in-context use.
 
   ```yaml
   - parallel:
