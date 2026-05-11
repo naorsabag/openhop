@@ -35,6 +35,10 @@
 </p>
 
 <p align="center">
+  <a href="#install-options"><b>→ Add to Claude Code in one command</b></a>
+</p>
+
+<p align="center">
   <a href="#try-it-in-30-seconds">Quickstart</a> ·
   <a href="#install-options">Install</a> ·
   <a href="#use-cases">Use cases</a> ·
