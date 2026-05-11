@@ -856,6 +856,24 @@ export function computeFallbackPositions(topology: FlowTopology): Map<string, Po
 }
 
 function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, EdgePortAssignment>) {
+  // Pre-compute which nodes have an incoming edge from ANOTHER actor.
+  // Those can't be pinned to ELK's FIRST layer — ELK throws
+  // UnsupportedConfigurationException if a FIRST node receives an
+  // intra-layer edge from another FIRST node. Skipping the pin only
+  // when the source is also an actor keeps the common case ("user is
+  // both first sender and final receiver of a response") working —
+  // because the response edge's source is typically a service/endpoint,
+  // not another actor.
+  const incomingFromActor = new Set<string>()
+  for (const e of topology.displayEdges) {
+    // Self-loop (source === target) doesn't introduce a second
+    // FIRST-pinned node, so it can't trigger the ELK error this guard
+    // protects against — exclude it.
+    if (e.source !== e.target && topology.nodeSnapshots.get(e.source)?.nodeType === 'actor') {
+      incomingFromActor.add(e.target)
+    }
+  }
+
   return {
     id: 'openhop-flow',
     layoutOptions: {
@@ -888,13 +906,16 @@ function buildElkGraph(topology: FlowTopology, portAssignments?: Map<string, Edg
       }))
 
       // Actors represent the human/external initiator — pin them to the
-      // leftmost layer so the flow always reads "user → system → ..." even
-      // when the actor also has incoming edges (e.g. a final response
-      // step).
+      // leftmost layer so the flow always reads "user → system → ..."
+      // (including when the actor is also the final response target).
+      // Skip the pin only for actors fed by another actor (see
+      // incomingFromActor above) — ELK rejects intra-layer FIRST→FIRST
+      // edges.
       const isActor = topology.nodeSnapshots.get(id)?.nodeType === 'actor'
+      const pinFirst = isActor && !incomingFromActor.has(id)
       const nodeLayoutOptions: Record<string, string> = {}
       if (portAssignments) nodeLayoutOptions.portConstraints = 'FIXED_SIDE'
-      if (isActor) nodeLayoutOptions['elk.layered.layering.layerConstraint'] = 'FIRST'
+      if (pinFirst) nodeLayoutOptions['elk.layered.layering.layerConstraint'] = 'FIRST'
 
       return {
         id,
