@@ -1,0 +1,50 @@
+meta:
+  title: Ephemeral Worker
+  path: examples/create-destroy
+  description: A dispatcher spawns a one-shot worker, the worker reports back, then it's destroyed
+
+flow:
+  nodes:
+    - id: queue
+      label: Job Queue
+      type: queue
+    - id: dispatcher
+      label: Dispatcher
+      type: service
+
+  steps:
+    # Step 1: Queue feeds a job to the dispatcher.
+    - from: queue
+      to: dispatcher
+      data: dequeued job
+
+    # Step 2: Dispatcher spawns a Worker for this job. The Worker
+    # node doesn't exist in `nodes` above — `create:` brings it
+    # into being and animates a spawn pixel from dispatcher to
+    # the freshly-rendered node.
+    - create: worker
+      from: dispatcher
+      node:
+        id: worker
+        label: Worker
+        type: service
+      data:
+        label: spawn
+        fields:
+          - name: job_id
+            type: string
+
+    # Step 3: The worker does its thing and reports back.
+    - from: worker
+      to: dispatcher
+      data:
+        label: result
+        fields:
+          - name: status
+            type: string
+            added: true
+
+    # Step 4: Worker is no longer needed — `destroy:` removes the
+    # node from the canvas. Any later step referencing `worker`
+    # would render as invalid.
+    - destroy: worker
