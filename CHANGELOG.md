@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-11
+
 ### Added
 
 - CLI: machine-first contract per `openhop-launch/16-cli-as-universal-api.md`.
@@ -21,12 +23,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI: `help --json` per-command `exitCodes` array and `examples` array — agents can plan invocations and know which failure modes to expect from each command.
 - CLI: `push --json` includes `nodeCount` field.
 - CLI: `npm run test:cli-contract` script alias targeting the end-to-end contract suite.
+- Skill (`skills/openhop/SKILL.md`): explicit semantics + use-case framing for `create:` and `destroy:` steps. Lifecycle pairing rule documented.
+- Skill: new "Voice" section requiring verbose plain-English step `data` labels and reserving short labels for nodes. Do/don't table covering the eight most common terse patterns.
+- Skill: prompt → YAML table now binds intents like "show me two things happening at the same time" and "show me a worker spawned and destroyed" to dedicated examples.
+- New examples bundled into the published CLI tarball:
+  - `examples/create-destroy.yaml` — minimal lifecycle demo (4 steps).
+  - `examples/sub-flows.yaml` — service node with nested flow + `drilldown: true`.
+  - `examples/parallel.yaml` — focused fan-out demo (in and out parallel branches).
+- Web: left flow-tree sidebar is now horizontally resizable (180–480 px), with the chosen width persisted to `localStorage` under `openhop:sidebar:width`. Shared `ResizeHandle` component extracted.
+- Web: hover tooltips on truncated flow / folder labels in the sidebar (native `title=` attribute).
+- Web: `__setMaxZoom(n)` browser-console hook for live-tuning the per-step playback auto-zoom.
+
+### Changed
+
+- Web: INSPECT panel toggle now anchors to the panel's leading edge regardless of dock side. Right-docked → vertical tab on canvas's right edge; bottom-docked → horizontal tab on canvas's bottom edge.
+- Web: per-step playback auto-zoom defaults to native sprite size (1.0) instead of the previous bbox-fit value; overview/paused mode keeps the natural fit.
+- Web: step gap during playback bumped from 700 ms to 1100 ms so the eye registers the destination node after a delivery before the next step lights up. Pixel travel unchanged at 1800 ms.
+- Web: canvas `maxZoom` restored to 6 (default React Flow wheel-cap) after the auto-zoom override addressed the underlying readability concern.
+- Web: `FlowEditorModal` z-index lifted to 2000 so the editor sits unambiguously above carrots (z 1000) and the inspect panel (z 1001).
+- Web: BookmarkTab z-index lifted to 1002 to remain clickable when its position overlaps the inspect panel's leading edge.
+- Existing examples (`auth-flow`, `order-flow`, `self-loops`, `simple-crud`) migrated to verbose plain-English voice for step `data` labels. Field schemas (`name` / `type` / diff markers) unchanged.
+- `simple-crud.yaml` upgraded to demonstrate both the bare-string and object-form (`{ label, fields }`) step data shapes.
+
+### Fixed
+
+- Web: edit modal could be occluded by a carrot mid-flight or by the inspect panel — z-index bump resolves both.
+- Web: in-page anchor `#install` in the README's "Try it" NOTE now correctly resolves to `#install-options`.
+- Web: `flow.steps` honoring `destroy:` on static nodes (not just `create`'d ones).
+- Web: actor pinning no longer forces an actor to FIRST when another actor feeds into it.
 
 ### Notes
 
 - `get --json` returns the server's `storedFlow` shape (`{meta, flow, version, ...}`) rather than the spec example's `{id, yaml, svg, metadata}`. SVG rendering doesn't exist server-side in v0.1; YAML re-serialization on the client is lossy. Documented inline in `packages/cli/src/get.ts`.
   - `openhop help [command] --json` — emit the full command tree as JSON for agent introspection.
 - CLI: stdin input via `-` on `push`, `patch`, `validate`, `render`.
+- `__setMaxZoom` is a debug-only hook. Safe to call from the console; will be removed in a future release once the default value (1.0) is fully validated.
 
 ## [0.1.0] - 2026-04-26
 
@@ -44,5 +75,6 @@ Initial public release.
 - GitHub Actions CI: lint, format check, typecheck, build, test, coverage, npm audit, gitleaks, CodeQL.
 - Issue and pull request templates; Dependabot configuration.
 
-[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.2.0
 [0.1.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.1.0
