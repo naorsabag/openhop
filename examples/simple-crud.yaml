@@ -16,15 +16,38 @@ flow:
       type: database
 
   steps:
+    # Step data has two forms: a bare string (just the narration) and
+    # an object with `label:` + structured `fields:`. The string form
+    # below is the simplest; the next step shows the full object form
+    # with fields so the renderer's tooltip lists each field, type,
+    # and any add/remove/change diff markers.
     - from: client
       to: api
       data: The client submits a new item with its name and quantity to the REST API.
     - from: api
       to: db
-      data: The API translates the incoming request into an insert and writes a new row.
+      data:
+        label: The API translates the incoming request into a database insert and writes a new row to the items table.
+        fields:
+          - name: name
+            type: string
+          - name: quantity
+            type: int
+          - name: created_at
+            type: datetime
+            added: true
     - from: db
       to: api
-      data: The database returns the newly created row along with its generated identifier.
+      data:
+        label: The database returns the newly created row along with its generated identifier so the API can echo it back to the caller.
+        fields:
+          - name: id
+            type: int
+            added: true
+          - name: name
+            type: string
+          - name: quantity
+            type: int
     - from: api
       to: client
-      data: The API confirms back to the client that the item was created successfully.
+      data: The API confirms back to the client that the item was created successfully and returns the new item's ID.

@@ -40,6 +40,7 @@ Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match w
 | "diagram a minimal CRUD service"                          | `examples/simple-crud.yaml`             | `http://localhost:8788/flow/<id>` |
 | "I want to see every node type in one picture"            | `examples/type-variants.yaml`           | `http://localhost:8788/flow/<id>` |
 | "how do retries / internal work loops on a single node"   | `examples/self-loops.yaml`              | `http://localhost:8788/flow/<id>` |
+| "show me two things happening at the same time"           | `examples/parallel.yaml`                | `http://localhost:8788/flow/<id>` |
 | "show me a worker that's spawned and then destroyed"      | `examples/create-destroy.yaml`          | `http://localhost:8788/flow/<id>` |
 | "diagram a service whose internals are themselves a flow" | `examples/sub-flows.yaml`               | `http://localhost:8788/flow/<id>` |
 | "visualize a three-tier app (browser → API → DB)"         | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
@@ -323,7 +324,7 @@ Each node type has common real-world variants. Use them to choose an accurate `l
 Either a move step, parallel, create, or destroy:
 
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
-- Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick. Each sub-step is itself a move (`from`/`to`/`data`). See [`examples/self-loops.yaml`](../../examples/self-loops.yaml) and [`examples/order-flow.yaml`](../../examples/order-flow.yaml) for in-context use.
+- Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick. Each sub-step is itself a move (`from`/`to`/`data`). See [`examples/parallel.yaml`](../../examples/parallel.yaml) for an isolated demo and [`examples/self-loops.yaml`](../../examples/self-loops.yaml) / [`examples/order-flow.yaml`](../../examples/order-flow.yaml) for in-context use.
 
   ```yaml
   - parallel:
