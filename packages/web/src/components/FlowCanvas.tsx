@@ -6,7 +6,6 @@ import {
   Controls,
   Panel,
   useReactFlow,
-  useStoreApi,
   type NodeTypes,
   type EdgeTypes,
   type Node,
@@ -124,25 +123,23 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
-  // Live-tunable maxZoom for the canvas. State drives the JSX prop;
-  // we also dispatch into the React Flow store directly because v12's
-  // prop-reactivity for maxZoom didn't update d3-zoom's scaleExtent on
-  // its own in this app's setup.
-  // Exposed on `window.__setMaxZoom` for browser-console tuning.
-  const storeApi = useStoreApi()
-  const [maxZoom, setMaxZoomState] = useState<number>(4)
+  // Live-tunable cap on the per-step auto-zoom that fires during
+  // playback (the moveTo() call in the focus useEffect below). Exposed
+  // on `window.__setMaxZoom` for browser-console tuning. Clearing
+  // lastFocusKeyRef forces the focus effect to re-apply on the next
+  // render so the new cap lands immediately on the current step.
+  const [autoZoomMax, setAutoZoomMax] = useState<number>(1.4)
   useEffect(() => {
     window.__setMaxZoom = (n: number) => {
-      setMaxZoomState(n)
-      const state = storeApi.getState() as { setMaxZoom?: (z: number) => void }
-      state.setMaxZoom?.(n)
+      setAutoZoomMax(n)
+      lastFocusKeyRef.current = ''
       // eslint-disable-next-line no-console
-      console.log('[openhop] maxZoom =', n)
+      console.log('[openhop] auto-zoom max =', n)
     }
     return () => {
       delete window.__setMaxZoom
     }
-  }, [storeApi])
+  }, [])
 
   // Playback speed multiplier. The animation hook reads the live value
   // off `window.__flowSpeed` each tick, so updating the global is what
@@ -415,7 +412,7 @@ function FlowCanvasInner({
     )
     if (focusNodes.length === 0) return
     lastFocusKeyRef.current = focusKey
-    moveTo(focusNodes, 0.5, 1.8)
+    moveTo(focusNodes, 0.5, autoZoomMax)
   }, [
     playing,
     animState.currentStepIndex,
@@ -423,6 +420,7 @@ function FlowCanvasInner({
     animState.activeToIds,
     baseNodes,
     reactFlow,
+    autoZoomMax,
     // paneResizeTick: re-runs this effect after a sidebar/inspector
     // toggle so the camera re-locks onto the active step instead of
     // staying at the overview fitToPane() applied.
@@ -777,7 +775,7 @@ function FlowCanvasInner({
         fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
         minZoom={0.1}
-        maxZoom={maxZoom}
+        maxZoom={6}
       >
         <Background variant={BackgroundVariant.Lines} gap={32} size={1} color="#1F3E2F" />
         <Controls
