@@ -31,12 +31,15 @@
     "skills"
   ],
   "scripts": {
+    "sync:version": "node scripts/sync-version.mjs",
+    "prestart": "npm run sync:version",
     "start": "tsx src/index.ts",
+    "pretypecheck": "npm run sync:version",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "test:cli-contract": "vitest run __tests__/contract.test.ts",
-    "prebuild": "node scripts/sync-version.mjs",
+    "prebuild": "npm run sync:version",
     "build": "tsc --noEmit && esbuild src/index.ts --bundle --platform=node --format=esm --external:commander --external:yaml --external:zod --external:@openhop/server --external:@openhop/web --external:fastify --external:@fastify/static --external:@fastify/http-proxy --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
     "prepack": "npm run build && rm -rf skills && cp -r ../../skills ./skills"
   },
