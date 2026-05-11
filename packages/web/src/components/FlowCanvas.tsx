@@ -123,6 +123,21 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
+  // Live-tunable maxZoom for the canvas. Lives as state so changing it
+  // triggers a re-render and React Flow picks up the new scaleExtent.
+  // Exposed on `window.__setMaxZoom` for browser-console tuning.
+  const [maxZoom, setMaxZoomState] = useState<number>(4)
+  useEffect(() => {
+    window.__setMaxZoom = (n: number) => {
+      setMaxZoomState(n)
+      // eslint-disable-next-line no-console
+      console.log('[openhop] maxZoom =', n)
+    }
+    return () => {
+      delete window.__setMaxZoom
+    }
+  }, [])
+
   // Playback speed multiplier. The animation hook reads the live value
   // off `window.__flowSpeed` each tick, so updating the global is what
   // actually affects pacing — local state just drives the button label.
@@ -756,7 +771,7 @@ function FlowCanvasInner({
         fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
         minZoom={0.1}
-        maxZoom={4}
+        maxZoom={maxZoom}
       >
         <Background variant={BackgroundVariant.Lines} gap={32} size={1} color="#1F3E2F" />
         <Controls

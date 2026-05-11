@@ -11,6 +11,8 @@ declare global {
   interface Window {
     /** Test/debug hook: scales animation speed (default 1, e.g. 4 for 4× faster). */
     __flowSpeed?: number
+    /** Test/debug hook: set the canvas's max zoom from the browser console. */
+    __setMaxZoom?: (n: number) => void
   }
 }
 
