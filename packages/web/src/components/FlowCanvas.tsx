@@ -123,18 +123,20 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
-  // Live-tunable cap on the per-step auto-zoom that fires during
-  // playback (the moveTo() call in the focus useEffect below). Exposed
-  // on `window.__setMaxZoom` for browser-console tuning. Clearing
-  // lastFocusKeyRef forces the focus effect to re-apply on the next
-  // render so the new cap lands immediately on the current step.
-  const [autoZoomMax, setAutoZoomMax] = useState<number>(1.4)
+  // Live-tunable override for the per-step auto-zoom that fires during
+  // playback. The default (null) preserves the bbox-fit calculation in
+  // moveTo(); setting a number via `window.__setMaxZoom` forces the
+  // zoom to that exact level on the next focus apply, bypassing the
+  // natural fit (so passing 0.3 zooms WAY out even when the natural
+  // fit was already 0.435, etc.). Clearing lastFocusKeyRef makes the
+  // value land on the current step on the next render.
+  const [autoZoomOverride, setAutoZoomOverride] = useState<number | null>(null)
   useEffect(() => {
     window.__setMaxZoom = (n: number) => {
-      setAutoZoomMax(n)
+      setAutoZoomOverride(n)
       lastFocusKeyRef.current = ''
       // eslint-disable-next-line no-console
-      console.log('[openhop] auto-zoom max =', n)
+      console.log('[openhop] auto-zoom override =', n)
     }
     return () => {
       delete window.__setMaxZoom
@@ -390,7 +392,13 @@ function FlowCanvasInner({
       const { minX, minY, maxX, maxY } = computeBbox(nodes)
       const contentW = maxX - minX
       const contentH = maxY - minY
-      const zoom = Math.min(paneW / (contentW * (1 + pad)), paneH / (contentH * (1 + pad)), maxZoom)
+      const naturalZoom = Math.min(
+        paneW / (contentW * (1 + pad)),
+        paneH / (contentH * (1 + pad)),
+        maxZoom
+      )
+      const zoom =
+        autoZoomOverride != null ? Math.max(0.1, Math.min(6, autoZoomOverride)) : naturalZoom
       reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
     }
 
@@ -412,7 +420,7 @@ function FlowCanvasInner({
     )
     if (focusNodes.length === 0) return
     lastFocusKeyRef.current = focusKey
-    moveTo(focusNodes, 0.5, autoZoomMax)
+    moveTo(focusNodes, 0.5, 1.8)
   }, [
     playing,
     animState.currentStepIndex,
@@ -420,7 +428,7 @@ function FlowCanvasInner({
     animState.activeToIds,
     baseNodes,
     reactFlow,
-    autoZoomMax,
+    autoZoomOverride,
     // paneResizeTick: re-runs this effect after a sidebar/inspector
     // toggle so the camera re-locks onto the active step instead of
     // staying at the overview fitToPane() applied.
