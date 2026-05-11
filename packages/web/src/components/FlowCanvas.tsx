@@ -123,20 +123,22 @@ function FlowCanvasInner({
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
   const reactFlow = useReactFlow()
 
-  // Live-tunable override for the per-step auto-zoom that fires during
-  // playback. The default (null) preserves the bbox-fit calculation in
-  // moveTo(); setting a number via `window.__setMaxZoom` forces the
-  // zoom to that exact level on the next focus apply, bypassing the
-  // natural fit (so passing 0.3 zooms WAY out even when the natural
-  // fit was already 0.435, etc.). Clearing lastFocusKeyRef makes the
-  // value land on the current step on the next render.
-  const [autoZoomOverride, setAutoZoomOverride] = useState<number | null>(null)
+  // Per-step auto-zoom level applied during playback. The bbox-fit
+  // calc in moveTo() routinely zoomed further out than felt right for
+  // tightly-laid-out flows; a fixed override at 1.0 (= native sprite
+  // size, no upscale/downscale) reads much better. Overview (paused)
+  // still uses the natural fit.
+  //
+  // Live-tunable via `window.__setMaxZoom(n)` for browser-console
+  // tuning — clearing lastFocusKeyRef makes the new value land on the
+  // current step immediately.
+  const [autoZoomOverride, setAutoZoomOverride] = useState<number | null>(1.0)
   useEffect(() => {
     window.__setMaxZoom = (n: number) => {
       setAutoZoomOverride(n)
       lastFocusKeyRef.current = ''
       // eslint-disable-next-line no-console
-      console.log('[openhop] auto-zoom override =', n)
+      console.log('[openhop] auto-zoom =', n)
     }
     return () => {
       delete window.__setMaxZoom
@@ -387,7 +389,12 @@ function FlowCanvasInner({
       }
     }
 
-    const moveTo = (nodes: typeof baseNodes, pad: number, maxZoom: number) => {
+    const moveTo = (
+      nodes: typeof baseNodes,
+      pad: number,
+      maxZoom: number,
+      override: number | null
+    ) => {
       if (nodes.length === 0) return
       const { minX, minY, maxX, maxY } = computeBbox(nodes)
       const contentW = maxX - minX
@@ -397,15 +404,14 @@ function FlowCanvasInner({
         paneH / (contentH * (1 + pad)),
         maxZoom
       )
-      const zoom =
-        autoZoomOverride != null ? Math.max(0.1, Math.min(6, autoZoomOverride)) : naturalZoom
+      const zoom = override != null ? Math.max(0.1, Math.min(6, override)) : naturalZoom
       reactFlow.setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 500 })
     }
 
     if (!playing) {
       if (lastFocusKeyRef.current === '__overview__') return
       lastFocusKeyRef.current = '__overview__'
-      moveTo(baseNodes, 0.3, 1.5)
+      moveTo(baseNodes, 0.3, 1.5, null)
       return
     }
 
@@ -420,7 +426,7 @@ function FlowCanvasInner({
     )
     if (focusNodes.length === 0) return
     lastFocusKeyRef.current = focusKey
-    moveTo(focusNodes, 0.5, 1.8)
+    moveTo(focusNodes, 0.5, 1.8, autoZoomOverride)
   }, [
     playing,
     animState.currentStepIndex,
