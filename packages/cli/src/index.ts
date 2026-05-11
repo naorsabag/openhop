@@ -16,6 +16,7 @@ import {
   logStderr,
 } from './utils.js'
 import { ExitCode } from './exit-codes.js'
+import { VERSION } from './version.js'
 import { registerGet } from './get.js'
 import { registerValidate } from './validate.js'
 import { registerHelpJson } from './help-json.js'
@@ -50,7 +51,7 @@ if (process.argv.includes('--api-version')) {
 
 const program = new Command()
 
-program.name('openhop').description('OpenHop — Data Flow Visualization CLI').version('0.2.0')
+program.name('openhop').description('OpenHop — Data Flow Visualization CLI').version(VERSION)
 
 // --- serve ---
 //
