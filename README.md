@@ -121,8 +121,7 @@ git clone https://github.com/naorsabag/openhop.git
 cd openhop && npm install && npm run dev
 ```
 
-> [!IMPORTANT]
-> **Architecture note — OpenHop v0.1 is local-first.**
+> **OpenHop v0.1 is local-first.**
 > The CLI runs entirely on your machine. There's no hosted backend, no flow
 > storage, no servers we keep running. Sharing today = sharing the YAML file
 > (or the URL-fragment share link from the [hosted playground](https://naorsabag.github.io/openhop/),
