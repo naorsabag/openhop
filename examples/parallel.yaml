@@ -1,0 +1,94 @@
+meta:
+  title: Parallel Fan-out
+  path: examples/parallel
+  description: A checkout handler that fires two independent calls at the same tick — reservation + payment — and waits for both to come back before responding
+
+flow:
+  nodes:
+    - id: client
+      label: Client
+      type: actor
+    - id: api
+      label: API
+      type: endpoint
+    - id: inventory
+      label: Inventory
+      type: service
+    - id: payment
+      label: Stripe
+      type: external
+      icon: "logos:stripe"
+      color: "#635BFF"
+
+  steps:
+    - from: client
+      to: api
+      data:
+        label: The shopper kicks off checkout — the API receives the cart items and a one-time payment token together.
+        fields:
+          - name: items
+            type: "list[CartItem]"
+          - name: card_token
+            type: string
+
+    # Parallel: the API doesn't wait. Both calls leave at the same
+    # tick — inventory reservation and payment authorization fire
+    # together. The single-arm version would serialize them; this
+    # halves the wall-clock for the checkout request.
+    - parallel:
+        - from: api
+          to: inventory
+          data:
+            label: The API asks the inventory service to reserve the items in the cart so they can't be oversold while the payment authorization runs.
+            fields:
+              - name: items
+                type: "list[CartItem]"
+              - name: hold_seconds
+                type: int
+        - from: api
+          to: payment
+          data:
+            label: At the same instant the API asks Stripe to authorize the customer's card for the order total.
+            fields:
+              - name: amount
+                type: float
+              - name: currency
+                type: string
+
+    # Both responses arrive in parallel. The renderer fires the two
+    # pixels concurrently so you can see "neither side was waiting on
+    # the other" at a glance. The API can't respond to the client
+    # until both have landed.
+    - parallel:
+        - from: inventory
+          to: api
+          data:
+            label: Inventory confirms the reservation went through and tells the API how long the hold is valid before the items get released back to general stock.
+            fields:
+              - name: reservation_id
+                type: string
+                added: true
+              - name: expires_at
+                type: datetime
+                added: true
+        - from: payment
+          to: api
+          data:
+            label: Stripe confirms the authorization succeeded and returns the payment identifier the API will reference when the order eventually settles.
+            fields:
+              - name: payment_id
+                type: string
+                added: true
+              - name: status
+                type: string
+                added: true
+
+    - from: api
+      to: client
+      data:
+        label: With both the reservation and the payment authorization in hand, the API responds to the shopper that checkout completed and returns the new order details.
+        fields:
+          - name: order_id
+            type: int
+          - name: total
+            type: float

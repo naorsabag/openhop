@@ -32,7 +32,7 @@ flow:
           - from: validate
             to: enrich
             data:
-              label: validated order
+              label: The validator hands the cleaned-up order to enrichment so missing pricing and tax details can be filled in.
               fields:
                 - name: items
                   type: "list[OrderItem]"
@@ -67,7 +67,7 @@ flow:
     - from: user
       to: api
       data:
-        label: POST /orders
+        label: The shopper submits a new order with their cart items, account ID, and any coupon they're applying.
         fields:
           - name: items
             type: "list[OrderItem]"
@@ -79,7 +79,7 @@ flow:
     - from: api
       to: authz
       data:
-        label: validate session
+        label: The gateway forwards the user's session credentials to the auth service to confirm they're really signed in.
         fields:
           - name: auth_token
             type: string
@@ -89,7 +89,7 @@ flow:
     - from: authz
       to: api
       data:
-        label: auth context
+        label: The auth service confirms the session is valid and hands back the user's roles so the gateway can decide what they're allowed to do.
         fields:
           - name: user_id
             type: int
@@ -103,7 +103,7 @@ flow:
     - from: api
       to: rate-limit
       data:
-        label: rate limit check
+        label: The gateway asks the rate-limit service whether this user has any quota left for placing orders.
         fields:
           - name: user_id
             type: int
@@ -113,7 +113,7 @@ flow:
     - from: rate-limit
       to: api
       data:
-        label: quota approved
+        label: The rate-limit service approves the request and reports how many orders this user can still place in the current window.
         fields:
           - name: remaining_requests
             type: int
@@ -123,7 +123,7 @@ flow:
         - from: api
           to: order-service
           data:
-            label: create order
+            label: The gateway hands the actual order details to the order service so the real processing can begin.
             fields:
               - name: items
                 type: "list[OrderItem]"
@@ -134,7 +134,7 @@ flow:
         - from: authz
           to: order-service
           data:
-            label: auth claims
+            label: At the same time, the auth service forwards the user's verified identity and roles directly to the order service so it doesn't have to re-check.
             fields:
               - name: user_id
                 type: int
@@ -146,7 +146,7 @@ flow:
     - from: api
       to: order-service
       data:
-        label: gateway trace
+        label: The gateway also attaches a trace identifier and the edge region it came from so the order service can correlate logs across the request.
         fields:
           - name: request_id
             type: string
@@ -158,7 +158,7 @@ flow:
     - from: order-service
       to: [db, cache]
       data:
-        label: persist order
+        label: The order service persists the finalized order to Postgres and warms the Redis cache so future status lookups are fast.
         fields:
           - name: order
             type: Order
@@ -172,7 +172,7 @@ flow:
         - from: db
           to: order-service
           data:
-            label: order saved
+            label: Postgres confirms the write and returns the new order's identifier and creation timestamp.
             fields:
               - name: order_id
                 type: int
@@ -183,7 +183,7 @@ flow:
         - from: cache
           to: order-service
           data:
-            label: cache updated
+            label: Redis confirms the cache entry was stored and is ready to serve.
             fields:
               - name: cached
                 type: bool
@@ -191,13 +191,13 @@ flow:
     - from: order-service
       to: payment
       data:
-        - label: charge request
+        - label: The order service asks Stripe to charge the customer's card for the order total.
           fields:
             - name: amount
               type: float
             - name: currency
               type: string
-        - label: order context
+        - label: Alongside the charge, the order service sends the order's context so Stripe can attach it to the transaction for reconciliation later.
           fields:
             - name: order_id
               type: int
@@ -207,7 +207,7 @@ flow:
     - from: payment
       to: order-service
       data:
-        - label: payment result
+        - label: Stripe answers with the result of the charge — the new payment identifier and whether it succeeded.
           fields:
             - name: payment_id
               type: string
@@ -215,7 +215,7 @@ flow:
             - name: status
               type: string
               added: true
-        - label: transaction details
+        - label: Along with the result, Stripe returns the financial breakdown so the merchant knows how much actually landed in their account after fees.
           fields:
             - name: amount
               type: float
@@ -235,7 +235,7 @@ flow:
         label: Audit Log
         type: service
       data:
-        label: log order event
+        label: The order service spins up a temporary audit logger for this specific transaction so the compliance trail can be written without blocking the response.
         fields:
           - name: order_id
             type: int
@@ -252,7 +252,7 @@ flow:
     - from: order-service
       to: events
       data:
-        label: publish order.created
+        label: The order service publishes an "order created" event to the queue so downstream systems like fulfillment, analytics, and email can react asynchronously.
         fields:
           - name: order_id
             type: int
@@ -265,7 +265,7 @@ flow:
     - from: cron
       to: order-service
       data:
-        label: retry stuck orders
+        label: On a fixed schedule, the retry scheduler sweeps the order service for orders that got stuck and asks it to try them again.
         fields:
           - name: since
             type: datetime
@@ -275,7 +275,7 @@ flow:
     - from: order-service
       to: api
       data:
-        label: order response
+        label: The order service tells the gateway the order is done and returns everything the user needs to see — order ID, total, status, and payment reference.
         fields:
           - name: order_id
             type: int
@@ -289,7 +289,7 @@ flow:
     - from: api
       to: user
       data:
-        label: "201 Created"
+        label: The gateway responds to the shopper confirming their order was placed successfully and shows them the order details.
         fields:
           - name: order_id
             type: int

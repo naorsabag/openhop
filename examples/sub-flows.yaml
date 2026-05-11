@@ -32,11 +32,11 @@ flow:
         steps:
           - from: validate
             to: enrich
-            data: clean request
+            data: The validator hands the cleaned-up request off to enrichment so missing fields can be filled in.
           - from: enrich
             to: persist
             data:
-              label: enriched record
+              label: Enrichment passes the fully-populated record to persistence so it can be written to long-term storage.
               fields:
                 - name: items
                   type: list
@@ -51,23 +51,23 @@ flow:
   steps:
     - from: client
       to: api
-      data: POST /orders
+      data: The client submits a new order with the cart items and shipping address.
     # `drilldown: true` auto-opens the sub-flow during playback when
     # the camera lands on this step. Use sparingly — once per flow
     # is usually enough; chained drilldowns get disorienting.
     - from: api
       to: order-service
-      data: validated input
+      data: The API hands the request to the order service for the real processing work.
       drilldown: true
     - from: order-service
       to: db
-      data: persist row
+      data: The order service writes the finalized order to the database.
     - from: db
       to: order-service
-      data: order_id
+      data: The database confirms the write and returns the new order's identifier.
     - from: order-service
       to: api
-      data: 201 Created
+      data: The order service tells the API that the order was placed and returns its ID.
     - from: api
       to: client
-      data: order created
+      data: The API confirms back to the client that their order was created successfully.
