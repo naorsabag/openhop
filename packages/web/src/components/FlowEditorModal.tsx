@@ -166,7 +166,7 @@ export function FlowEditorModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 100,
+        zIndex: 2000,
       }}
     >
       <div
