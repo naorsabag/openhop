@@ -53,22 +53,12 @@ sub-flow.
 ## Try it in 30 seconds
 
 ```bash
-npx openhop demo
-```
-
-That's it. The command:
-
-1. Spawns the API + web UI locally (no install state, no signup)
-2. Pushes a canonical OAuth flow
-3. Opens your browser at the live animation
-
-Liked what you saw? Install the skill so your own agent can author flows from your codebase:
-
-```bash
 npx openhop init
 ```
 
-Then restart your agent and ask:
+**That's it!**
+
+Now restart your agent so it picks up the new skill, and ask:
 
 > "Walk me through the main flow of this codebase."
 
