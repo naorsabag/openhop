@@ -1,0 +1,73 @@
+meta:
+  title: Sub-flows
+  path: examples/sub-flows
+  description: A service node with a nested flow — click "+" on the service to drill in
+
+flow:
+  nodes:
+    - id: client
+      label: Client
+      type: actor
+    - id: api
+      label: API
+      type: endpoint
+
+    # Any node can carry a nested `flow:` block. The renderer shows
+    # a "+" badge on the node; clicking it zooms the canvas into
+    # this sub-flow's nodes + steps. Infinite depth supported.
+    - id: order-service
+      label: Order Service
+      type: service
+      flow:
+        nodes:
+          - id: validate
+            label: Validate
+            type: service
+          - id: enrich
+            label: Enrich
+            type: service
+          - id: persist
+            label: Persist
+            type: service
+        steps:
+          - from: validate
+            to: enrich
+            data: clean request
+          - from: enrich
+            to: persist
+            data:
+              label: enriched record
+              fields:
+                - name: items
+                  type: list
+                - name: user_id
+                  type: int
+                  added: true
+
+    - id: db
+      label: Postgres
+      type: database
+
+  steps:
+    - from: client
+      to: api
+      data: POST /orders
+    # `drilldown: true` auto-opens the sub-flow during playback when
+    # the camera lands on this step. Use sparingly — once per flow
+    # is usually enough; chained drilldowns get disorienting.
+    - from: api
+      to: order-service
+      data: validated input
+      drilldown: true
+    - from: order-service
+      to: db
+      data: persist row
+    - from: db
+      to: order-service
+      data: order_id
+    - from: order-service
+      to: api
+      data: 201 Created
+    - from: api
+      to: client
+      data: order created

@@ -33,14 +33,16 @@ Activate this skill on prompts like:
 
 Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match what the validator already accepts. The URL comes from the `url` field of `openhop push <file> --json`.
 
-| Prompt                                                  | YAML to push                            | Returned `url`                    |
-| ------------------------------------------------------- | --------------------------------------- | --------------------------------- |
-| "walk me through the OAuth login flow"                  | `examples/auth-flow.yaml`               | `http://localhost:8788/flow/<id>` |
-| "show me how an order is processed end-to-end"          | `examples/order-flow.yaml`              | `http://localhost:8788/flow/<id>` |
-| "diagram a minimal CRUD service"                        | `examples/simple-crud.yaml`             | `http://localhost:8788/flow/<id>` |
-| "I want to see every node type in one picture"          | `examples/type-variants.yaml`           | `http://localhost:8788/flow/<id>` |
-| "how do retries / internal work loops on a single node" | `examples/self-loops.yaml`              | `http://localhost:8788/flow/<id>` |
-| "visualize a three-tier app (browser → API → DB)"       | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
+| Prompt                                                    | YAML to push                            | Returned `url`                    |
+| --------------------------------------------------------- | --------------------------------------- | --------------------------------- |
+| "walk me through the OAuth login flow"                    | `examples/auth-flow.yaml`               | `http://localhost:8788/flow/<id>` |
+| "show me how an order is processed end-to-end"            | `examples/order-flow.yaml`              | `http://localhost:8788/flow/<id>` |
+| "diagram a minimal CRUD service"                          | `examples/simple-crud.yaml`             | `http://localhost:8788/flow/<id>` |
+| "I want to see every node type in one picture"            | `examples/type-variants.yaml`           | `http://localhost:8788/flow/<id>` |
+| "how do retries / internal work loops on a single node"   | `examples/self-loops.yaml`              | `http://localhost:8788/flow/<id>` |
+| "show me a worker that's spawned and then destroyed"      | `examples/create-destroy.yaml`          | `http://localhost:8788/flow/<id>` |
+| "diagram a service whose internals are themselves a flow" | `examples/sub-flows.yaml`               | `http://localhost:8788/flow/<id>` |
+| "visualize a three-tier app (browser → API → DB)"         | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
 
 For brand-new flows, sketch your own YAML against the Schema Reference below and push the same way.
 
@@ -267,7 +269,7 @@ flow:
 - `type`: **closed enum, exactly one of**: `actor | endpoint | auth | database | external | cache | queue | service | docker | k8s | scheduler | custom`. Anything else fails validation. Default if omitted: `service`.
 - `icon`: Iconify icon ID (e.g. `"logos:postgresql"`) — overlays on top of the node's pixel art. Works on any `type`, not just `custom`. Browse: https://icon-sets.iconify.design/logos/
 - `color`: hex color
-- `flow`: nested sub-flow { nodes, steps } — makes node expandable with +
+- `flow`: nested sub-flow `{ nodes, steps }` — makes the node expandable; the renderer shows a "+" badge and clicking zooms into the inner flow. Infinite depth supported (sub-flows can themselves contain nodes with sub-flows). Pair with `drilldown: true` on a step targeting the parent node to auto-open the sub-flow on playback. See [`examples/sub-flows.yaml`](../../examples/sub-flows.yaml).
 
 > **Critical: types are categories, labels are names.** The 12 `type` values are how the renderer knows which sprite + color to draw (database = barrel, cache = lightning, etc.). The `label` is what the user reads on the node. **Never** put a variant name (like `redis`, `oauth`, `stripe`) into `type` — that's a label. Put it in `label`, and use the matching category in `type` (`cache`, `auth`, `external`).
 >
@@ -297,7 +299,7 @@ Each node type has common real-world variants. Use them to choose an accurate `l
 Either a move step, parallel, create, or destroy:
 
 - Move: `{ from, to (string or string[]), data (string or object), drilldown (bool) }`
-- Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick.
+- Parallel: `{ parallel: [move steps] }` (min 2). All sub-steps fire **concurrently** on playback — pixels travel at the same time. Use this when two or more transfers logically happen together, e.g. an orchestrator fans out work to several services at once, or two upstream nodes deliver payloads to the same target in the same tick. Each sub-step is itself a move (`from`/`to`/`data`). See [`examples/self-loops.yaml`](../../examples/self-loops.yaml) and [`examples/order-flow.yaml`](../../examples/order-flow.yaml) for in-context use.
 
   ```yaml
   - parallel:
@@ -309,8 +311,29 @@ Either a move step, parallel, create, or destroy:
         data: { label: auth context, fields: [{ name: user_id, type: int }] }
   ```
 
-- Create: `{ create: "node-id", from: "creator-node", node: { id, label, type?, icon?, color? }, data? }`
-- Destroy: `{ destroy: "node-id" }`
+- Create: `{ create: "node-id", from: "creator-node", node: { id, label, type?, icon?, color? }, data? }`. Use when a node is **brought into existence** by another node mid-flow — a dispatcher spawning a worker, a request handler instantiating a session object, a service allocating a temporary buffer. The node **does NOT need to be listed in the top-level `flow.nodes`**; `create:` adds it to the canvas at this step's tick, animating a spawn pixel from `from` into the new node. Subsequent steps may reference the new id like any other node.
+
+  ```yaml
+  - create: worker
+    from: dispatcher
+    node:
+      id: worker
+      label: Worker
+      type: service
+    data:
+      label: spawn
+      fields:
+        - name: job_id
+          type: string
+  ```
+
+- Destroy: `{ destroy: "node-id" }`. Use when a node should **disappear from the canvas** after this step — the ephemeral counterpart of `create:`. Common pairings: a worker reporting result then terminating, a session lifecycle ending, a temporary buffer being released. The destroyed node fades out; any subsequent step that references it is invalid.
+
+  ```yaml
+  - destroy: worker
+  ```
+
+  Pair `create:` and `destroy:` to model **lifecycle**: a node exists only between its create step and its destroy step. See [`examples/create-destroy.yaml`](../../examples/create-destroy.yaml) for a complete spawn-work-terminate flow.
 
 ### Data
 
