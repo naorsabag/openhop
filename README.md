@@ -5,7 +5,8 @@
 </p>
 
 <p align="center">
-  Animated diagrams your AI agent can write.
+  <b>Your AI walks you through your code, one step at a time.</b><br/>
+  Animated, multi-level data flows — described in YAML, drawn by your coding agent.
 </p>
 
 <p align="center">
@@ -30,7 +31,7 @@
 </p>
 
 <p align="center">
-  <a href="#try-it-in-60-seconds">Quickstart</a> ·
+  <a href="#try-it-in-30-seconds">Quickstart</a> ·
   <a href="#install-options">Install</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
@@ -49,22 +50,32 @@ You ask in plain English; your agent writes the flow as YAML and pushes it; Open
 pixels traveling between components on a pixel-art canvas. Click any node to drill into its
 sub-flow.
 
-## Try it in 60 seconds
+## Try it in 30 seconds
+
+```bash
+npx openhop demo
+```
+
+That's it. The command:
+
+1. Spawns the API + web UI locally (no install state, no signup)
+2. Pushes a canonical OAuth flow
+3. Opens your browser at the live animation
+
+Liked what you saw? Install the skill so your own agent can author flows from your codebase:
 
 ```bash
 npx openhop init
 ```
 
-**That's it!**
-
-Now restart your agent so it picks up the new skill, and ask:
+Then restart your agent and ask:
 
 > "Walk me through the main flow of this codebase."
 
 The agent generates the YAML, pushes it, and returns a URL with the animation playing.
 
 > [!NOTE]
-> `npx openhop init` auto-detects Claude Code, Cursor, Windsurf, Cline, and Continue. For other clients, see [Install](#install).
+> `npx openhop init` auto-detects Claude Code, Cursor, Windsurf, Cline, and Continue. For other clients, see [Install](#install-options).
 
 ## Features
 
