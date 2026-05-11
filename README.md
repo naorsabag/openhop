@@ -27,7 +27,7 @@
 
 <p align="center">
   <a href="#try-it-in-60-seconds">Quickstart</a> ·
-  <a href="#install">Install</a> ·
+  <a href="#install-options">Install</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a>
