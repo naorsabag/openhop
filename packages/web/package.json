@@ -1,6 +1,6 @@
 {
   "name": "@openhop/web",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0",
   "description": "OpenHop web UI. Prebuilt static assets — animated data-flow renderer.",
   "repository": {
     "type": "git",
