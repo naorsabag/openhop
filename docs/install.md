@@ -39,25 +39,13 @@ After OpenSkills places the skill, also run `npx openhop init` so the CLI
 machinery the skill calls into is installed locally. `init` skips the skill
 copy if OpenSkills already wrote it.
 
-## Path C — Claude Code `/plugin` slash-install
+## Path C — plugin install
 
 ```text
 /plugin install naorsabag/openhop
 ```
 
-Claude Code-specific **syntax**, not "Claude Code-only ecosystem". Cursor,
-Windsurf, and others have their own plugin / marketplace systems too — they
-just don't expose an ad-hoc `/plugin install <github-repo>` slash command:
-
-- **Cursor**: Settings → Marketplace, team marketplaces (via Dashboard →
-  Settings → Plugins), or [cursor.directory](https://cursor.directory). MCP
-  servers also install via `cursor://` deeplinks. No ad-hoc repo slash
-  install. For OpenHop, **Path A above is the native install**, which
-  writes to `~/.cursor/skills/openhop/`.
-- **Windsurf**: native skills surface; covered by Path A.
-- **Cline**: native skills surface (with a one-time UI toggle); covered by
-  Path A.
-- **Everyone else**: Path B (OpenSkills).
+…or from your agent GUI.
 
 ## Manual / advisory clients
 

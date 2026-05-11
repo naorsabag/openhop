@@ -94,13 +94,13 @@ npx openhop init
 npx openskills install naorsabag/openhop
 ```
 
-**Path C — Claude Code `/plugin` slash-install**
+**Path C — plugin install**
 
 ```text
 /plugin install naorsabag/openhop
 ```
 
-Claude Code-specific syntax. Cursor has its own plugin marketplace (Settings → Marketplace, or cursor.directory) — the install paths there are GUI-driven rather than ad-hoc-repo slash commands; reach OpenHop via Path A above.
+…or from your agent GUI.
 
 **Want to start the server yourself?**
 
