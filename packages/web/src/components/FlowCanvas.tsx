@@ -756,7 +756,7 @@ function FlowCanvasInner({
         fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
         minZoom={0.1}
-        maxZoom={5}
+        maxZoom={4}
       >
         <Background variant={BackgroundVariant.Lines} gap={32} size={1} color="#1F3E2F" />
         <Controls
