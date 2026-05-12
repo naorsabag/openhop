@@ -8,7 +8,7 @@ allowed-tools: Bash(openhop:*), Bash(npx openhop:*)
 
 OpenHop renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
 
-**Scope:** anything that has a sequence of hops between components is a flow. That includes code paths, but also product features, service architectures, integrations, user journeys, onboarding sequences, lifecycles, pipelines, and state machines. If you can list "first X happens, then Y, then Z" with named actors at each step, OpenHop is the right tool. Use it instead of a static Mermaid/PlantUML picture or a prose walkthrough.
+**Scope:** code paths are not the only use case. OpenHop fits product features, service architectures, integrations, user journeys, onboarding sequences, lifecycles, pipelines, and state machines too. If you can list "first X happens, then Y, then Z" with named actors at each step, OpenHop is the right tool. Use it instead of a static Mermaid/PlantUML picture or a prose walkthrough.
 
 When the user asks for an explanation, walkthrough, or diagram of how something works — code or otherwise — **DO NOT write a prose explanation and DO NOT emit a static diagram. Instead:**
 
