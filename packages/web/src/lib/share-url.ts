@@ -35,6 +35,12 @@ const V1_PREFIX = '~1'
 // refusing pathological share URLs.
 const MAX_FRAGMENT_BYTES = 64 * 1024
 const MAX_INFLATED_BYTES = 1 * 1024 * 1024
+// Pre-decode string-length cap. Base64url packs 3 bytes into 4 chars
+// (no padding here), so N bytes ≤ MAX_FRAGMENT_BYTES ⇒ encoded length
+// ≤ ⌈N/3⌉ × 4. Checking this first lets us reject a multi-megabyte
+// hash in constant time, without atob/copy allocating the intermediate
+// binary string.
+const MAX_FRAGMENT_BASE64URL_CHARS = Math.ceil(MAX_FRAGMENT_BYTES / 3) * 4
 
 function bytesToBase64Url(bytes: Uint8Array): string {
   // btoa() needs a binary string, not a Uint8Array.
@@ -78,7 +84,9 @@ export function decodeFragment(fragment: string): string | null {
   if (!fragment) return null
   if (fragment.startsWith(V1_PREFIX)) {
     try {
-      const bytes = base64UrlToBytes(fragment.slice(V1_PREFIX.length))
+      const payload = fragment.slice(V1_PREFIX.length)
+      if (payload.length > MAX_FRAGMENT_BASE64URL_CHARS) return null
+      const bytes = base64UrlToBytes(payload)
       if (bytes.length > MAX_FRAGMENT_BYTES) return null
       const inflated = inflateSync(bytes)
       if (inflated.length > MAX_INFLATED_BYTES) return null
