@@ -30,8 +30,8 @@
   <a href="#try-it-in-30-seconds">Quickstart</a> ·
   <a href="#live-demo">Live demo</a> ·
   <a href="#token-use">Token use</a> ·
-  <a href="#install-options">Install</a> ·
   <a href="#sharing-flows">Sharing</a> ·
+  <a href="#install-options">Install</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a> ·
@@ -84,6 +84,12 @@ No MCP server — nothing sits in your context all session. It's an on-demand sk
 
 Flows are authored in **compact YAML**, not JSON, so the payload the agent emits stays small: **~100 tokens per step** (a 10-step flow ≈ 1,000 tokens of output).
 
+## Sharing flows
+
+OpenHop is local-first — no hosted backend, no flow storage. To share a flow, open the [playground](https://naorsabag.github.io/openhop/), paste your YAML and hit **Save**: the page compresses the flow into the URL hash and copies a self-contained link to your clipboard. Nothing is uploaded — URL fragments stay in the browser.
+
+For flows too large to fit in a URL, share the YAML file directly.
+
 ## Install Options
 
 OpenHop is a skill — a `SKILL.md` file your AI agent reads to learn how to render flows. **Installing the skill is the only required step.** The CLI + server (which actually paints the pixels) ship in the same npm package and the agent boots them automatically the first time you ask for a flow.
@@ -128,12 +134,6 @@ npx openhop demo
 git clone https://github.com/naorsabag/openhop.git
 cd openhop && npm install && npm run dev
 ```
-
-## Sharing flows
-
-OpenHop is local-first — no hosted backend, no flow storage. To share a flow, open the [playground](https://naorsabag.github.io/openhop/), paste your YAML and hit **Save**: the page compresses the flow into the URL hash and copies a self-contained link to your clipboard. Nothing is uploaded — URL fragments stay in the browser.
-
-For flows too large to fit in a URL, share the YAML file directly.
 
 ## Use cases
 
