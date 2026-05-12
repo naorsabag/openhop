@@ -230,7 +230,12 @@ function App() {
   // (Tailwind `md` breakpoint, 768px) so the canvas gets full width on
   // phones; on desktop it stays open as before.
   const [inspectorOpen, setInspectorOpen] = useState(() => !isMobileViewport())
-  const [inspectorSide, setInspectorSide] = useState<DockSide>('right')
+  // Mobile defaults to bottom-dock so when the user opens the inspector
+  // from its bookmark tab, the canvas keeps full width above. Desktop
+  // keeps the right-dock it's always had.
+  const [inspectorSide, setInspectorSide] = useState<DockSide>(() =>
+    isMobileViewport() ? 'bottom' : 'right'
+  )
   const [inspectorSize, setInspectorSize] = useState(320)
   // Sidebar (flow tree) collapsed/expanded state. Bookmark tab on the
   // left edge of the canvas toggles it. Same mobile-default rule as
