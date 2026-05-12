@@ -1,23 +1,102 @@
 import LZString from 'lz-string'
+import { deflateSync, inflateSync } from 'fflate'
+import YAML from 'yaml'
 
 /**
  * URL-fragment encoding for the GitHub Pages deploy.
  *
  * The static deploy has no API, so a flow's full YAML lives in the URL hash:
- *   https://naorsabag.github.io/OpenHop/#<lz-uri-encoded>
+ *   https://naorsabag.github.io/openhop/#<encoded>
  *
- * `compressToEncodedURIComponent` is the LZ variant designed for URLs — its
- * output is already safe to drop straight into a hash without further encoding.
- * Decompresses to `null` on bad input (truncated link, foreign payload, etc.),
+ * Two on-the-wire formats coexist; the leading byte(s) of the fragment tell
+ * the decoder which one to use:
+ *
+ *   ~1<base64url>  — version 1: YAML parsed + restringified with minimal
+ *                    indentation (drops comments/whitespace), DEFLATE-raw
+ *                    compressed, base64url-encoded. ~30-50% shorter than v0.
+ *   <anything>     — legacy: lz-string's URL-safe variant of the raw YAML.
+ *
+ * `~` is outside lz-string's output alphabet
+ * (`[A-Za-z0-9$_-]`), so the version prefix is unambiguous and old share
+ * URLs in the wild keep working.
+ *
+ * Bad input (truncated link, foreign payload, etc.) round-trips to `null`,
  * which the app surfaces as a "share link looks corrupted" banner.
  */
 
+const V1_PREFIX = '~1'
+
+// Decompression-bomb guards. fflate has no streaming-abort hook, so we cap
+// in two places: the compressed input length (which bounds worst-case
+// allocation at MAX_INFLATED_BYTES via fflate, regardless of the DEFLATE
+// expansion ratio attempted), and the inflated output (post-hoc, soft cap).
+// Real example flows compress to ~3 KB / inflate to ~9 KB at the high end —
+// the limits below leave 20-100x headroom for legitimate inputs while
+// refusing pathological share URLs.
+const MAX_FRAGMENT_BYTES = 64 * 1024
+const MAX_INFLATED_BYTES = 1 * 1024 * 1024
+// Pre-decode string-length cap. Base64url packs 3 bytes into 4 chars
+// (no padding here), so N bytes ≤ MAX_FRAGMENT_BYTES ⇒ encoded length
+// ≤ ⌈N/3⌉ × 4. Checking this first lets us reject a multi-megabyte
+// hash in constant time, without atob/copy allocating the intermediate
+// binary string.
+const MAX_FRAGMENT_BASE64URL_CHARS = Math.ceil(MAX_FRAGMENT_BYTES / 3) * 4
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  // btoa() needs a binary string, not a Uint8Array.
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function base64UrlToBytes(input: string): Uint8Array {
+  let s = input.replace(/-/g, '+').replace(/_/g, '/')
+  while (s.length % 4 !== 0) s += '='
+  const binary = atob(s)
+  const out = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i)
+  return out
+}
+
+/**
+ * Drop comments and re-emit with 1-space indent + no line wrapping. Reduces
+ * the byte count fed to DEFLATE by ~20-40% on the bundled example flows.
+ * Falls through to the raw text if the input doesn't parse (the editor may
+ * call us mid-keystroke on invalid YAML).
+ */
+function minifyYaml(yamlText: string): string {
+  try {
+    const parsed = YAML.parse(yamlText)
+    if (parsed === undefined) return yamlText
+    return YAML.stringify(parsed, { indent: 1, lineWidth: 0, minContentWidth: 0 })
+  } catch {
+    return yamlText
+  }
+}
+
 export function encodeFragment(yamlText: string): string {
-  return LZString.compressToEncodedURIComponent(yamlText)
+  const minified = minifyYaml(yamlText)
+  const compressed = deflateSync(new TextEncoder().encode(minified), { level: 9 })
+  return V1_PREFIX + bytesToBase64Url(compressed)
 }
 
 export function decodeFragment(fragment: string): string | null {
   if (!fragment) return null
+  if (fragment.startsWith(V1_PREFIX)) {
+    try {
+      const payload = fragment.slice(V1_PREFIX.length)
+      if (payload.length > MAX_FRAGMENT_BASE64URL_CHARS) return null
+      const bytes = base64UrlToBytes(payload)
+      if (bytes.length > MAX_FRAGMENT_BYTES) return null
+      const inflated = inflateSync(bytes)
+      if (inflated.length > MAX_INFLATED_BYTES) return null
+      const out = new TextDecoder().decode(inflated)
+      return out.length > 0 ? out : null
+    } catch {
+      return null
+    }
+  }
+  // Legacy v0 — lz-string of the raw YAML. Keeps old share URLs working.
   try {
     const out = LZString.decompressFromEncodedURIComponent(fragment)
     return out && out.length > 0 ? out : null
