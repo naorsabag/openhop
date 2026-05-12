@@ -39,7 +39,7 @@
 </p>
 
 <p align="center">
-  <b>Local-first. Your code never leaves your machine. No telemetry.</b>
+  <b>Local-first. Token-light. Your code never leaves your machine. No telemetry.</b>
 </p>
 
 ---
