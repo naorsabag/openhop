@@ -80,17 +80,9 @@ Click and play, no install required: **<https://naorsabag.github.io/openhop/>**
 
 ## Token use
 
-The agent emits YAML, not prose — so a "walk me through this codebase" answer is small enough to keep in context across many turns instead of evicting the rest of your conversation.
+No MCP server, so nothing sits in your context all session. OpenHop is an on-demand skill that loads only when you ask for a flow, plus a local CLI the agent shells out to.
 
-A few example flows from [`examples/`](examples/), with rough token estimates (≈ 1 token per 4 characters of YAML):
-
-| Flow                  | Steps | YAML size | YAML tokens (est.) |
-| --------------------- | ----- | --------- | ------------------ |
-| `simple-crud.yaml`    | 4     | 1.6 KB    | ~400               |
-| `auth-flow.yaml`      | 9     | 2.2 KB    | ~560               |
-| `order-flow.yaml`     | 18    | 8.9 KB    | ~2,200             |
-
-For comparison, a generic agent answering the same "walk me through X" question in prose typically runs **5–15× larger**, depending on how verbose the agent is and how much code it quotes inline. The ratio matters more than the absolute number — the win compounds as the flow gets bigger, because YAML reuses node names while prose has to keep re-introducing them.
+Rule of thumb: **~100 tokens per step.** A 10-step flow runs about ~1,000 tokens end-to-end (skill load + agent thinking + CLI calls).
 
 ## Install Options
 
