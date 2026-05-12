@@ -28,7 +28,10 @@
 
 <p align="center">
   <a href="#try-it-in-30-seconds">Quickstart</a> ·
+  <a href="#live-demo">Live demo</a> ·
+  <a href="#token-use">Token use</a> ·
   <a href="#install-options">Install</a> ·
+  <a href="#sharing-flows">Sharing</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a> ·
@@ -36,18 +39,23 @@
 </p>
 
 <p align="center">
-  <b>Local-first. Your code never leaves your machine. No telemetry.</b>
+  <b>Local-first. Token-light. Your code never leaves your machine. No telemetry.</b>
 </p>
 
 ---
 
 ## Why
 
-AI coding agents are great at explaining how code works — in 800-line bullet walls and complicated diagrams you can't verify.
-OpenHop is a skill that lets your agent emit **animated data-flow diagrams**, making it much easier to understand what it’s actually yapping about.
-You ask in plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
-pixels traveling between components on a pixel-art canvas. Click any node to drill into its
-sub-flow.
+AI coding agents are great at explaining how code works — in 800-line bullet walls and complicated static diagrams you can't actually follow.
+
+OpenHop is a skill that lets your agent emit an **animated, multi-level data-flow diagram** instead. You ask in plain English; your agent writes the flow as YAML and pushes it; OpenHop takes care of the rest — and you walk it at your own pace.
+
+**Why an animated flow beats a static Mermaid/PlantUML picture:**
+
+- 🎞 **Step through it, don't squint at it.** Play, pause, prev/next, restart. The flow runs _over time_, the way the code actually does. You watch one hop happen, then the next, then the next.
+- 🔍 **Drill into sub-flows.** Click any node to zoom into how it works inside. Infinite depth, same controls at every level.
+- 🧠 **Token-light by design.** The YAML the agent emits is a fraction of the prose walkthrough it replaces — see [Token use](#token-use) for the numbers on real flows.
+- 🔒 **Local-first, no telemetry.** Your code never leaves your machine. No analytics, no phone-home, no account required.
 
 ## Try it in 30 seconds
 
@@ -66,15 +74,15 @@ The agent generates the YAML, pushes it, and returns a URL with the animation pl
 > [!NOTE]
 > `npx openhop init` auto-detects Claude Code, Cursor, Windsurf, Cline, and Continue. For other clients, see [Install](#install-options).
 
-## Features
+## Live demo
 
-- 🎞 **Agent-authored.** Ships with a skill any SKILL-compatible agent can load (Claude Code, Cursor, Windsurf, Cline, Continue, and more). Your agent writes the YAML, you watch it animate.
-- 🔍 **Multi-level drill-down.** Click a node to zoom into its sub-flow. Infinite depth.
-- ⚡ **Live re-render.** `openhop patch` applies incremental changes without a full reload.
-- 🧠 **Strict schema + fuzzy typo hints.** Invalid YAML fails loudly with helpful suggestions.
-- 🐚 **CLI + HTTP API + web UI.** Script it, hit it from tools, or browse at `http://localhost:8788`.
-- 🔒 **Local-first, no telemetry.** Runs entirely on your machine — no analytics, no phone-home, no account required.
-- ✂️ **Token-light.** A typical flow YAML is ~5–20× smaller than the equivalent prose explanation an agent would otherwise emit.
+Click and play, no install required: **<https://naorsabag.github.io/openhop/>**
+
+## Token use
+
+No MCP server — nothing sits in your context all session. It's an on-demand skill that loads only when you ask for a flow, plus a local CLI the agent shells out to.
+
+Flows are authored in **compact YAML**, not JSON, so the payload the agent emits stays small: **~100 tokens per step** (a 10-step flow ≈ 1,000 tokens of output).
 
 ## Install Options
 
@@ -121,12 +129,11 @@ git clone https://github.com/naorsabag/openhop.git
 cd openhop && npm install && npm run dev
 ```
 
-> **OpenHop v0.1 is local-first.**
-> The CLI runs entirely on your machine. There's no hosted backend, no flow
-> storage, no servers we keep running. Sharing today = sharing the YAML file
-> (or the URL-fragment share link from the [hosted playground](https://naorsabag.github.io/openhop/),
-> which compresses the flow into the URL hash — still no server-side
-> storage).
+## Sharing flows
+
+OpenHop is local-first — no hosted backend, no flow storage. To share a flow, open the [playground](https://naorsabag.github.io/openhop/), paste your YAML and hit **Save**: the page compresses the flow into the URL hash and copies a self-contained link to your clipboard. Nothing is uploaded — URL fragments stay in the browser.
+
+For flows too large to fit in a URL, share the YAML file directly.
 
 ## Use cases
 
