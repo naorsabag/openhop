@@ -28,7 +28,10 @@
 
 <p align="center">
   <a href="#try-it-in-30-seconds">Quickstart</a> ·
+  <a href="#live-demo">Live demo</a> ·
+  <a href="#token-use">Token use</a> ·
   <a href="#install-options">Install</a> ·
+  <a href="#sharing-flows">Sharing</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a> ·
@@ -43,11 +46,16 @@
 
 ## Why
 
-AI coding agents are great at explaining how code works — in 800-line bullet walls and complicated diagrams you can't verify.
-OpenHop is a skill that lets your agent emit **animated data-flow diagrams**, making it much easier to understand what it’s actually yapping about.
-You ask in plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data
-pixels traveling between components on a pixel-art canvas. Click any node to drill into its
-sub-flow.
+AI coding agents are great at explaining how code works — in 800-line bullet walls and complicated static diagrams you can't actually follow.
+
+OpenHop is a skill that lets your agent emit an **animated, multi-level data-flow diagram** instead. You ask in plain English; your agent writes the flow as YAML and pushes it; OpenHop renders animated data pixels traveling between components on a pixel-art canvas — and you walk it at your own pace.
+
+**Why an animated flow beats a static Mermaid/PlantUML picture:**
+
+- 🎞 **Step through it, don't squint at it.** Play, pause, prev/next, restart. The flow runs *over time*, the way the code actually does. You watch one hop happen, then the next, then the next.
+- 🔍 **Drill into sub-flows.** Click any node to zoom into how it works inside. Infinite depth, same controls at every level.
+- 🧠 **Token-light by design.** The YAML the agent emits is a fraction of the prose walkthrough it replaces — see [Token use](#token-use) for the numbers on real flows.
+- 🔒 **Local-first, no telemetry.** Your code never leaves your machine. No analytics, no phone-home, no account required.
 
 ## Try it in 30 seconds
 
@@ -66,15 +74,27 @@ The agent generates the YAML, pushes it, and returns a URL with the animation pl
 > [!NOTE]
 > `npx openhop init` auto-detects Claude Code, Cursor, Windsurf, Cline, and Continue. For other clients, see [Install](#install-options).
 
-## Features
+## Live demo
 
-- 🎞 **Agent-authored.** Ships with a skill any SKILL-compatible agent can load (Claude Code, Cursor, Windsurf, Cline, Continue, and more). Your agent writes the YAML, you watch it animate.
-- 🔍 **Multi-level drill-down.** Click a node to zoom into its sub-flow. Infinite depth.
-- ⚡ **Live re-render.** `openhop patch` applies incremental changes without a full reload.
-- 🧠 **Strict schema + fuzzy typo hints.** Invalid YAML fails loudly with helpful suggestions.
-- 🐚 **CLI + HTTP API + web UI.** Script it, hit it from tools, or browse at `http://localhost:8788`.
-- 🔒 **Local-first, no telemetry.** Runs entirely on your machine — no analytics, no phone-home, no account required.
-- ✂️ **Token-light.** A typical flow YAML is ~5–20× smaller than the equivalent prose explanation an agent would otherwise emit.
+Click and play, no install required: **<https://naorsabag.github.io/openhop/>**
+
+The playground is the same renderer OpenHop ships locally — same sprites, same animation, same drill-down, same Play / Pause / Prev / Next controls. The sidebar is pre-loaded with example flows (`auth-flow`, `order-flow`, `simple-crud`, `self-loops`, `type-variants`); pick one and step through it to get a feel for the product before you install anything.
+
+You can also paste any OpenHop share URL into the address bar and the page renders the flow inside it — no server, no account, no upload. See [Sharing flows](#sharing-flows) for how that works.
+
+## Token use
+
+The agent emits YAML, not prose — so a "walk me through this codebase" answer is small enough to keep in context across many turns instead of evicting the rest of your conversation.
+
+A few example flows from [`examples/`](examples/), with rough token estimates (≈ 1 token per 4 characters of YAML):
+
+| Flow                  | Steps | YAML size | YAML tokens (est.) |
+| --------------------- | ----- | --------- | ------------------ |
+| `simple-crud.yaml`    | 4     | 1.6 KB    | ~400               |
+| `auth-flow.yaml`      | 9     | 2.2 KB    | ~560               |
+| `order-flow.yaml`     | 18    | 8.9 KB    | ~2,200             |
+
+For comparison, a generic agent answering the same "walk me through X" question in prose typically runs **5–15× larger**, depending on how verbose the agent is and how much code it quotes inline. The ratio matters more than the absolute number — the win compounds as the flow gets bigger, because YAML reuses node names while prose has to keep re-introducing them.
 
 ## Install Options
 
@@ -121,12 +141,19 @@ git clone https://github.com/naorsabag/openhop.git
 cd openhop && npm install && npm run dev
 ```
 
-> **OpenHop v0.1 is local-first.**
-> The CLI runs entirely on your machine. There's no hosted backend, no flow
-> storage, no servers we keep running. Sharing today = sharing the YAML file
-> (or the URL-fragment share link from the [hosted playground](https://naorsabag.github.io/openhop/),
-> which compresses the flow into the URL hash — still no server-side
-> storage).
+## Sharing flows
+
+OpenHop is local-first — there's no hosted backend, no flow storage, no servers we keep running. So how do you send a teammate a flow?
+
+**Via the GitHub Pages playground** at <https://naorsabag.github.io/openhop/>:
+
+1. Open the playground, click **+ New flow** (or paste your YAML into the editor) and hit **Save**.
+2. The page compresses the full YAML into the URL hash (`https://naorsabag.github.io/openhop/#<lz-encoded>`) and copies the link to your clipboard.
+3. Send the link. Anyone who opens it sees the same animated flow — at their own pace, with the same Play / Pause / Prev / Next / drill-down controls — without installing anything.
+
+Nothing is uploaded. The whole flow lives inside the URL fragment (the part after `#`), which browsers don't send to servers. If the share link gets corrupted in transit (truncated email, mangled paste), the playground surfaces a "share link looks corrupted" banner instead of failing silently.
+
+For longer flows that don't fit comfortably in a URL, share the YAML file itself — the renderer is the same either way.
 
 ## Use cases
 
