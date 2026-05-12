@@ -26,6 +26,16 @@ import YAML from 'yaml'
 
 const V1_PREFIX = '~1'
 
+// Decompression-bomb guards. fflate has no streaming-abort hook, so we cap
+// in two places: the compressed input length (which bounds worst-case
+// allocation at MAX_INFLATED_BYTES via fflate, regardless of the DEFLATE
+// expansion ratio attempted), and the inflated output (post-hoc, soft cap).
+// Real example flows compress to ~3 KB / inflate to ~9 KB at the high end —
+// the limits below leave 20-100x headroom for legitimate inputs while
+// refusing pathological share URLs.
+const MAX_FRAGMENT_BYTES = 64 * 1024
+const MAX_INFLATED_BYTES = 1 * 1024 * 1024
+
 function bytesToBase64Url(bytes: Uint8Array): string {
   // btoa() needs a binary string, not a Uint8Array.
   let binary = ''
@@ -69,7 +79,10 @@ export function decodeFragment(fragment: string): string | null {
   if (fragment.startsWith(V1_PREFIX)) {
     try {
       const bytes = base64UrlToBytes(fragment.slice(V1_PREFIX.length))
-      const out = new TextDecoder().decode(inflateSync(bytes))
+      if (bytes.length > MAX_FRAGMENT_BYTES) return null
+      const inflated = inflateSync(bytes)
+      if (inflated.length > MAX_INFLATED_BYTES) return null
+      const out = new TextDecoder().decode(inflated)
       return out.length > 0 ? out : null
     } catch {
       return null

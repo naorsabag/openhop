@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import LZString from 'lz-string'
 import YAML from 'yaml'
+import { deflateSync } from 'fflate'
 import { parseFlowYaml } from '@openhop/shared'
 import { buildShareUrl, decodeFragment, encodeFragment } from '../src/lib/share-url'
+
+function toBase64Url(bytes: Uint8Array): string {
+  let bin = ''
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
+  // btoa is available in vitest's jsdom env
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
 
 const SAMPLE_YAML = `meta:
   title: Round-trip
@@ -67,6 +75,20 @@ describe('share-url encode/decode', () => {
     // v1 prefix with junk after it — the base64 might decode but inflate
     // will fail.
     expect(decodeFragment('~1!!!not-base64!!!')).toBeNull()
+  })
+
+  it('refuses oversized v1 fragments (compressed-input cap)', () => {
+    // 80 KB of random-ish bytes; well above the 64 KB compressed cap. Doesn't
+    // even need to be a real DEFLATE stream — the length check fires first.
+    const bomb = new Uint8Array(80 * 1024).map((_, i) => (i * 31) & 0xff)
+    expect(decodeFragment('~1' + toBase64Url(bomb))).toBeNull()
+  })
+
+  it('refuses decompression bombs (inflated-output cap)', () => {
+    // 2 MB of zeros DEFLATE-compresses to ~2 KB — fits under the input cap
+    // but blows past the 1 MB inflated cap.
+    const oversized = deflateSync(new Uint8Array(2 * 1024 * 1024), { level: 9 })
+    expect(decodeFragment('~1' + toBase64Url(oversized))).toBeNull()
   })
 
   it('buildShareUrl uses Vite BASE_URL so dev (/) and Pages (/openhop/) both work', () => {
