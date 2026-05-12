@@ -52,7 +52,7 @@ OpenHop is a skill that lets your agent emit an **animated, multi-level data-flo
 
 **Why an animated flow beats a static Mermaid/PlantUML picture:**
 
-- 🎞 **Step through it, don't squint at it.** Play, pause, prev/next, restart. The flow runs *over time*, the way the code actually does. You watch one hop happen, then the next, then the next.
+- 🎞 **Step through it, don't squint at it.** Play, pause, prev/next, restart. The flow runs _over time_, the way the code actually does. You watch one hop happen, then the next, then the next.
 - 🔍 **Drill into sub-flows.** Click any node to zoom into how it works inside. Infinite depth, same controls at every level.
 - 🧠 **Token-light by design.** The YAML the agent emits is a fraction of the prose walkthrough it replaces — see [Token use](#token-use) for the numbers on real flows.
 - 🔒 **Local-first, no telemetry.** Your code never leaves your machine. No analytics, no phone-home, no account required.
