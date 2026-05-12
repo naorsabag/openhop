@@ -80,11 +80,9 @@ Click and play, no install required: **<https://naorsabag.github.io/openhop/>**
 
 ## Token use
 
-No MCP server, so nothing sits in your context all session. OpenHop is an on-demand skill that loads only when you ask for a flow, plus a local CLI the agent shells out to.
+No MCP server — nothing sits in your context all session. It's an on-demand skill that loads only when you ask for a flow, plus a local CLI the agent shells out to.
 
-Flows are authored in **compact YAML**, not JSON — no quotes, no braces, just indentation — which keeps the payload the agent emits small.
-
-Rule of thumb: **~100 tokens per step.** A 10-step flow runs about ~1,000 tokens end-to-end (skill load + agent thinking + CLI calls).
+Flows are authored in **compact YAML**, not JSON, so the payload the agent emits stays small: **~100 tokens per step** (a 10-step flow ≈ 1,000 tokens of output).
 
 ## Install Options
 
@@ -133,17 +131,9 @@ cd openhop && npm install && npm run dev
 
 ## Sharing flows
 
-OpenHop is local-first — there's no hosted backend, no flow storage, no servers we keep running. So how do you send a teammate a flow?
+OpenHop is local-first — no hosted backend, no flow storage. To share a flow, open the [playground](https://naorsabag.github.io/openhop/), paste your YAML and hit **Save**: the page compresses the flow into the URL hash and copies a self-contained link to your clipboard. Nothing is uploaded — URL fragments stay in the browser.
 
-**Via the GitHub Pages playground** at <https://naorsabag.github.io/openhop/>:
-
-1. Open the playground, click **+ New flow** (or paste your YAML into the editor) and hit **Save**.
-2. The page compresses the full YAML into the URL hash (`https://naorsabag.github.io/openhop/#<lz-encoded>`) and copies the link to your clipboard.
-3. Send the link. Anyone who opens it sees the same animated flow — at their own pace, with the same Play / Pause / Prev / Next / drill-down controls — without installing anything.
-
-Nothing is uploaded. The whole flow lives inside the URL fragment (the part after `#`), which browsers don't send to servers. If the share link gets corrupted in transit (truncated email, mangled paste), the playground surfaces a "share link looks corrupted" banner instead of failing silently.
-
-For longer flows that don't fit comfortably in a URL, share the YAML file itself — the renderer is the same either way.
+For flows too large to fit in a URL, share the YAML file directly.
 
 ## Use cases
 
