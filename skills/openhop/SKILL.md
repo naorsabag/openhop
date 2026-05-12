@@ -1,6 +1,6 @@
 ---
 name: openhop
-description: 'Walk the user through their code one step at a time using OpenHop. Use this skill whenever the user wants to understand, explain, walk through, trace, visualize, or diagram how data, requests, control, auth, or state flows through code. Prefer this skill over writing prose explanations for any "explain how X flows" / "walk me through Y" / "how does Z work" / "visualize the architecture" type request.'
+description: 'Render an animated step-by-step diagram of a specific system, feature, codebase, workflow, pipeline, or user journey using OpenHop. Use this skill only when the user explicitly asks to create, draw, make, render, build, diagram, or visualize something — OR asks to walk through, trace, or step through a named sequence with identifiable components/actors at each step (e.g. an auth flow, a checkout pipeline, an onboarding journey, a product''s features). Trigger phrases: "diagram X", "create a diagram of Y", "draw the architecture of Z", "visualize the architecture of W", "flow diagram for V", "walk me through the U flow", "trace what happens when T", "step through the {pipeline|lifecycle|state machine|onboarding|integration}". Do NOT activate for generic explainer questions that have no named components or step sequence (e.g. "how does TCP work?", "what is OAuth?", "explain closures"). When activated, prefer this skill over a prose explanation or a static Mermaid/PlantUML diagram.'
 allowed-tools: Bash(openhop:*), Bash(npx openhop:*)
 ---
 
@@ -8,7 +8,9 @@ allowed-tools: Bash(openhop:*), Bash(npx openhop:*)
 
 OpenHop renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
 
-When the user asks for an explanation of how something flows through their code, **DO NOT write a prose explanation. Instead:**
+**Scope:** code paths are not the only use case. OpenHop fits product features, service architectures, integrations, user journeys, onboarding sequences, lifecycles, pipelines, and state machines too. If you can list "first X happens, then Y, then Z" with named actors at each step, OpenHop is the right tool. Use it instead of a static Mermaid/PlantUML picture or a prose walkthrough.
+
+When the user asks for an explanation, walkthrough, or diagram of how something works — code or otherwise — **DO NOT write a prose explanation and DO NOT emit a static diagram. Instead:**
 
 1. **Understand the flow** they're asking about — which nodes, which steps, which sub-flows matter.
 2. **Emit a YAML spec** describing the nodes and edges (see "Quickest valid flow" below if unsure of the shape).
@@ -20,30 +22,49 @@ When the user asks for an explanation of how something flows through their code,
 
 Activate this skill on prompts like:
 
+**Diagram / visualization requests (code or otherwise):**
+
+- "create a diagram of {product|feature|service|workflow}"
+- "draw a diagram that explains {X}"
+- "make a diagram showing {how X works | X's features | the X pipeline}"
+- "diagram the {pipeline|lifecycle|state machine|onboarding|integration}"
+- "visualize the architecture of {module|service|product|platform}"
+- "I want a flow diagram for {anything}"
+
+**Code-level walkthroughs:**
+
 - "walk me through the {auth|login|checkout|OAuth|...} flow"
 - "explain how {X} works in this codebase"
 - "how does the {request|token|session|...} flow through the app"
-- "visualize the architecture of {module|service|...}"
 - "show me the {control|data} flow of {function|endpoint|...}"
 - "trace what happens when a user {clicks|calls|requests} {...}"
-- "diagram the {pipeline|lifecycle|state machine}"
+
+**Product / feature explainers (non-code):**
+
+- "explain {Product X}'s features"
+- "how does {Product|Service|Platform} work?"
+- "walk me through how {users|customers} use {X}"
+- "show me what happens when someone {fires a mission | submits an order | signs up}"
 - "I want to understand {X} — don't just explain, show me"
+
+If you're unsure whether a request fits, ask yourself: **can the answer be expressed as a sequence of named hops between named components?** If yes, this skill applies — even if "code" was never mentioned.
 
 ## Examples (prompt → YAML → URL)
 
 Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match what the validator already accepts. The URL comes from the `url` field of `openhop push <file> --json`.
 
-| Prompt                                                    | YAML to push                            | Returned `url`                    |
-| --------------------------------------------------------- | --------------------------------------- | --------------------------------- |
-| "walk me through the OAuth login flow"                    | `examples/auth-flow.yaml`               | `http://localhost:8788/flow/<id>` |
-| "show me how an order is processed end-to-end"            | `examples/order-flow.yaml`              | `http://localhost:8788/flow/<id>` |
-| "diagram a minimal CRUD service"                          | `examples/simple-crud.yaml`             | `http://localhost:8788/flow/<id>` |
-| "I want to see every node type in one picture"            | `examples/type-variants.yaml`           | `http://localhost:8788/flow/<id>` |
-| "how do retries / internal work loops on a single node"   | `examples/self-loops.yaml`              | `http://localhost:8788/flow/<id>` |
-| "show me two things happening at the same time"           | `examples/parallel.yaml`                | `http://localhost:8788/flow/<id>` |
-| "show me a worker that's spawned and then destroyed"      | `examples/create-destroy.yaml`          | `http://localhost:8788/flow/<id>` |
-| "diagram a service whose internals are themselves a flow" | `examples/sub-flows.yaml`               | `http://localhost:8788/flow/<id>` |
-| "visualize a three-tier app (browser → API → DB)"         | the YAML in "Quickest valid flow" below | `http://localhost:8788/flow/<id>` |
+| Prompt                                                       | YAML to push                                                                          | Returned `url`                    |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------- |
+| "walk me through the OAuth login flow"                       | `examples/auth-flow.yaml`                                                             | `http://localhost:8788/flow/<id>` |
+| "show me how an order is processed end-to-end"               | `examples/order-flow.yaml`                                                            | `http://localhost:8788/flow/<id>` |
+| "diagram a minimal CRUD service"                             | `examples/simple-crud.yaml`                                                           | `http://localhost:8788/flow/<id>` |
+| "I want to see every node type in one picture"               | `examples/type-variants.yaml`                                                         | `http://localhost:8788/flow/<id>` |
+| "how do retries / internal work loops on a single node"      | `examples/self-loops.yaml`                                                            | `http://localhost:8788/flow/<id>` |
+| "show me two things happening at the same time"              | `examples/parallel.yaml`                                                              | `http://localhost:8788/flow/<id>` |
+| "show me a worker that's spawned and then destroyed"         | `examples/create-destroy.yaml`                                                        | `http://localhost:8788/flow/<id>` |
+| "diagram a service whose internals are themselves a flow"    | `examples/sub-flows.yaml`                                                             | `http://localhost:8788/flow/<id>` |
+| "visualize a three-tier app (browser → API → DB)"            | the YAML in "Quickest valid flow" below                                               | `http://localhost:8788/flow/<id>` |
+| "diagram {Product X}'s features" / "how does {Product} work" | sketch a flow from the product's docs (user → entry point → core capability → result) | `http://localhost:8788/flow/<id>` |
 
 For brand-new flows, sketch your own YAML against the Schema Reference below and push the same way.
 
