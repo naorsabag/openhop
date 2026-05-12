@@ -62,5 +62,8 @@
     "vite": "^8.0.11",
     "vitest": "^1.6.1",
     "yaml": "^2.8.4"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
   }
 }
