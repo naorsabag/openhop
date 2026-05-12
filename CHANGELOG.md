@@ -87,6 +87,7 @@ Initial public release.
 - GitHub Actions CI: lint, format check, typecheck, build, test, coverage, npm audit, gitleaks, CodeQL.
 - Issue and pull request templates; Dependabot configuration.
 
-[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.3.0
 [0.2.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.2.0
 [0.1.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.1.0
