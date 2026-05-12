@@ -78,10 +78,6 @@ The agent generates the YAML, pushes it, and returns a URL with the animation pl
 
 Click and play, no install required: **<https://naorsabag.github.io/openhop/>**
 
-The playground is the same renderer OpenHop ships locally — same sprites, same animation, same drill-down, same Play / Pause / Prev / Next controls. The sidebar is pre-loaded with example flows (`auth-flow`, `order-flow`, `simple-crud`, `self-loops`, `type-variants`); pick one and step through it to get a feel for the product before you install anything.
-
-You can also paste any OpenHop share URL into the address bar and the page renders the flow inside it — no server, no account, no upload. See [Sharing flows](#sharing-flows) for how that works.
-
 ## Token use
 
 The agent emits YAML, not prose — so a "walk me through this codebase" answer is small enough to keep in context across many turns instead of evicting the rest of your conversation.
