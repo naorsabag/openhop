@@ -82,6 +82,8 @@ Click and play, no install required: **<https://naorsabag.github.io/openhop/>**
 
 No MCP server, so nothing sits in your context all session. OpenHop is an on-demand skill that loads only when you ask for a flow, plus a local CLI the agent shells out to.
 
+Flows are authored in **compact YAML**, not JSON — no quotes, no braces, just indentation — which keeps the payload the agent emits small.
+
 Rule of thumb: **~100 tokens per step.** A 10-step flow runs about ~1,000 tokens end-to-end (skill load + agent thinking + CLI calls).
 
 ## Install Options
