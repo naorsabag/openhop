@@ -1,0 +1,105 @@
+meta:
+  title: Vercel AI SDK — useChat with tool calls
+  path: showcase/vercel-ai-sdk
+  description: One round-trip through the Vercel AI SDK — a Next.js useChat client posts a message, the server streams text via streamText, the model emits a tool call, the SDK executes it, the result feeds back, and the UI updates token-by-token.
+
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+    - id: ui
+      label: Chat UI
+      type: actor
+    - id: useChat
+      label: useChat hook
+      type: service
+    - id: route
+      label: /api/chat
+      type: endpoint
+    - id: sdk
+      label: streamText
+      type: service
+    - id: provider
+      label: Provider Adapter
+      type: service
+      icon: "logos:vercel-icon"
+    - id: model
+      label: LLM
+      type: external
+      icon: "logos:anthropic-icon"
+    - id: tool
+      label: Tool
+      type: external
+    - id: stream
+      label: Data Stream
+      type: queue
+
+  steps:
+    - from: user
+      to: ui
+      data: The user types a message and hits send.
+    - from: ui
+      to: useChat
+      data: The Chat UI calls handleSubmit on the useChat hook with the new message.
+    - from: useChat
+      to: route
+      data:
+        label: useChat POSTs the running messages array to the chat route handler.
+        fields:
+          - name: messages
+            type: "UIMessage[]"
+    - from: route
+      to: sdk
+      data:
+        label: The route handler calls streamText with the model, messages, and the available tools.
+        fields:
+          - name: model
+          - name: messages
+          - name: tools
+            type: "Record<string, Tool>"
+    - from: sdk
+      to: provider
+      data: streamText invokes the provider adapter for the chosen model.
+    - from: provider
+      to: model
+      data: The adapter translates the SDK message format to the provider's wire format and opens a streaming request.
+    - from: model
+      to: provider
+      data:
+        label: The model streams back chunks; one of them is a tool_use block requesting a tool.
+        fields:
+          - name: text_delta
+          - name: tool_call
+            type: ToolCall
+            added: true
+    - from: provider
+      to: sdk
+      data: The adapter normalizes chunks into the SDK's StreamPart vocabulary (text-delta, tool-call, finish).
+    - from: sdk
+      to: tool
+      data: When a tool-call part lands, the SDK invokes the matching tool's execute function with the parsed arguments.
+    - from: tool
+      to: sdk
+      data: The tool returns its result; the SDK wraps it as a tool-result part.
+    - from: sdk
+      to: provider
+      data: The SDK appends the tool result to the conversation and asks the provider to continue generating.
+    - from: provider
+      to: model
+      data: The adapter sends the extended conversation, and the model streams the final answer.
+    - from: model
+      to: provider
+      data: The model streams text deltas until it emits a finish event.
+    - from: sdk
+      to: stream
+      data: The SDK writes each StreamPart to the response body as a Server-Sent Events data stream.
+    - from: stream
+      to: useChat
+      data: useChat reads the stream chunk-by-chunk via the browser fetch ReadableStream.
+    - from: useChat
+      to: ui
+      data: useChat reduces the parts into the messages state and triggers a re-render after each delta.
+    - from: ui
+      to: user
+      data: The assistant reply appears in the chat, growing token-by-token until it's complete.

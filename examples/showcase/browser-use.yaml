@@ -1,0 +1,126 @@
+meta:
+  title: browser-use — LLM driving a real browser
+  path: showcase/browser-use
+  description: One step of a browser-use Agent run — the agent observes the page, asks the LLM what to do next, executes the chosen action through Playwright, and feeds the new page state back for the next step.
+
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+    - id: agent
+      label: Agent
+      type: service
+    - id: history
+      label: History
+      type: cache
+    - id: dom
+      label: DOM Tree Service
+      type: service
+    - id: snap
+      label: Browser Snapshot
+      type: cache
+    - id: prompt
+      label: System Prompt
+      type: cache
+    - id: model
+      label: LLM
+      type: external
+      icon: "logos:openai-icon"
+    - id: controller
+      label: Controller
+      type: service
+    - id: playwright
+      label: Playwright
+      type: external
+      icon: "logos:microsoft-icon"
+    - id: page
+      label: Browser Page
+      type: external
+
+  steps:
+    - from: user
+      to: agent
+      data: The user calls Agent.run with a natural-language task and an optional max_steps.
+    - from: agent
+      to: playwright
+      data: On the first step the agent launches or reuses a Chromium context through Playwright.
+    - from: playwright
+      to: page
+      data: Playwright opens the starting URL (or the page the user passed in).
+    - from: agent
+      to: dom
+      data: At the start of each step the agent asks the DOM tree service for the page's interactive elements.
+    - from: dom
+      to: playwright
+      data: The service injects a JS snippet that walks the DOM and tags every clickable / typeable element with an index.
+    - from: playwright
+      to: dom
+      data:
+        label: Playwright returns the serialized element tree with stable indices the model can reference.
+        fields:
+          - name: elements
+            type: "list[InteractiveElement]"
+          - name: scroll_pixels_above
+            type: int
+          - name: scroll_pixels_below
+            type: int
+    - from: agent
+      to: snap
+      data: The agent also takes a screenshot and stores it next to the element tree as the step's snapshot.
+    - from: snap
+      to: prompt
+      data: The agent assembles the next user-role message — task, recent history, current URL, the indexed element tree, and the screenshot as a vision input.
+    - from: history
+      to: prompt
+      data: Previous step results (last action, model thoughts, success flag) are included so the model has the running plan.
+    - from: prompt
+      to: model
+      data:
+        label: The agent calls the LLM with the structured prompt and the response_format that pins it to AgentOutput.
+        fields:
+          - name: messages
+          - name: response_format
+            type: AgentOutput
+    - from: model
+      to: agent
+      data:
+        label: The model returns a JSON object with the next thought and one or more typed actions.
+        fields:
+          - name: current_state
+          - name: action
+            type: "list[ActionModel]"
+    - from: agent
+      to: controller
+      data: For each action, the agent looks up its handler in the Controller's registered action registry.
+    - from: controller
+      to: playwright
+      data:
+        label: The controller calls the Playwright API matching the action — click_element_by_index, input_text, scroll, go_to_url, extract_content, done.
+        fields:
+          - name: action
+          - name: params
+            type: dict
+    - from: playwright
+      to: page
+      data: Playwright dispatches the actual browser event on the live page.
+    - from: page
+      to: playwright
+      data: The page navigates / mutates; Playwright waits for network-idle and DOM stability.
+    - from: playwright
+      to: controller
+      data:
+        label: Playwright returns the result of the action — success flag, error if any, extracted text for read actions.
+        fields:
+          - name: success
+            type: bool
+          - name: extracted_content
+    - from: controller
+      to: history
+      data: The controller appends an ActionResult to the agent's history.
+    - from: agent
+      to: agent
+      data: If the last action wasn't `done` and max_steps isn't reached, the agent loops back to the DOM-snapshot step.
+    - from: agent
+      to: user
+      data: When the model emits the `done` action with success=true, the agent returns the final extracted output to the caller.

@@ -28,6 +28,8 @@ Shipped inventory + license verification lives in [`openhop-launch/22-shipped-ex
 | [`vite-hmr.yaml`](./vite-hmr.yaml) | vitejs/vite | MIT | HMR flow: file change → fs watcher → module graph invalidation → WebSocket → client patch |
 | [`authjs-oauth.yaml`](./authjs-oauth.yaml) | nextauthjs/next-auth | ISC | OAuth 2.0 PKCE end-to-end: browser → app → provider → callback → token exchange |
 | [`openclaw.yaml`](./openclaw.yaml) | openclaw/openclaw | MIT | Agent loop: prompt → skill router → tool call → tool response → reply |
+| [`vercel-ai-sdk.yaml`](./vercel-ai-sdk.yaml) | vercel/ai | Apache-2.0 | useChat → /api/chat → streamText → tool call → tool exec → SSE data stream → UI re-render |
+| [`browser-use.yaml`](./browser-use.yaml) | browser-use/browser-use | MIT | Agent step: DOM tree + screenshot → LLM → typed action → Playwright → page state → loop |
 
 ## Running one
 
