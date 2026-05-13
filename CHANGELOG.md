@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-12
+
 ### Added
 
 - Two new node types: `ai_agent` (LLM-driven agent — bunny-robot sprite) and `browser` (a browser-window sprite). Both appear in `NodeTypeEnum` and ship as cropped + color-quantized SVG sprites under `packages/web/public/sprites/`. See `examples/ai-browsing-agent.yaml` for a flow that exercises both.
+- `examples/showcase/` — eight hand-authored flows visualizing real code paths in well-known OSS projects (langgraph, openai-codex, block-goose, vercel-ai-sdk, browser-use, nextauthjs, openclaw) plus a self-referential openhop flow. Each is `openhop validate`-clean against the zod schema.
+
+### Changed
+
+- Skill (`skills/openhop/SKILL.md`): trigger surface broadened beyond code walkthroughs. The `description:` field now routes on explicit diagram / visualization / walkthrough verbs over any system, product, feature, codebase, workflow, pipeline, or user journey — not only code. Adds an explicit negative gate so generic explainer prompts ("how does TCP work?", "what is OAuth?") do not activate the skill. Trigger phrase examples reorganised into diagram / code-walkthrough / product-feature buckets.
+- Web: INSPECT panel defaults to bottom-dock on narrow viewports (Tailwind `md` breakpoint, < 768 px). Desktop continues to default to right-dock. Closed-by-default behaviour on mobile is unchanged — the new dock side only kicks in when the user opens the panel from its bookmark tab.
 
 ## [0.2.0] - 2026-05-11
 
@@ -79,6 +87,7 @@ Initial public release.
 - GitHub Actions CI: lint, format check, typecheck, build, test, coverage, npm audit, gitleaks, CodeQL.
 - Issue and pull request templates; Dependabot configuration.
 
-[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.3.0
 [0.2.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.2.0
 [0.1.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.1.0

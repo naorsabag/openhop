@@ -1,6 +1,6 @@
 {
   "name": "@openhop/server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OpenHop API server. Fastify app for storing and serving data-flow definitions.",
   "repository": {
     "type": "git",
