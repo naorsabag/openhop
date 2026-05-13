@@ -23,7 +23,7 @@ flow:
     - id: provider
       label: Provider Adapter
       type: service
-      icon: "skill-icons:vercel-dark"
+      icon: "simple-icons:vercel"
     - id: model
       label: LLM
       type: external

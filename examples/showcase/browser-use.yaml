@@ -26,7 +26,7 @@ flow:
     - id: model
       label: LLM
       type: external
-      icon: "twemoji:robot"
+      icon: "simple-icons:openai"
     - id: controller
       label: Controller
       type: service
