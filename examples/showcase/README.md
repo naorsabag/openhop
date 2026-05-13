@@ -25,7 +25,6 @@ Shipped inventory + license verification lives in [`openhop-launch/22-shipped-ex
 | [`langgraph.yaml`](./langgraph.yaml) | langchain-ai/langgraph | MIT | Agent state graph: START → agent node → conditional edge → tool node → END |
 | [`openai-codex.yaml`](./openai-codex.yaml) | openai/codex | Apache-2.0 | Codex CLI tool-call loop: prompt → model → tool selection → execution → output |
 | [`block-goose.yaml`](./block-goose.yaml) | block/goose | Apache-2.0 | Goose MCP + skills loop: prompt → goose core → MCP client → MCP server → reply |
-| [`vite-hmr.yaml`](./vite-hmr.yaml) | vitejs/vite | MIT | HMR flow: file change → fs watcher → module graph invalidation → WebSocket → client patch |
 | [`authjs-oauth.yaml`](./authjs-oauth.yaml) | nextauthjs/next-auth | ISC | OAuth 2.0 PKCE end-to-end: browser → app → provider → callback → token exchange |
 | [`openclaw.yaml`](./openclaw.yaml) | openclaw/openclaw | MIT | Agent loop: prompt → skill router → tool call → tool response → reply |
 | [`vercel-ai-sdk.yaml`](./vercel-ai-sdk.yaml) | vercel/ai | Apache-2.0 | useChat → /api/chat → streamText → tool call → tool exec → SSE data stream → UI re-render |
