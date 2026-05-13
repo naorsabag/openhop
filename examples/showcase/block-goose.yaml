@@ -1,0 +1,110 @@
+meta:
+  title: block/goose MCP and extensions loop
+  path: showcase/block-goose
+  description: One agent turn in block/goose — user message → goose core → provider → tool call → MCP server → result → reply, with the system prompt assembled from installed extensions.
+
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+    - id: cli
+      label: goose CLI
+      type: service
+    - id: agent
+      label: Agent Core
+      type: service
+    - id: extensions
+      label: Extensions Manager
+      type: service
+    - id: prompt
+      label: System Prompt
+      type: cache
+    - id: provider
+      label: LLM Provider
+      type: external
+      icon: "logos:anthropic-icon"
+    - id: mcp
+      label: MCP Client
+      type: service
+    - id: server
+      label: MCP Server
+      type: external
+    - id: tool
+      label: Tool
+      type: external
+
+  steps:
+    - from: user
+      to: cli
+      data: The user enters a message in the goose session.
+    - from: cli
+      to: agent
+      data: The CLI hands the user message to the agent core along with the running session state.
+    - from: agent
+      to: extensions
+      data: The agent asks the extensions manager which extensions are currently enabled for this session.
+    - from: extensions
+      to: mcp
+      data: For each MCP-backed extension, the manager makes sure the corresponding MCP client is connected.
+    - from: mcp
+      to: server
+      data: The MCP client opens or reuses a stdio/SSE transport and calls list_tools on each connected server.
+    - from: server
+      to: mcp
+      data:
+        label: Each MCP server returns its tool catalog — names, descriptions, and JSON Schemas.
+        fields:
+          - name: tools
+            type: "list[ToolSpec]"
+    - from: mcp
+      to: prompt
+      data: The agent assembles a system prompt that lists the available tools and any extension instructions.
+    - from: prompt
+      to: provider
+      data: The agent sends system + messages + the merged tool list to the configured LLM provider.
+    - from: provider
+      to: agent
+      data:
+        label: The model returns an assistant message; if it wants to act, the message includes a tool_use block.
+        fields:
+          - name: content
+          - name: tool_use
+            type: ToolUse
+            added: true
+    - from: agent
+      to: mcp
+      data: The agent routes the tool_use to the MCP client that owns the chosen tool name.
+    - from: mcp
+      to: server
+      data: The MCP client invokes call_tool over the transport with the arguments the model produced.
+    - from: server
+      to: tool
+      data: The MCP server dispatches the call to the underlying implementation — shell command, API client, or local handler.
+    - from: tool
+      to: server
+      data: The tool returns its result; the server packages it as a CallToolResult.
+    - from: server
+      to: mcp
+      data:
+        label: The MCP client receives the tool result over the transport.
+        fields:
+          - name: content
+            type: "list[ContentBlock]"
+          - name: is_error
+            type: bool
+    - from: mcp
+      to: agent
+      data: The agent appends the tool_result block to the conversation as the next user-role message.
+    - from: agent
+      to: provider
+      data: The agent sends the updated conversation back to the provider so the model can read the result.
+    - from: provider
+      to: agent
+      data: When the model has answered, it returns a plain assistant message with no tool_use.
+    - from: agent
+      to: cli
+      data: The agent forwards the final text to the CLI for rendering.
+    - from: cli
+      to: user
+      data: The CLI prints the answer in the terminal and waits for the next turn.

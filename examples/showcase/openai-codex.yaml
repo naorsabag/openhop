@@ -1,0 +1,95 @@
+meta:
+  title: OpenAI Codex CLI tool-call loop
+  path: showcase/openai-codex
+  description: One turn of openai/codex — user prompt enters, the model picks a tool, codex executes it, the result feeds back into the model, and the final reply lands in the terminal.
+
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+    - id: cli
+      label: codex CLI
+      type: service
+    - id: session
+      label: Session State
+      type: cache
+    - id: model
+      label: Responses API
+      type: external
+      icon: "logos:openai-icon"
+    - id: approval
+      label: Approval Gate
+      type: auth
+    - id: tool
+      label: Tool Runner
+      type: service
+    - id: shell
+      label: Shell / Workspace
+      type: external
+    - id: term
+      label: Terminal
+      type: actor
+
+  steps:
+    - from: user
+      to: cli
+      data: The user types a request in the codex terminal session.
+    - from: cli
+      to: session
+      data: The CLI appends the new user message to the running conversation history.
+    - from: session
+      to: model
+      data:
+        label: The CLI sends the full conversation plus the registered tool schemas to the Responses API.
+        fields:
+          - name: input
+            type: "list[Message]"
+          - name: tools
+            type: "list[ToolSchema]"
+    - from: model
+      to: cli
+      data:
+        label: The model streams back a response — either a final answer or a function_call requesting a tool.
+        fields:
+          - name: output
+            type: "list[ResponseItem]"
+          - name: tool_call
+            type: ToolCall
+            added: true
+    - from: cli
+      to: approval
+      data: For sensitive tools (shell write, network), the CLI consults the configured approval policy before running.
+    - from: approval
+      to: user
+      data: Under on-request approval, the CLI prompts the user with the proposed command and waits for y/n.
+    - from: user
+      to: approval
+      data: The user approves, denies, or edits the command.
+    - from: approval
+      to: tool
+      data: Approved tool calls are forwarded to the tool runner with their parsed arguments.
+    - from: tool
+      to: shell
+      data: For shell tools, the runner spawns the command inside the workspace sandbox.
+    - from: shell
+      to: tool
+      data:
+        label: The shell returns stdout, stderr, and the exit code; the runner truncates long output before it goes back to the model.
+        fields:
+          - name: stdout
+          - name: stderr
+          - name: exit_code
+            type: int
+    - from: tool
+      to: session
+      data: The runner appends a function_call_output item carrying the tool result to the session history.
+    - from: session
+      to: model
+      data: The CLI sends the updated conversation back to the Responses API so the model can read the tool output and decide what to do next.
+    - from: model
+      to: cli
+      data: When the model has enough information, it streams a final assistant message instead of another tool call.
+    - from: cli
+      to: term
+      data: The CLI renders the streamed answer in the terminal and waits for the next user turn.

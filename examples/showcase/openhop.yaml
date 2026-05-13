@@ -1,0 +1,107 @@
+meta:
+  title: OpenHop, visualized in OpenHop
+  path: showcase/openhop
+  description: How an AI agent turns "explain how X works" into an animated flow you can share — the self-referential hero demo.
+
+flow:
+  nodes:
+    - id: human
+      label: Human
+      type: actor
+    - id: agent
+      label: AI Agent
+      type: actor
+      icon: "logos:anthropic-icon"
+    - id: skill
+      label: SKILL.md
+      type: external
+    - id: cli
+      label: openhop CLI
+      type: service
+      flow:
+        nodes:
+          - id: parse
+            label: Parse YAML
+            type: service
+          - id: validate
+            label: Schema Validator
+            type: service
+          - id: suggest
+            label: Typo Suggestions
+            type: service
+          - id: emit
+            label: JSON Output
+            type: service
+        steps:
+          - from: parse
+            to: validate
+            data: The parser hands the YAML AST to the schema validator so structural rules can be checked.
+          - from: validate
+            to: suggest
+            data: If a field name is misspelled, the validator asks the suggester for a fuzzy match against the known schema.
+          - from: suggest
+            to: emit
+            data: The suggester returns an actionable error object listing the closest valid names.
+          - from: validate
+            to: emit
+            data: On success the validator hands the cleaned-up flow object straight to the JSON emitter.
+    - id: server
+      label: openhop server
+      type: endpoint
+    - id: store
+      label: Flow Store
+      type: database
+    - id: browser
+      label: Browser
+      type: actor
+
+  steps:
+    - from: human
+      to: agent
+      data: The user asks the agent to explain how something works in their codebase.
+    - from: agent
+      to: skill
+      data: The agent searches its installed skills and matches OpenHop's SKILL.md by description.
+    - from: skill
+      to: agent
+      data: The skill returns the YAML schema, authoring rules, and the exact CLI commands to run.
+    - from: agent
+      to: cli
+      data:
+        label: The agent pipes a hand-authored flow YAML into the CLI on stdin.
+        fields:
+          - name: meta
+          - name: flow.nodes
+          - name: flow.steps
+      drilldown: true
+    - from: cli
+      to: server
+      data: The CLI POSTs the validated flow to the server so it can be persisted and given a stable URL.
+    - from: server
+      to: store
+      data: The server writes the flow document under the agent's namespace.
+    - from: store
+      to: server
+      data: The store confirms the write and returns the flow's slug.
+    - from: server
+      to: cli
+      data:
+        label: The server replies with a shareable URL pointing at the playground.
+        fields:
+          - name: url
+          - name: slug
+    - from: cli
+      to: agent
+      data: The CLI prints the URL back so the agent can quote it in the chat reply.
+    - from: agent
+      to: human
+      data: The agent posts a one-line summary plus the URL to click.
+    - from: human
+      to: browser
+      data: The user clicks the URL.
+    - from: browser
+      to: server
+      data: The browser requests the playground page for that flow slug.
+    - from: server
+      to: browser
+      data: The server returns the static HTML plus the flow JSON so the animation can play locally.
