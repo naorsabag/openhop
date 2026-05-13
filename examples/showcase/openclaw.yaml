@@ -13,7 +13,7 @@ flow:
       type: service
     - id: agent
       label: Agent Loop
-      type: service
+      type: ai_agent
     - id: skills
       label: Skill Router
       type: service

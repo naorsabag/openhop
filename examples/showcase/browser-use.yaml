@@ -10,7 +10,7 @@ flow:
       type: actor
     - id: agent
       label: Agent
-      type: service
+      type: ai_agent
     - id: history
       label: History
       type: cache
@@ -36,7 +36,7 @@ flow:
       icon: "logos:microsoft-icon"
     - id: page
       label: Browser Page
-      type: external
+      type: browser
 
   steps:
     - from: user

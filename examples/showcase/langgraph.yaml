@@ -10,7 +10,7 @@ flow:
       type: actor
     - id: agent
       label: Agent Node
-      type: service
+      type: ai_agent
     - id: llm
       label: Chat Model
       type: external

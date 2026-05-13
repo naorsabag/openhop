@@ -10,7 +10,7 @@ flow:
       type: actor
     - id: browser
       label: Browser
-      type: actor
+      type: browser
     - id: app
       label: App Server
       type: endpoint

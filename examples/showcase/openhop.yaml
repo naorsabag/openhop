@@ -10,7 +10,7 @@ flow:
       type: actor
     - id: agent
       label: AI Agent
-      type: actor
+      type: ai_agent
       icon: "logos:claude-icon"
     - id: skill
       label: SKILL.md
@@ -53,7 +53,7 @@ flow:
       type: database
     - id: browser
       label: Browser
-      type: actor
+      type: browser
 
   steps:
     - from: human

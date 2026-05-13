@@ -10,7 +10,7 @@ flow:
       type: actor
     - id: cli
       label: codex CLI
-      type: service
+      type: ai_agent
     - id: session
       label: Session State
       type: cache
