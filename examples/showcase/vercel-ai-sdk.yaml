@@ -23,11 +23,11 @@ flow:
     - id: provider
       label: Provider Adapter
       type: service
-      icon: "logos:vercel-icon"
+      icon: "skill-icons:vercel-dark"
     - id: model
       label: LLM
       type: external
-      icon: "logos:anthropic-icon"
+      icon: "logos:claude-icon"
     - id: tool
       label: Tool
       type: external

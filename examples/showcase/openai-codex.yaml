@@ -17,7 +17,7 @@ flow:
     - id: model
       label: Responses API
       type: external
-      icon: "logos:openai-icon"
+      icon: "twemoji:robot"
     - id: approval
       label: Approval Gate
       type: auth

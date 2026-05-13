@@ -23,7 +23,7 @@ flow:
     - id: provider
       label: LLM Provider
       type: external
-      icon: "logos:anthropic-icon"
+      icon: "logos:claude-icon"
     - id: mcp
       label: MCP Client
       type: service

@@ -11,7 +11,7 @@ flow:
     - id: agent
       label: AI Agent
       type: actor
-      icon: "logos:anthropic-icon"
+      icon: "logos:claude-icon"
     - id: skill
       label: SKILL.md
       type: external

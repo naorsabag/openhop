@@ -14,7 +14,7 @@ flow:
     - id: llm
       label: Chat Model
       type: external
-      icon: "logos:openai-icon"
+      icon: "twemoji:robot"
     - id: condition
       label: tools_condition
       type: service

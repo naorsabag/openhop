@@ -23,7 +23,7 @@ flow:
     - id: model
       label: LLM
       type: external
-      icon: "logos:anthropic-icon"
+      icon: "logos:claude-icon"
     - id: tools
       label: Tool Registry
       type: service
