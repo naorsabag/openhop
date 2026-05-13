@@ -1,0 +1,98 @@
+meta:
+  title: OpenClaw agent loop
+  path: showcase/openclaw
+  description: One turn of an OpenClaw-style agent CLI — prompt → skill router → tool call → tool response → reply. Stand-in shape for AI agent CLIs that mount a SKILL.md ecosystem.
+
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+    - id: cli
+      label: openclaw CLI
+      type: service
+    - id: agent
+      label: Agent Loop
+      type: ai_agent
+    - id: skills
+      label: Skill Router
+      type: service
+    - id: skill
+      label: Matched Skill
+      type: external
+    - id: model
+      label: LLM
+      type: external
+      icon: "logos:claude-icon"
+    - id: tools
+      label: Tool Registry
+      type: service
+    - id: tool
+      label: Tool
+      type: external
+    - id: term
+      label: Terminal
+      type: actor
+
+  steps:
+    - from: user
+      to: cli
+      data: The user types a request in the openclaw session.
+    - from: cli
+      to: agent
+      data: The CLI forwards the message to the agent loop together with the running session state.
+    - from: agent
+      to: skills
+      data: The agent asks the skill router which installed skills match this request by description.
+    - from: skills
+      to: skill
+      data: The router loads the SKILL.md of the highest-scoring match.
+    - from: skill
+      to: agent
+      data:
+        label: The skill returns its instructions and the tools it wants exposed for this turn.
+        fields:
+          - name: instructions
+          - name: tools
+            type: "list[ToolName]"
+    - from: agent
+      to: model
+      data: The agent sends the conversation, the skill instructions, and the merged tool schemas to the model.
+    - from: model
+      to: agent
+      data:
+        label: The model returns an assistant message that may include a tool_use block.
+        fields:
+          - name: content
+          - name: tool_use
+            type: ToolUse
+            added: true
+    - from: agent
+      to: tools
+      data: The agent looks the requested tool up in the registry to find its handler.
+    - from: tools
+      to: tool
+      data:
+        label: The tool runner invokes the handler with the validated arguments from the model.
+        fields:
+          - name: name
+          - name: args
+            type: dict
+    - from: tool
+      to: tools
+      data: The handler returns its result; the runner serializes it back to a tool_result block.
+    - from: tools
+      to: agent
+      data: The agent appends the tool_result to the conversation as the next user-role message.
+    - from: agent
+      to: model
+      data: The agent sends the updated conversation to the model so it can read the tool result.
+    - from: model
+      to: agent
+      data: When the model has answered, it returns an assistant message with no tool_use.
+    - from: agent
+      to: cli
+      data: The CLI receives the final text plus any structured artifacts the skill emitted.
+    - from: cli
+      to: term
+      data: The CLI prints the answer in the terminal and waits for the next turn.

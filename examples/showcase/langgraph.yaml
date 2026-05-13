@@ -1,0 +1,87 @@
+meta:
+  title: LangGraph ReAct agent state graph
+  path: showcase/langgraph
+  description: The default ReAct agent in langchain-ai/langgraph — START → agent node → conditional edge → tool node → END, with messages state threaded through.
+
+flow:
+  nodes:
+    - id: start
+      label: START
+      type: actor
+    - id: agent
+      label: Agent Node
+      type: ai_agent
+    - id: llm
+      label: Chat Model
+      type: external
+      icon: "simple-icons:openai"
+    - id: condition
+      label: tools_condition
+      type: service
+    - id: tools
+      label: ToolNode
+      type: service
+    - id: tool
+      label: Tool
+      type: external
+    - id: checkpoint
+      label: Checkpointer
+      type: database
+    - id: end
+      label: END
+      type: actor
+
+  steps:
+    - from: start
+      to: agent
+      data:
+        label: The graph enters with the initial messages state — the user's question wrapped as a HumanMessage.
+        fields:
+          - name: messages
+            type: "list[HumanMessage]"
+    - from: agent
+      to: llm
+      data: The agent node passes the running message list to the bound chat model so it can decide whether to call a tool.
+    - from: llm
+      to: agent
+      data:
+        label: The model returns an AIMessage; if it wants a tool, the message carries a tool_calls list.
+        fields:
+          - name: content
+            type: str
+          - name: tool_calls
+            type: "list[ToolCall]"
+            added: true
+    - from: agent
+      to: checkpoint
+      data: The agent node appends the AIMessage to the messages channel; the checkpointer persists the new state slice.
+    - from: agent
+      to: condition
+      data: After the agent step, the graph evaluates the conditional edge to choose the next node.
+    - from: condition
+      to: tools
+      data: When the last message has tool_calls, tools_condition routes to the ToolNode.
+    - from: condition
+      to: end
+      data: When the model answered without tool_calls, tools_condition routes straight to END.
+    - from: tools
+      to: tool
+      data:
+        label: The ToolNode invokes each requested tool with its parsed arguments.
+        fields:
+          - name: name
+            type: str
+          - name: args
+            type: dict
+    - from: tool
+      to: tools
+      data: The tool returns its result; the ToolNode wraps it in a ToolMessage tagged with the originating tool_call_id.
+    - from: tools
+      to: checkpoint
+      data: The ToolNode appends each ToolMessage to messages; the checkpointer writes the new state slice.
+    - from: tools
+      to: agent
+      data: Control loops back to the agent node so the model can read the tool results and either answer or call more tools.
+    - from: agent
+      to: end
+      data: Once the conditional edge picks END, the graph emits the final state to the caller.

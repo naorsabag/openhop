@@ -28,6 +28,8 @@ export const NODE_TYPE_SPRITE: Record<string, string> = {
   docker: `${BASE}sprites/docker_node.svg`,
   k8s: `${BASE}sprites/k8s_node.svg`,
   scheduler: `${BASE}sprites/scheduler_node.svg`,
+  ai_agent: `${BASE}sprites/ai_agent_node.svg`,
+  browser: `${BASE}sprites/browser_node.svg`,
 }
 
 export const SPRITE_SIZE = 108

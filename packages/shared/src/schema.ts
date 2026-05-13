@@ -14,6 +14,8 @@ export const NodeTypeEnum = z.enum([
   'docker',
   'k8s',
   'scheduler',
+  'ai_agent',
+  'browser',
   'custom',
 ])
 

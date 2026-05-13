@@ -1,0 +1,120 @@
+meta:
+  title: Auth.js OAuth 2.0 with PKCE
+  path: showcase/authjs-oauth
+  description: End-to-end OAuth Authorization Code + PKCE login through Auth.js / NextAuth — the flow everyone asks "wait, what does state actually do?" about.
+
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+    - id: browser
+      label: Browser
+      type: browser
+    - id: app
+      label: App Server
+      type: endpoint
+    - id: pkce
+      label: PKCE + state cookies
+      type: cache
+    - id: provider
+      label: OAuth Provider
+      type: external
+      icon: "logos:google-icon"
+    - id: adapter
+      label: Database Adapter
+      type: database
+    - id: session
+      label: Session Cookie
+      type: cache
+
+  steps:
+    - from: user
+      to: browser
+      data: The user clicks the "Sign in with Google" button on a page rendered by the app.
+    - from: browser
+      to: app
+      data: The browser hits /api/auth/signin/google so Auth.js can start the handshake.
+    - from: app
+      to: pkce
+      data:
+        label: Auth.js generates a fresh code_verifier and state, hashes the verifier into a code_challenge, and writes them to short-lived HTTP-only cookies.
+        fields:
+          - name: code_verifier
+          - name: code_challenge
+          - name: state
+    - from: app
+      to: browser
+      data:
+        label: The app responds with a 302 redirect to the provider's /authorize endpoint, including the PKCE challenge and the state value.
+        fields:
+          - name: client_id
+          - name: redirect_uri
+          - name: code_challenge
+          - name: code_challenge_method
+            type: "'S256'"
+          - name: state
+    - from: browser
+      to: provider
+      data: The browser follows the redirect to the provider's login page.
+    - from: user
+      to: provider
+      data: The user authenticates with the provider and approves the requested scopes.
+    - from: provider
+      to: browser
+      data:
+        label: The provider redirects the browser back to the app's callback URL with a one-time code and the original state.
+        fields:
+          - name: code
+          - name: state
+    - from: browser
+      to: app
+      data: The browser hits /api/auth/callback/google carrying the code, state, and the cookies set earlier.
+    - from: app
+      to: pkce
+      data: Auth.js reads code_verifier and state from the cookies set in the first redirect.
+    - from: pkce
+      to: app
+      data:
+        label: If the returned state doesn't match the cookie, Auth.js aborts with an OAuthCallbackError before touching the provider.
+        fields:
+          - name: state_match
+            type: bool
+          - name: code_verifier
+    - from: app
+      to: provider
+      data:
+        label: Auth.js POSTs to the token endpoint, redeeming the code together with the original code_verifier so the provider can re-hash it and prove the same client started the flow.
+        fields:
+          - name: grant_type
+            type: "'authorization_code'"
+          - name: code
+          - name: redirect_uri
+          - name: code_verifier
+    - from: provider
+      to: app
+      data:
+        label: The provider returns tokens; Auth.js fetches the userinfo endpoint to get the profile.
+        fields:
+          - name: access_token
+          - name: id_token
+          - name: refresh_token
+    - from: app
+      to: adapter
+      data: Auth.js calls the configured database adapter to upsert the User and link the Account record by (provider, providerAccountId).
+    - from: adapter
+      to: app
+      data: The adapter returns the canonical user id and the linked account row.
+    - from: app
+      to: session
+      data:
+        label: For database sessions Auth.js writes a session row and sets next-auth.session-token; for JWT sessions it signs a token and sets the same cookie name.
+        fields:
+          - name: sessionToken
+          - name: expires
+    - from: app
+      to: browser
+      data: The app responds with a 302 to the page the user originally wanted, and the session cookie is now attached.
+    - from: browser
+      to: user
+      data: The user lands back on the app, signed in.

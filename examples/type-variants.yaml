@@ -82,6 +82,20 @@ flow:
     - { id: sched-4, label: Sched 4, type: scheduler }
     - { id: sched-5, label: Sched 5, type: scheduler }
 
+    # ai_agent
+    - { id: agent-1, label: Agent 1, type: ai_agent }
+    - { id: agent-2, label: Agent 2, type: ai_agent }
+    - { id: agent-3, label: Agent 3, type: ai_agent }
+    - { id: agent-4, label: Agent 4, type: ai_agent }
+    - { id: agent-5, label: Agent 5, type: ai_agent }
+
+    # browser
+    - { id: browser-1, label: Browser 1, type: browser }
+    - { id: browser-2, label: Browser 2, type: browser }
+    - { id: browser-3, label: Browser 3, type: browser }
+    - { id: browser-4, label: Browser 4, type: browser }
+    - { id: browser-5, label: Browser 5, type: browser }
+
     # custom (falls back to service sprite)
     - { id: custom-1, label: Custom 1, type: custom }
     - { id: custom-2, label: Custom 2, type: custom }
@@ -107,4 +121,6 @@ flow:
     - { from: svc-1, to: docker-1, data: "→" }
     - { from: docker-1, to: k8s-1, data: "→" }
     - { from: k8s-1, to: sched-1, data: "→" }
-    - { from: sched-1, to: custom-1, data: "→" }
+    - { from: sched-1, to: agent-1, data: "→" }
+    - { from: agent-1, to: browser-1, data: "→" }
+    - { from: browser-1, to: custom-1, data: "→" }

@@ -30,7 +30,7 @@ flow:
 
 ### `type` is a category, `label` is the name
 
-The 12 type values pick the sprite + accent the renderer draws (database = barrel, cache = lightning, queue = stack, etc.). **Never** put a variant name (`redis`, `stripe`, `postgres`) in `type` — that's a label.
+The 14 type values pick the sprite + accent the renderer draws (database = barrel, cache = lightning, queue = stack, etc.). **Never** put a variant name (`redis`, `stripe`, `postgres`) in `type` — that's a label.
 
 | `type`      | Common labels                                                |
 | ----------- | ------------------------------------------------------------ |
@@ -45,6 +45,8 @@ The 12 type values pick the sprite + accent the renderer draws (database = barre
 | `docker`    | container, sidecar, init-container, compose-service          |
 | `k8s`       | pod, deployment, statefulset, daemonset, job, cronjob        |
 | `scheduler` | cron, airflow, temporal, celery-beat, sidekiq                |
+| `ai_agent`  | llm-agent, chatbot, copilot, research-agent, coding-agent    |
+| `browser`   | chrome, firefox, headless-browser, playwright, puppeteer     |
 | `custom`    | anything — also set `icon` + `color`                         |
 
 Anything outside that list fails validation. When nothing fits, use `custom`.

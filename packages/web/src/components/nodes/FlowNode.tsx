@@ -81,7 +81,9 @@ function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
   if (icon) {
     if (icon.includes(':')) {
       const [prefix, name] = icon.split(':')
-      const url = `https://api.iconify.design/${prefix}/${name}.svg`
+      // ?color=white recolors monotone icons (those that use fill/stroke="currentColor")
+      // for the dark canvas. It's a no-op on icons that have explicit fills baked in.
+      const url = `https://api.iconify.design/${prefix}/${name}.svg?color=white`
       customIconOverlay = (
         <img
           src={url}

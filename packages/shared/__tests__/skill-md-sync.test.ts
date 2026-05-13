@@ -37,7 +37,7 @@ function readSkillTypeTable(): string[] {
   for (const line of slice.split('\n')) {
     if (line.startsWith('|')) {
       inTable = true
-      const m = line.match(/^\|\s*([a-z][a-z0-9-]*)\s*\|/)
+      const m = line.match(/^\|\s*([a-z][a-z0-9_-]*)\s*\|/)
       if (m && !/^-+$/.test(m[1]) && m[1] !== 'type') types.push(m[1])
     } else if (inTable && line.trim() === '') {
       break // table ended
@@ -69,7 +69,7 @@ describe('SKILL.md / schema NodeTypeEnum sync', () => {
     //   `type`: closed enum, exactly one of: `actor | endpoint | …`
     // We look for the bullet that has both `\`type\`` and at least one
     // pipe-separated list of bare names.
-    const m = md.match(/`type`:[\s\S]{0,200}?`([a-z][a-z0-9 |]+)`/)
+    const m = md.match(/`type`:[\s\S]{0,200}?`([a-z][a-z0-9_ |]+)`/)
     expect(m, 'SKILL.md must have a `type`: bullet listing the enum').not.toBeNull()
     const listed = new Set(
       m![1]
