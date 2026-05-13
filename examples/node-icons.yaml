@@ -1,0 +1,60 @@
+meta:
+  title: Node Icons
+  description: How `icon:` and `color:` overlay an Iconify brand icon on top of a node's pixel sprite. The `type` still picks the underlying sprite — the icon just rebrands it. Browse icons at https://icon-sets.iconify.design.
+  path: examples/node-icons
+
+flow:
+  nodes:
+    - id: user
+      label: User
+      type: actor
+
+    - id: api
+      label: API
+      type: endpoint
+      icon: "simple-icons:fastify"
+      color: "#000000"
+
+    - id: pg
+      label: Postgres
+      type: database
+      icon: "logos:postgresql"
+      color: "#336791"
+
+    - id: redis
+      label: Redis
+      type: cache
+      icon: "logos:redis"
+      color: "#DC382D"
+
+    - id: events
+      label: RabbitMQ
+      type: queue
+      icon: "logos:rabbitmq"
+      color: "#FF6600"
+
+    - id: email
+      label: SendGrid
+      type: external
+      icon: "logos:sendgrid"
+      color: "#1A82E2"
+
+  steps:
+    - from: user
+      to: api
+      data: The user signs up — the API receives their email and chosen password.
+    - from: api
+      to: pg
+      data: The API writes the new user row to Postgres so the account survives a restart.
+    - from: api
+      to: redis
+      data: The API caches the session token in Redis so subsequent requests skip the database.
+    - from: api
+      to: events
+      data: The API enqueues a "user.signed_up" event for downstream consumers to react to asynchronously.
+    - from: events
+      to: email
+      data: The email worker picks the event off the queue and asks SendGrid to deliver the welcome email.
+    - from: email
+      to: user
+      data: SendGrid delivers the welcome email to the user's inbox.
