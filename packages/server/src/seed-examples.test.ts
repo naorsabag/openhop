@@ -14,14 +14,14 @@ describe('seedBundledExamples', () => {
 
     // Every YAML in examples/ + examples/showcase/ should land as a new flow.
     // We don't pin an exact count (it'll change as examples are added) — just
-    // assert "more than the previous one-shot seed" and that known anchors
-    // (order-flow, langgraph, ai-browsing-agent) are present.
+    // assert "more than the previous one-shot seed" and that a couple of
+    // stable anchors (top-level example, showcase entry) are present.
     expect(result.created.length).toBeGreaterThan(5)
     expect(result.updated.length).toBe(0)
     expect(result.failed.length).toBe(0)
     expect(result.created).toContain('example-order-flow')
     expect(result.created).toContain('example-langgraph')
-    expect(result.created).toContain('example-ai-browsing-agent')
+    expect(result.created).toContain('example-openhop')
   })
 
   it('updates an existing example in place on the second run', async () => {
