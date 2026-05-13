@@ -24,7 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Skill (`skills/openhop/SKILL.md`): trigger surface broadened beyond code walkthroughs. The `description:` field now routes on explicit diagram / visualization / walkthrough verbs over any system, product, feature, codebase, workflow, pipeline, or user journey — not only code. Adds an explicit negative gate so generic explainer prompts ("how does TCP work?", "what is OAuth?") do not activate the skill. Trigger phrase examples reorganised into diagram / code-walkthrough / product-feature buckets.
 - Web: INSPECT panel defaults to bottom-dock on narrow viewports (Tailwind `md` breakpoint, < 768 px). Desktop continues to default to right-dock. Closed-by-default behaviour on mobile is unchanged — the new dock side only kicks in when the user opens the panel from its bookmark tab.
->>>>>>> 3b5e1f2 (feat: ship all examples + showcases on first run)
 
 ## [0.2.0] - 2026-05-11
 
