@@ -124,3 +124,6 @@ flow:
     - from: agent
       to: user
       data: When the model emits the `done` action with success=true, the agent returns the final extracted output to the caller.
+    - from: agent
+      to: user
+      data: If max_steps is reached or the model emits `done` with success=false, the agent returns a failure status with whatever was extracted so far.

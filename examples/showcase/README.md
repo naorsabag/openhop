@@ -1,7 +1,7 @@
 # Showcase flows
 
 Hand-authored OpenHop flows for well-known open-source projects, plus a self-referential
-flow of OpenHop itself. Each flow visualizes a *real* code path in the target repo — not
+flow of OpenHop itself. Each flow visualizes a _real_ code path in the target repo — not
 a marketing diagram — so anyone who already uses the project gets the "huh, didn't realize
 it worked that way" reaction.
 
@@ -19,16 +19,16 @@ Shipped inventory + license verification lives in [`openhop-launch/22-shipped-ex
 
 ## Files
 
-| File | Target | License | Flow visualized |
-|---|---|---|---|
-| [`openhop.yaml`](./openhop.yaml) | this repo | MIT | The self-referential hero — agent prompt → SKILL.md → CLI → playground URL → animation |
-| [`langgraph.yaml`](./langgraph.yaml) | langchain-ai/langgraph | MIT | Agent state graph: START → agent node → conditional edge → tool node → END |
-| [`openai-codex.yaml`](./openai-codex.yaml) | openai/codex | Apache-2.0 | Codex CLI tool-call loop: prompt → model → tool selection → execution → output |
-| [`block-goose.yaml`](./block-goose.yaml) | block/goose | Apache-2.0 | Goose MCP + skills loop: prompt → goose core → MCP client → MCP server → reply |
-| [`authjs-oauth.yaml`](./authjs-oauth.yaml) | nextauthjs/next-auth | ISC | OAuth 2.0 PKCE end-to-end: browser → app → provider → callback → token exchange |
-| [`openclaw.yaml`](./openclaw.yaml) | openclaw/openclaw | MIT | Agent loop: prompt → skill router → tool call → tool response → reply |
-| [`vercel-ai-sdk.yaml`](./vercel-ai-sdk.yaml) | vercel/ai | Apache-2.0 | useChat → /api/chat → streamText → tool call → tool exec → SSE data stream → UI re-render |
-| [`browser-use.yaml`](./browser-use.yaml) | browser-use/browser-use | MIT | Agent step: DOM tree + screenshot → LLM → typed action → Playwright → page state → loop |
+| File                                         | Target                  | License    | Flow visualized                                                                           |
+| -------------------------------------------- | ----------------------- | ---------- | ----------------------------------------------------------------------------------------- |
+| [`openhop.yaml`](./openhop.yaml)             | this repo               | MIT        | The self-referential hero — agent prompt → SKILL.md → CLI → playground URL → animation    |
+| [`langgraph.yaml`](./langgraph.yaml)         | langchain-ai/langgraph  | MIT        | Agent state graph: START → agent node → conditional edge → tool node → END                |
+| [`openai-codex.yaml`](./openai-codex.yaml)   | openai/codex            | Apache-2.0 | Codex CLI tool-call loop: prompt → model → tool selection → execution → output            |
+| [`block-goose.yaml`](./block-goose.yaml)     | block/goose             | Apache-2.0 | Goose MCP + skills loop: prompt → goose core → MCP client → MCP server → reply            |
+| [`authjs-oauth.yaml`](./authjs-oauth.yaml)   | nextauthjs/next-auth    | ISC        | OAuth 2.0 PKCE end-to-end: browser → app → provider → callback → token exchange           |
+| [`openclaw.yaml`](./openclaw.yaml)           | openclaw/openclaw       | MIT        | Agent loop: prompt → skill router → tool call → tool response → reply                     |
+| [`vercel-ai-sdk.yaml`](./vercel-ai-sdk.yaml) | vercel/ai               | Apache-2.0 | useChat → /api/chat → streamText → tool call → tool exec → SSE data stream → UI re-render |
+| [`browser-use.yaml`](./browser-use.yaml)     | browser-use/browser-use | MIT        | Agent step: DOM tree + screenshot → LLM → typed action → Playwright → page state → loop   |
 
 ## Running one
 

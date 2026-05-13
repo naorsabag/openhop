@@ -463,17 +463,17 @@ The canvas is dark green (`#0a1f0e`). The renderer fetches each icon from `https
 
 ### Brand cheat sheet
 
-| What you want | Use |
-| --- | --- |
-| OpenAI / GPT / ChatGPT | `simple-icons:openai` |
-| Anthropic / Claude | `logos:claude-icon` |
-| Vercel | `simple-icons:vercel` |
-| Google / Gmail / GCP brand | `logos:google-icon` (already colorful) |
-| Microsoft / Azure brand | `logos:microsoft-icon` (already colorful) |
-| Postgres / MySQL / Redis / Mongo | `logos:postgresql`, `logos:mysql`, `logos:redis`, `logos:mongodb` (all colorful) |
-| Any other brand | Try `simple-icons:<brand>` first — covers ~3000 brands, all recolor to white |
-| Generic icon (cpu, lock, database, robot, …) | `tabler:*`, `lucide:*`, `mdi:*` — all recolor to white |
-| Playful / emoji-style | `twemoji:*`, `noto:*`, `fluent-color:*` |
+| What you want                                | Use                                                                              |
+| -------------------------------------------- | -------------------------------------------------------------------------------- |
+| OpenAI / GPT / ChatGPT                       | `simple-icons:openai`                                                            |
+| Anthropic / Claude                           | `logos:claude-icon`                                                              |
+| Vercel                                       | `simple-icons:vercel`                                                            |
+| Google / Gmail / GCP brand                   | `logos:google-icon` (already colorful)                                           |
+| Microsoft / Azure brand                      | `logos:microsoft-icon` (already colorful)                                        |
+| Postgres / MySQL / Redis / Mongo             | `logos:postgresql`, `logos:mysql`, `logos:redis`, `logos:mongodb` (all colorful) |
+| Any other brand                              | Try `simple-icons:<brand>` first — covers ~3000 brands, all recolor to white     |
+| Generic icon (cpu, lock, database, robot, …) | `tabler:*`, `lucide:*`, `mdi:*` — all recolor to white                           |
+| Playful / emoji-style                        | `twemoji:*`, `noto:*`, `fluent-color:*`                                          |
 
 ### How to find icons for the dark canvas
 

@@ -58,6 +58,9 @@ flow:
           - name: tools
             type: "list[ToolSpec]"
     - from: mcp
+      to: agent
+      data: The MCP client hands the merged tool catalog (plus any extension instructions) back to the agent.
+    - from: agent
       to: prompt
       data: The agent assembles a system prompt that lists the available tools and any extension instructions.
     - from: prompt
