@@ -312,12 +312,12 @@ flow:
 
 - `id` (required): alphanumeric + hyphens + underscores
 - `label` (required): display name — short noun phrase, **≤ 4 words** so it fits the fixed-width label slot (`"Stripe"`, `"Order Service"`, `"Auth API"`). Longer labels truncate with "…".
-- `type`: **closed enum, exactly one of**: `actor | endpoint | auth | database | external | cache | queue | service | docker | k8s | scheduler | custom`. Anything else fails validation. Default if omitted: `service`.
+- `type`: **closed enum, exactly one of**: `actor | endpoint | auth | database | external | cache | queue | service | docker | k8s | scheduler | ai_agent | browser | custom`. Anything else fails validation. Default if omitted: `service`.
 - `icon`: Iconify icon ID (e.g. `"logos:postgresql"`) — overlays on top of the node's pixel art. Works on any `type`, not just `custom`. See the **Icons** section below for which icon sets render correctly on the dark canvas.
 - `color`: hex color
 - `flow`: nested sub-flow `{ nodes, steps }` — makes the node expandable; the renderer shows a "+" badge and clicking zooms into the inner flow. Infinite depth supported (sub-flows can themselves contain nodes with sub-flows). Pair with `drilldown: true` on a step targeting the parent node to auto-open the sub-flow on playback. See [`examples/sub-flows.yaml`](../../examples/sub-flows.yaml).
 
-> **Critical: types are categories, labels are names.** The 12 `type` values are how the renderer knows which sprite + color to draw (database = barrel, cache = lightning, etc.). The `label` is what the user reads on the node. **Never** put a variant name (like `redis`, `oauth`, `stripe`) into `type` — that's a label. Put it in `label`, and use the matching category in `type` (`cache`, `auth`, `external`).
+> **Critical: types are categories, labels are names.** The 14 `type` values are how the renderer knows which sprite + color to draw (database = barrel, cache = lightning, etc.). The `label` is what the user reads on the node. **Never** put a variant name (like `redis`, `oauth`, `stripe`) into `type` — that's a label. Put it in `label`, and use the matching category in `type` (`cache`, `auth`, `external`).
 >
 > **When nothing fits**, use `type: custom` and set your own `icon` + `color`. Don't invent new type values — the schema is closed.
 
@@ -338,6 +338,8 @@ Each node type has common real-world variants. Use them to choose an accurate `l
 | docker    | container, sidecar, init-container, compose-service                                                          |
 | k8s       | pod, deployment, statefulset, daemonset, job, cronjob, service, ingress                                      |
 | scheduler | cron, airflow, temporal, celery-beat, sidekiq, bullmq                                                        |
+| ai_agent  | llm-agent, chatbot, copilot, research-agent, coding-agent, browsing-agent, mcp-agent                         |
+| browser   | chrome, firefox, safari, edge, headless-browser, playwright, puppeteer, webview                              |
 | custom    | (anything — also set `icon` and `color`)                                                                     |
 
 ### Step

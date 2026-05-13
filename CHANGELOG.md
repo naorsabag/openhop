@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Two new node types: `ai_agent` (LLM-driven agent — bunny-robot sprite) and `browser` (a browser-window sprite). Both appear in `NodeTypeEnum` and ship as cropped + color-quantized SVG sprites under `packages/web/public/sprites/`. See `examples/ai-browsing-agent.yaml` for a flow that exercises both.
+
 ## [0.2.0] - 2026-05-11
 
 ### Added
