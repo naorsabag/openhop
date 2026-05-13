@@ -14,7 +14,6 @@ import nodeIcons from '../../../../examples/node-icons.yaml?raw'
 import parallel from '../../../../examples/parallel.yaml?raw'
 import subFlows from '../../../../examples/sub-flows.yaml?raw'
 import createDestroy from '../../../../examples/create-destroy.yaml?raw'
-import aiBrowsingAgent from '../../../../examples/ai-browsing-agent.yaml?raw'
 
 import showcaseOpenhop from '../../../../examples/showcase/openhop.yaml?raw'
 import showcaseLanggraph from '../../../../examples/showcase/langgraph.yaml?raw'
@@ -37,6 +36,16 @@ const EXAMPLES = 'examples'
 const SHOWCASE = 'examples/showcase'
 
 export const EXAMPLE_FLOWS: ExampleFlow[] = [
+  // First entry doubles as the Pages site's default landing flow
+  // (AppFragment auto-routes to EXAMPLE_FLOWS[0] when the URL has no hash).
+  {
+    id: 'showcase-openhop',
+    title: 'openhop',
+    description: 'The self-referential hero — agent prompt → SKILL.md → CLI → playground URL.',
+    path: SHOWCASE,
+    yaml: showcaseOpenhop,
+  },
+
   {
     id: 'node-icons',
     title: 'Node Icons',
@@ -65,22 +74,8 @@ export const EXAMPLE_FLOWS: ExampleFlow[] = [
     path: EXAMPLES,
     yaml: createDestroy,
   },
-  {
-    id: 'ai-browsing-agent',
-    title: 'AI Browsing Agent',
-    description: 'User → ai_agent ↔ LLM, agent ↔ browser ↔ website. Showcases the new sprites.',
-    path: EXAMPLES,
-    yaml: aiBrowsingAgent,
-  },
 
   // ── Showcase: hand-authored flows visualizing real code paths in OSS projects.
-  {
-    id: 'showcase-openhop',
-    title: 'OpenHop, visualized in OpenHop',
-    description: 'The self-referential hero — agent prompt → SKILL.md → CLI → playground URL.',
-    path: SHOWCASE,
-    yaml: showcaseOpenhop,
-  },
   {
     id: 'showcase-langgraph',
     title: 'LangGraph ReAct',

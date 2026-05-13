@@ -164,29 +164,13 @@ Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
 
 ## How it works
 
-```mermaid
-flowchart LR
-    user([User])
-    cli[CLI<br/>zod validation]
-    api[Fastify API]
-    web[Web UI<br/>PIXI]
-    browser([Browser])
+<p align="center">
+  <a href="https://naorsabag.github.io/openhop/">
+    <img src="assets/openhop-self-flow.png" width="720" alt="OpenHop rendering its own end-to-end flow — Human → AI Agent → SKILL.md / openhop CLI → openhop server → Flow Store, plus Browser. Click to view live." />
+  </a>
+</p>
 
-    subgraph agentBlock [ ]
-        direction TB
-        agent[Agent]
-        skill([SKILL.md])
-    end
-
-    user -- prompt --> agent
-    skill -- teaches --> agent
-    agent -- YAML --> cli
-    cli -- JSON --> api
-    api --> web
-    browser --> web
-
-    style agentBlock fill:transparent,stroke:none
-```
+<p align="center"><a href="https://naorsabag.github.io/openhop/"><b>▶ View this flow live on the Pages playground</b></a></p>
 
 The CLI validates YAML against a zod schema (with fuzzy typo hints), posts the flow to the API,
 and prints a URL. The web UI subscribes and animates data pixels along the edges.
