@@ -441,47 +441,14 @@ All operations support multiple items. Apply with `openhop patch <id> <file.yaml
 
 ## Icons
 
-The canvas is dark green (`#0a1f0e`). The renderer fetches each icon from `https://api.iconify.design/<prefix>/<name>.svg?color=white`. The `?color=white` recolors monotone icons that use `fill="currentColor"`; it's a no-op on icons that have explicit colored fills baked in.
+The canvas is dark — use light-theme icons.
 
-### Three classes of icons — pick the right one
+Pick from either:
 
-**1. Colorful icons — pick when the brand has a recognizable color identity.** Multi-color fills baked into the SVG. Render unchanged.
+- `simple-icons:<brand>` — covers ~3000 brand logos and auto-recolors to white.
+- `icon-sets.iconify.design/?palette=colorful` — sets with baked-in bright colors (e.g. `logos:google-icon`, `logos:postgresql`, `twemoji:*`).
 
-- ✅ `logos:google-icon`, `logos:microsoft-icon`, `logos:postgresql`, `logos:redis`, `logos:docker-icon`, `logos:stripe`, `logos:kubernetes`, `logos:claude-icon` (orange swirl), `logos:meta-icon`, `logos:hugging-face-icon`
-- ✅ `twemoji:*`, `noto:*`, `fluent-color:*`, `fluent-emoji:*` — fully colored emoji-style icons
-
-**2. Monotone (`currentColor`) icons — pick when you want a brand mark that the canvas recolors to white.** Iconify swaps `currentColor` for the URL's `?color=`, so these render bright on the dark canvas.
-
-- ✅ `simple-icons:*` for nearly every brand (`simple-icons:openai`, `simple-icons:vercel`, `simple-icons:anthropic`, `simple-icons:openai`, `simple-icons:apache`, …)
-- ✅ `tabler:*`, `lucide:*`, `mdi:*`, `material-symbols:*` — generic glyphs (`tabler:database`, `lucide:cpu`)
-
-**3. Avoid — bare-path logos with hardcoded dark fills.** These have a single `<path>` with either no `fill` (defaults black) or a hardcoded dark color (`#181818`). The `?color=` substitution has nothing to bind to, so they render black on the dark canvas.
-
-- ❌ `logos:openai-icon` (bare path, default black) — use `simple-icons:openai` instead
-- ❌ `logos:vercel-icon` (bare path, default black) — use `simple-icons:vercel` instead
-- ❌ `logos:anthropic-icon` (`fill="#181818"`, hardcoded near-black) — use `logos:claude-icon` (orange) instead
-
-### Brand cheat sheet
-
-| What you want                                | Use                                                                              |
-| -------------------------------------------- | -------------------------------------------------------------------------------- |
-| OpenAI / GPT / ChatGPT                       | `simple-icons:openai`                                                            |
-| Anthropic / Claude                           | `logos:claude-icon`                                                              |
-| Vercel                                       | `simple-icons:vercel`                                                            |
-| Google / Gmail / GCP brand                   | `logos:google-icon` (already colorful)                                           |
-| Microsoft / Azure brand                      | `logos:microsoft-icon` (already colorful)                                        |
-| Postgres / MySQL / Redis / Mongo             | `logos:postgresql`, `logos:mysql`, `logos:redis`, `logos:mongodb` (all colorful) |
-| Any other brand                              | Try `simple-icons:<brand>` first — covers ~3000 brands, all recolor to white     |
-| Generic icon (cpu, lock, database, robot, …) | `tabler:*`, `lucide:*`, `mdi:*` — all recolor to white                           |
-| Playful / emoji-style                        | `twemoji:*`, `noto:*`, `fluent-color:*`                                          |
-
-### How to find icons for the dark canvas
-
-1. **`icon-sets.iconify.design`** — set the **Palette** filter:
-   - `palette=colorful` → icons with baked-in colored fills (class 1 above).
-   - `palette=mono` → monotone icons that use `currentColor` (class 2 — these auto-recolor white on the canvas).
-2. **`icon-sets.iconify.design/simple-icons/`** — single best set for brand logos. Every icon is monotone-currentColor, so every one renders bright.
-3. **Quick verification** — `curl https://api.iconify.design/<prefix>/<name>.svg | head -2`. If the SVG contains `fill="currentColor"` or has multiple `fill="#…"` colors, you're good. If it's a bare `<path d="…" />` with no fill, the icon will render black — pick something else.
+Avoid `logos:openai-icon`, `logos:vercel-icon`, `logos:anthropic-icon`, and similar bare-path "icon" variants — they render black. Use `simple-icons:openai`, `simple-icons:vercel`, `logos:claude-icon` instead.
 
 ## Tips
 
