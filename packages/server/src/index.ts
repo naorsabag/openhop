@@ -4,7 +4,7 @@ import cors from '@fastify/cors'
 import { sharedJsonSchemas } from '@openhop/shared'
 import { flowRoutes } from './routes.js'
 import { FlowStore } from './store.js'
-import { syncExampleOrderFlow } from './seed-example.js'
+import { seedBundledExamples } from './seed-examples.js'
 
 export interface StartServerOptions {
   /** TCP port. Default: process.env.PORT ?? 8787 */
@@ -56,19 +56,24 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
 
   await app.register(flowRoutes)
 
-  // Seed the bundled example flow into the disk-backed store, if available.
-  // FlowStore is disk-backed (~/.openhop/flows by default), so the seed write
-  // becomes visible to the routes' own FlowStore instance via the shared dir.
+  // Seed the bundled example flows into the disk-backed store, if any
+  // ship with this build. FlowStore is disk-backed (~/.openhop/flows by
+  // default), so the seed writes become visible to the routes' own
+  // FlowStore instance via the shared dir.
   const store = new FlowStore()
   try {
-    const syncResult = await syncExampleOrderFlow(store)
-    if (syncResult === 'created') {
-      app.log.info('Seeded example flow: example-order-flow')
-    } else if (syncResult === 'updated') {
-      app.log.info('Updated example flow: example-order-flow')
+    const seed = await seedBundledExamples(store)
+    if (seed.created.length > 0) {
+      app.log.info({ created: seed.created }, `Seeded ${seed.created.length} example flow(s)`)
+    }
+    if (seed.updated.length > 0) {
+      app.log.info({ updated: seed.updated }, `Updated ${seed.updated.length} example flow(s)`)
+    }
+    if (seed.failed.length > 0) {
+      app.log.warn({ failed: seed.failed }, `${seed.failed.length} example(s) failed to parse`)
     }
   } catch {
-    // No example flow available, that's fine for the published package.
+    // No bundled examples available — that's fine in stripped-down builds.
   }
 
   return app

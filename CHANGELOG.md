@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `examples/node-icons.yaml`: small focused flow demonstrating Iconify brand-icon overlays on top of pixel sprites (Postgres, Redis, RabbitMQ, SendGrid).
+- Server: on first startup, the bundled `examples/` and `examples/showcase/` flows are seeded into the disk-backed store with stable `example-<basename>` ids. Repeat starts update the seeded copies in place; user-authored flows (random nanoids) are untouched. The npm tarball now ships the `examples/` tree (`@openhop/server` `files` field + prepack copy) so `npx openhop demo` populates the sidebar on a brand-new machine.
+- Pages playground: sidebar now bundles the showcase flows and the focused feature demos (node-icons, parallel, sub-flows, create-destroy, ai-browsing-agent). The earlier general-purpose examples (simple-crud, auth-flow, order-flow, self-loops, type-variants) remain in the repo and are still seeded by the local server — they're just not pinned in the Pages sidebar anymore.
+
 ## [0.3.0] - 2026-05-12
 
 ### Added

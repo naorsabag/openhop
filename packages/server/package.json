@@ -31,7 +31,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "examples"
   ],
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -41,7 +42,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "build": "tsc -p tsconfig.build.json --emitDeclarationOnly && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:fastify --external:@fastify/cors --external:@fastify/swagger --external:@fastify/swagger-ui --external:nanoid --external:yaml --external:zod --external:zod-to-json-schema",
-    "prepack": "npm run build",
+    "prepack": "npm run build && rm -rf examples && { test -d ../../examples || { echo 'prepack: ../../examples missing — refusing to publish without bundled examples' >&2; exit 1; }; } && cp -r ../../examples ./examples",
     "prepare": "npm run build"
   },
   "dependencies": {
