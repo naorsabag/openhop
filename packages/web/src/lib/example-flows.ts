@@ -10,11 +10,6 @@
  * own `meta.path` says (some use `e-commerce/orders`, `demos`, etc).
  */
 
-import authFlow from '../../../../examples/auth-flow.yaml?raw'
-import orderFlow from '../../../../examples/order-flow.yaml?raw'
-import selfLoops from '../../../../examples/self-loops.yaml?raw'
-import simpleCrud from '../../../../examples/simple-crud.yaml?raw'
-import typeVariants from '../../../../examples/type-variants.yaml?raw'
 import nodeIcons from '../../../../examples/node-icons.yaml?raw'
 import parallel from '../../../../examples/parallel.yaml?raw'
 import subFlows from '../../../../examples/sub-flows.yaml?raw'
@@ -43,32 +38,11 @@ const SHOWCASE = 'examples/showcase'
 
 export const EXAMPLE_FLOWS: ExampleFlow[] = [
   {
-    id: 'simple-crud',
-    title: 'Simple CRUD',
-    description: 'Basic REST API CRUD — the smallest useful flow.',
-    path: EXAMPLES,
-    yaml: simpleCrud,
-  },
-  {
     id: 'node-icons',
     title: 'Node Icons',
     description: 'Iconify brand-icon overlays on top of pixel sprites.',
     path: EXAMPLES,
     yaml: nodeIcons,
-  },
-  {
-    id: 'auth-flow',
-    title: 'OAuth2 Login',
-    description: 'Browser → app → Google OAuth → DB + cache.',
-    path: EXAMPLES,
-    yaml: authFlow,
-  },
-  {
-    id: 'order-flow',
-    title: 'Order Processing',
-    description: 'Multi-service order pipeline with payment, audit, and retry.',
-    path: EXAMPLES,
-    yaml: orderFlow,
   },
   {
     id: 'parallel',
@@ -92,25 +66,11 @@ export const EXAMPLE_FLOWS: ExampleFlow[] = [
     yaml: createDestroy,
   },
   {
-    id: 'self-loops',
-    title: 'Self-loops',
-    description: 'Steps where from = to (retries, recursion), plus broadcasts and multi-data.',
-    path: EXAMPLES,
-    yaml: selfLoops,
-  },
-  {
     id: 'ai-browsing-agent',
     title: 'AI Browsing Agent',
     description: 'User → ai_agent ↔ LLM, agent ↔ browser ↔ website. Showcases the new sprites.',
     path: EXAMPLES,
     yaml: aiBrowsingAgent,
-  },
-  {
-    id: 'type-variants',
-    title: 'Type Variants Showcase',
-    description: 'Five nodes of each type — shows the hue-cycle per-sprite coloring.',
-    path: EXAMPLES,
-    yaml: typeVariants,
   },
 
   // ── Showcase: hand-authored flows visualizing real code paths in OSS projects.
