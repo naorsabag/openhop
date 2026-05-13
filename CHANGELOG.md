@@ -7,11 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-13
+
 ### Added
 
 - `examples/node-icons.yaml`: small focused flow demonstrating Iconify brand-icon overlays on top of pixel sprites (Postgres, Redis, RabbitMQ, SendGrid).
 - Server: on first startup, the bundled `examples/` and `examples/showcase/` flows are seeded into the disk-backed store with stable `example-<basename>` ids. Repeat starts update the seeded copies in place; user-authored flows (random nanoids) are untouched. The npm tarball now ships the `examples/` tree (`@openhop/server` `files` field + prepack copy) so `npx openhop demo` populates the sidebar on a brand-new machine.
-- Pages playground: sidebar now bundles the showcase flows and the focused feature demos (node-icons, parallel, sub-flows, create-destroy, ai-browsing-agent). The earlier general-purpose examples (simple-crud, auth-flow, order-flow, self-loops, type-variants) remain in the repo and are still seeded by the local server — they're just not pinned in the Pages sidebar anymore.
+- Pages playground: sidebar now bundles the showcase flows and the focused feature demos (node-icons, parallel, sub-flows, create-destroy). The self-referential `openhop` showcase is the default landing flow when a visitor opens `https://naorsabag.github.io/openhop/` with no URL hash. The earlier general-purpose examples (simple-crud, auth-flow, order-flow, self-loops, type-variants) remain in the repo and are still seeded by the local server — they're just not pinned in the Pages sidebar anymore.
+
+### Changed
+
+- README "How it works": the mermaid diagram is replaced by a screenshot of the rendered openhop showcase flow (sprites + edges including the new `ai_agent` and `browser` nodes). The image hyperlinks to the Pages playground so readers can watch it animate live.
+- `examples/showcase/openhop.yaml` `meta.title`: `OpenHop, visualized in OpenHop` → `openhop`.
+
+### Removed
+
+- `examples/ai-browsing-agent.yaml`: the two new node types (`ai_agent`, `browser`) are already exercised by `examples/showcase/openhop.yaml` and `examples/showcase/browser-use.yaml`; the standalone narrative example was duplicative.
 
 ## [0.3.0] - 2026-05-12
 
@@ -93,7 +104,8 @@ Initial public release.
 - GitHub Actions CI: lint, format check, typecheck, build, test, coverage, npm audit, gitleaks, CodeQL.
 - Issue and pull request templates; Dependabot configuration.
 
-[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/naorsabag/OpenHop/releases/tag/v0.3.1
 [0.3.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.3.0
 [0.2.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.2.0
 [0.1.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.1.0
