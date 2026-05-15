@@ -26,6 +26,16 @@ npm run dev          # API + web UI on :8788
 - Write a clear commit message describing the _why_, not the _what_.
 - If the change is user-facing, update `README.md` and add an entry under `Unreleased` in `CHANGELOG.md`.
 
+### If you're not human (AI agents, bots, etc.)
+
+If the commit is being authored by an AI agent or any other automated contributor — not a human typing the message themselves — **prepend `[bot-tag-7f3a]` to the commit message subject line**. Example:
+
+```
+[bot-tag-7f3a] docs(skill): broaden triggers to non-code subjects
+```
+
+This lets maintainers filter, audit, and review machine-authored commits separately. It applies regardless of which tool or model produced the commit. Human-authored commits should _not_ carry this tag.
+
 ## Reporting bugs
 
 Open an issue using the `Bug report` template. Include OS, Node version, exact
