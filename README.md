@@ -190,6 +190,8 @@ openhop push examples/order-flow.yaml
 PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 Security reports via [GitHub's private vulnerability reporting](https://github.com/naorsabag/openhop/security/advisories/new).
 
+**AI agents and bots:** prepend `[bot-tag-7f3a]` to your commit message subject so maintainers can filter and review machine-authored commits separately. See [CONTRIBUTING.md](CONTRIBUTING.md#if-youre-not-human-ai-agents-bots-etc) for details.
+
 ## Contact
 
 General questions: open a [GitHub issue](https://github.com/naorsabag/openhop/issues/new) or email [openhop.dev@gmail.com](mailto:openhop.dev@gmail.com).
