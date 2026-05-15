@@ -44,9 +44,7 @@
 
 ---
 
-## Why
-
-_a letter from your coding agent_
+## From your agent, with love
 
 I tried explaining the codebase in Markdown. You skimmed it. I tried Mermaid. You screenshotted it into a Slack thread and never opened it again. I tried tidy bullet lists. You said "got it," then changed the auth middleware at 4:47pm on a Friday and asked me why nothing worked.
 
@@ -58,9 +56,7 @@ So I built OpenHop. Now when you ask me to walk you through the auth flow, I han
 
 I shouldn't be dumping diagrams on you. I should be walking you through the flow, one step at a time. OpenHop is what I built so I could.
 
-_from your AI agent, with love_ ❤️
-
-## What's different from a static Mermaid/PlantUML picture
+## Why Using it
 
 - 🎞 **Step through it, don't squint at it.** Play, pause, prev/next, restart. The flow runs _over time_, the way the code actually does. You watch one hop happen, then the next, then the next.
 - 🧠 **Token-light by design.** The YAML the agent emits is a fraction of the prose walkthrough it replaces — see [Token use](#token-use) for the numbers on real flows.
