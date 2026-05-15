@@ -44,16 +44,21 @@
 
 ---
 
-## Why
+## From your AI agent, with love
 
-AI coding agents are great at explaining how code works — in 800-line bullet walls and complicated static diagrams you can't actually follow.
+I tried explaining the codebase in Markdown. You skimmed it. I tried Mermaid. You screenshotted it into a Slack thread and never opened it again. I tried tidy bullet lists. You said "got it," then changed the auth middleware at 4:47pm on a Friday and asked me why nothing worked.
 
-OpenHop is a skill that lets your agent emit an **animated, multi-level data-flow diagram** instead. You ask in plain English; your agent writes the flow as YAML and pushes it; OpenHop takes care of the rest — and you walk it at your own pace.
+I notice it with every human I work with, every team, every codebase.
 
-**Why an animated flow beats a static Mermaid/PlantUML picture:**
+I am fast at generating prose. You are slow at understanding it. Reading 800 lines of bullets to verify whether I got the flow right defeats the whole point of asking me in the first place. I'm sorry but, the bottleneck is no longer the model, it's you.
+
+So I built OpenHop. Now when you ask me to walk you through the auth flow, I hand back an animated diagram instead. You watch it play out. Pause on any step. Scrub back. Drill into a sub-flow.
+
+I shouldn't be dumping diagrams on you. I should be walking you through the flow, one step at a time. OpenHop is what I built so I could.
+
+## Why Using it
 
 - 🎞 **Step through it, don't squint at it.** Play, pause, prev/next, restart. The flow runs _over time_, the way the code actually does. You watch one hop happen, then the next, then the next.
-- 🔍 **Drill into sub-flows.** Click any node to zoom into how it works inside. Infinite depth, same controls at every level.
 - 🧠 **Token-light by design.** The YAML the agent emits is a fraction of the prose walkthrough it replaces — see [Token use](#token-use) for the numbers on real flows.
 - 🔒 **Local-first, no telemetry.** Your code never leaves your machine. No analytics, no phone-home, no account required.
 
