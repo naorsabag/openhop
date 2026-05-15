@@ -1,0 +1,230 @@
+meta:
+  title: Spotify — Open App to Streaming a Track
+  description:
+    End-to-end flow of a Spotify session — auth, personalized home (BaRT), track lookup, and audio streaming via
+    the Spotify CDN backed by Google Cloud Storage.
+  path: system-design/spotify
+flow:
+  nodes:
+    - id: user
+      label: Listener
+      type: actor
+    - id: client
+      label: Spotify Client (Mobile / Desktop / Web)
+      type: browser
+    - id: gateway
+      label: API Gateway (GCLB)
+      type: endpoint
+      icon: logos:google-cloud
+    - id: auth
+      label: Accounts & Auth (OAuth2 / JWT)
+      type: auth
+    - id: home
+      label: Home / Personalization Service
+      type: service
+    - id: bart
+      label: BaRT — Recommendations (ML Bandits)
+      type: service
+    - id: memcached
+      label: Memcached (Hot Home Cache)
+      type: cache
+      icon: logos:memcached
+    - id: bigtable
+      label: Bigtable — Listening History & Affinities
+      type: database
+      icon: logos:google-cloud
+    - id: catalog
+      label: Catalog & Licensing Service
+      type: service
+    - id: cassandra
+      label: Cassandra — Track Metadata
+      type: database
+      icon: logos:cassandra
+    - id: kafka
+      label: Kafka — Event Log (plays, impressions)
+      type: queue
+      icon: logos:kafka
+    - id: cdn
+      label: Audio CDN (Fastly / Google CDN)
+      type: external
+      icon: logos:fastly
+    - id: gcs
+      label: Google Cloud Storage (Ogg Vorbis files)
+      type: external
+      icon: logos:google-cloud
+  steps:
+    - from: user
+      to: client
+      data: Tap "Spotify"
+    - from: client
+      to: gateway
+      data:
+        label: GET /home
+        fields:
+          - name: access_token
+            type: JWT
+          - name: user_id
+            type: spotify:uri
+          - name: country
+            type: ISO-3166
+    - from: gateway
+      to: auth
+      data: Validate token
+    - from: auth
+      to: gateway
+      data:
+        label: Identity + entitlements
+        fields:
+          - name: user_id
+            type: uuid
+          - name: product
+            type: free | premium
+          - name: market
+            type: string
+    - from: gateway
+      to: home
+      data: build_home(user_id, market)
+    - from: home
+      to: memcached
+      data: get_home(user_id)
+    - from: memcached
+      to: home
+      data:
+        label: cache MISS
+        color: "#ff6a6a"
+    - from: home
+      to: bart
+      data: rank_rows(user_id, context)
+    - from: bart
+      to: bigtable
+      data: listening_history(user_id)
+    - from: bigtable
+      to: bart
+      data:
+        label: history + affinities
+        fields:
+          - name: recent_tracks
+            type: list[TrackPlay]
+          - name: artist_affinities
+            type: map[artist, float]
+          - name: genre_taste
+            type: map[genre, float]
+    - from: bart
+      to: home
+      data:
+        label: ranked rows (DJ, Daily Mixes, Discover Weekly...)
+        fields:
+          - name: rows
+            type: list[Shelf]
+          - name: model_version
+            type: string
+    - from: home
+      to: memcached
+      data: write-through cache
+    - from: home
+      to: kafka
+      data:
+        label: impression event
+        fields:
+          - name: event
+            type: home_impression
+          - name: shelf_ids
+            type: list[id]
+    - from: home
+      to: gateway
+      data: home payload
+    - from: gateway
+      to: client
+      data:
+        label: 200 OK — Home JSON
+        fields:
+          - name: shelves
+            type: list[Shelf]
+          - name: image_urls
+            type: list[CDN URL]
+    - from: user
+      to: client
+      data: Tap a track
+    - from: client
+      to: gateway
+      data:
+        label: POST /play
+        fields:
+          - name: track_uri
+            type: spotify:track:...
+          - name: device_caps
+            type: "{codec, bitrate}"
+    - from: gateway
+      to: catalog
+      data: resolve_track(uri, market, product)
+    - from: catalog
+      to: cassandra
+      data: track_metadata(uri)
+    - from: cassandra
+      to: catalog
+      data:
+        label: metadata + licensing
+        fields:
+          - name: title_artist_album
+            type: TrackMeta
+          - name: available_markets
+            type: list[ISO]
+          - name: audio_file_id
+            type: uuid
+          - name: bitrate_ladder
+            type: list[kbps]
+    - from: catalog
+      to: gateway
+      data:
+        label: stream descriptor (signed)
+        fields:
+          - name: cdn_url
+            type: signed URL
+          - name: encryption_key
+            type: AES-128
+          - name: ttl_s
+            type: int
+    - from: gateway
+      to: client
+      data: stream manifest + key
+    - from: client
+      to: cdn
+      data:
+        label: GET /audio (HTTP range)
+        fields:
+          - name: byte_range
+            type: start-end
+          - name: bitrate
+            type: kbps
+    - from: cdn
+      to: gcs
+      data:
+        label: origin fetch (first time only)
+        color: "#ffd66a"
+    - from: gcs
+      to: cdn
+      data: Ogg Vorbis file
+    - from: cdn
+      to: client
+      data:
+        label: audio chunk (TLS, AES-decrypted client-side)
+        color: "#4aff7a"
+        fields:
+          - name: chunk
+            type: bytes
+          - name: duration_s
+            type: float
+    - from: client
+      to: kafka
+      data:
+        label: stream-start event
+        fields:
+          - name: track_uri
+            type: string
+          - name: source
+            type: home | search | radio
+          - name: ts
+            type: epoch_ms
+    - from: client
+      to: user
+      data: Music plays
