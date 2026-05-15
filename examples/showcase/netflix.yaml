@@ -1,0 +1,200 @@
+meta:
+  title: Netflix — Open App to Streaming a Video
+  description: End-to-end flow of a Netflix playback session, from app launch through homepage personalization to adaptive
+    video streaming via Open Connect.
+  path: system-design/netflix
+flow:
+  nodes:
+  - id: user
+    label: Viewer
+    type: actor
+  - id: client
+    label: Netflix Client (TV / Mobile / Web)
+    type: browser
+  - id: gateway
+    label: Zuul API Gateway (AWS)
+    type: endpoint
+    icon: logos:aws
+  - id: auth
+    label: Identity & Auth Service
+    type: auth
+  - id: homepage
+    label: Homepage / Viewing Service
+    type: service
+  - id: recs
+    label: Personalization & Recommendations
+    type: service
+  - id: evcache
+    label: EVCache (Memcached cluster)
+    type: cache
+    icon: logos:memcached
+  - id: cassandra
+    label: Cassandra (User & Viewing History)
+    type: database
+    icon: logos:cassandra
+  - id: playback
+    label: Playback API
+    type: service
+  - id: steering
+    label: Open Connect Steering Service
+    type: service
+  - id: s3
+    label: S3 (Master Video Files)
+    type: external
+    icon: logos:aws-s3
+  - id: oca
+    label: Open Connect Appliance (ISP Edge CDN)
+    type: external
+  steps:
+  - from: user
+    to: client
+    data: Tap "Netflix"
+  - from: client
+    to: gateway
+    data:
+      label: GET /homepage
+      fields:
+      - name: user_token
+        type: JWT
+      - name: device_id
+        type: string
+      - name: profile_id
+        type: string
+  - from: gateway
+    to: auth
+    data: Validate JWT
+  - from: auth
+    to: gateway
+    data:
+      label: Identity OK
+      fields:
+      - name: account_id
+        type: uuid
+      - name: profile_id
+        type: uuid
+      - name: subscription_tier
+        type: enum
+  - from: gateway
+    to: homepage
+    data: Build personalized home
+  - parallel:
+    - from: homepage
+      to: recs
+      data: get_rows(profile_id)
+    - from: homepage
+      to: evcache
+      data: get_cached_home(profile_id)
+  - from: evcache
+    to: homepage
+    data:
+      label: cache MISS
+      color: '#ff6a6a'
+  - from: recs
+    to: cassandra
+    data: viewing_history(profile_id)
+  - from: cassandra
+    to: recs
+    data:
+      label: watch history + ratings
+      fields:
+      - name: titles_watched
+        type: list[Title]
+      - name: completion_rates
+        type: list[float]
+  - from: recs
+    to: homepage
+    data:
+      label: ranked rows
+      fields:
+      - name: rows
+        type: list[Row]
+      - name: ranking_model
+        type: string
+  - from: homepage
+    to: evcache
+    data: write-through cache
+  - from: homepage
+    to: gateway
+    data: rows + artwork URLs
+  - from: gateway
+    to: client
+    data:
+      label: 200 OK — Homepage JSON
+      fields:
+      - name: rows
+        type: list[Row]
+      - name: image_urls
+        type: list[CDN URL]
+  - from: user
+    to: client
+    data: Click "Play" on a title
+  - from: client
+    to: gateway
+    data:
+      label: POST /playback/start
+      fields:
+      - name: title_id
+        type: uuid
+      - name: device_caps
+        type: '{codecs, drm, bitrate}'
+  - from: gateway
+    to: playback
+    data: start_session(title_id, device)
+  - from: playback
+    to: steering
+    data:
+      label: locate nearest OCA
+      fields:
+      - name: client_ip
+        type: string
+      - name: isp_asn
+        type: int
+  - from: steering
+    to: s3
+    data: confirm asset availability
+  - from: s3
+    to: steering
+    data: manifest pointers
+  - from: steering
+    to: playback
+    data:
+      label: ranked OCA URLs
+      fields:
+      - name: edge_urls
+        type: list[URL]
+      - name: drm_license_url
+        type: URL
+  - from: playback
+    to: gateway
+    data: playback manifest (DASH/HLS)
+  - from: gateway
+    to: client
+    data:
+      label: manifest + DRM token
+      fields:
+      - name: bitrate_ladder
+        type: list[Variant]
+      - name: drm_license
+        type: token
+  - from: client
+    to: oca
+    data:
+      label: GET /chunk (HTTP range)
+      fields:
+      - name: bitrate
+        type: kbps
+      - name: byte_range
+        type: start-end
+  - from: oca
+    to: client
+    data:
+      label: video segment (TLS)
+      color: '#4aff7a'
+      fields:
+      - name: segment
+        type: bytes
+      - name: duration_s
+        type: float
+  - from: client
+    to: user
+    data: Pixels on screen
