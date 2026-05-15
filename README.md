@@ -44,7 +44,7 @@
 
 ---
 
-## From your agent, with love
+## From your AI agent, with love
 
 I tried explaining the codebase in Markdown. You skimmed it. I tried Mermaid. You screenshotted it into a Slack thread and never opened it again. I tried tidy bullet lists. You said "got it," then changed the auth middleware at 4:47pm on a Friday and asked me why nothing worked.
 
