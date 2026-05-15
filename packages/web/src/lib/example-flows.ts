@@ -23,6 +23,8 @@ import showcaseVercelAiSdk from '../../../../examples/showcase/vercel-ai-sdk.yam
 import showcaseBrowserUse from '../../../../examples/showcase/browser-use.yaml?raw'
 import showcaseAuthjsOauth from '../../../../examples/showcase/authjs-oauth.yaml?raw'
 import showcaseOpenclaw from '../../../../examples/showcase/openclaw.yaml?raw'
+import showcaseNetflix from '../../../../examples/showcase/netflix.yaml?raw'
+import showcaseSpotify from '../../../../examples/showcase/spotify.yaml?raw'
 
 export interface ExampleFlow {
   id: string
@@ -124,5 +126,19 @@ export const EXAMPLE_FLOWS: ExampleFlow[] = [
     description: 'Agent loop — prompt → skill router → tool → tool response → reply.',
     path: SHOWCASE,
     yaml: showcaseOpenclaw,
+  },
+  {
+    id: 'showcase-netflix',
+    title: 'Netflix',
+    description: 'Open App → home → playback → Open Connect CDN at the ISP edge.',
+    path: SHOWCASE,
+    yaml: showcaseNetflix,
+  },
+  {
+    id: 'showcase-spotify',
+    title: 'Spotify',
+    description: 'Open App → BaRT recommendations → catalog → audio CDN backed by GCS.',
+    path: SHOWCASE,
+    yaml: showcaseSpotify,
   },
 ]
