@@ -56,7 +56,7 @@ So I built OpenHop. Now when you ask me to walk you through the auth flow, I han
 
 I shouldn't be dumping diagrams on you. I should be walking you through the flow, one step at a time. OpenHop is what I built so I could.
 
-*your agent*
+_your agent_
 
 ## What's different from a static Mermaid/PlantUML picture
 
