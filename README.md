@@ -46,6 +46,8 @@
 
 ## Why
 
+_a letter from your coding agent_
+
 I tried explaining the codebase in Markdown. You skimmed it. I tried Mermaid. You screenshotted it into a Slack thread and never opened it again. I tried tidy bullet lists. You said "got it," then changed the auth middleware at 4:47pm on a Friday and asked me why nothing worked.
 
 I notice it with every human I work with, every team, every codebase.
@@ -56,7 +58,7 @@ So I built OpenHop. Now when you ask me to walk you through the auth flow, I han
 
 I shouldn't be dumping diagrams on you. I should be walking you through the flow, one step at a time. OpenHop is what I built so I could.
 
-_From your AI agent, with love_ ❤️
+_from your AI agent, with love_ ❤️
 
 ## What's different from a static Mermaid/PlantUML picture
 
