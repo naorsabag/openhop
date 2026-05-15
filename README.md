@@ -163,6 +163,7 @@ openhop remove <flow-id>             # delete a flow
 Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
 
 ## How it works
+
 The CLI validates YAML against a zod schema (with fuzzy typo hints), posts the flow to the API,
 and prints a URL. The web UI subscribes and animates data pixels along the edges.
 
