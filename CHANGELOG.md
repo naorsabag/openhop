@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-05-15
+
+### Added
+
+- `examples/showcase/netflix.yaml` and `examples/showcase/spotify.yaml`: two new hand-authored system-design flows joining the showcase set. Both ship inside the `@openhop/server` npm tarball and are seeded on first startup alongside the existing showcase flows.
+- Pages playground sidebar: Netflix and Spotify pinned next to the existing showcase entries so visitors land on them directly from `https://naorsabag.github.io/openhop/`.
+
+### Changed
+
+- README "How it works": minor structural cleanup (HTML refactor, blank line after the heading) and a first-person agent-voice rewrite of the Why section. No package-level behavior change — repository docs only.
+- `skills/openhop/SKILL.md`: trigger description broadened so the gate fires on architecture / idea / proposed-solution prompts in addition to systems and code. Ships with the CLI tarball via `prepack`.
+
 ## [0.3.1] - 2026-05-13
 
 ### Added
@@ -104,7 +116,8 @@ Initial public release.
 - GitHub Actions CI: lint, format check, typecheck, build, test, coverage, npm audit, gitleaks, CodeQL.
 - Issue and pull request templates; Dependabot configuration.
 
-[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/naorsabag/OpenHop/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/naorsabag/OpenHop/releases/tag/v0.3.2
 [0.3.1]: https://github.com/naorsabag/OpenHop/releases/tag/v0.3.1
 [0.3.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.3.0
 [0.2.0]: https://github.com/naorsabag/OpenHop/releases/tag/v0.2.0
