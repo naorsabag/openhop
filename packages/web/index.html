@@ -4,18 +4,94 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>OpenHop — animated data-flow diagrams your AI agent can write</title>
     <meta
       name="description"
-      content="Animated data-flow diagrams your AI agent can write. One SKILL.md plugs OpenHop into Claude Code, Cursor, Codex, and 11+ other clients."
+      content="OpenHop turns YAML written by your coding agent into animated, step-through data-flow diagrams. Local-first, token-light, MIT-licensed. One SKILL.md plugs into Claude Code, Cursor, Codex, and 11+ other clients."
     />
     <meta name="theme-color" content="#0a1f0e" />
+    <link rel="canonical" href="https://naorsabag.github.io/openhop/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="OpenHop" />
+    <meta property="og:title" content="OpenHop — animated data-flow diagrams your AI agent can write" />
+    <meta
+      property="og:description"
+      content="YAML in, animated diagram out. Your AI agent writes the flow; you watch it play, pause on any step, drill into sub-flows. Local-first and token-light."
+    />
+    <meta property="og:url" content="https://naorsabag.github.io/openhop/" />
+    <meta property="og:image" content="https://naorsabag.github.io/openhop/social-preview.png" />
+    <meta property="og:image:alt" content="OpenHop logo with an animated data-flow diagram preview" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="OpenHop — animated data-flow diagrams your AI agent can write" />
+    <meta
+      name="twitter:description"
+      content="YAML in, animated diagram out. Your AI agent writes the flow; you watch it play, pause on any step, drill into sub-flows."
+    />
+    <meta name="twitter:image" content="https://naorsabag.github.io/openhop/social-preview.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "OpenHop",
+        "alternateName": "openhop",
+        "description": "Animated data-flow diagrams your AI agent can write. YAML in, multi-level animated diagrams out. Plugs into Claude Code, Cursor, Codex and other AI coding clients via a single SKILL.md.",
+        "url": "https://naorsabag.github.io/openhop/",
+        "image": "https://naorsabag.github.io/openhop/social-preview.png",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS, Linux, Windows",
+        "license": "https://opensource.org/licenses/MIT",
+        "codeRepository": "https://github.com/naorsabag/openhop",
+        "author": {
+          "@type": "Person",
+          "name": "Naor Sabag",
+          "url": "https://github.com/naorsabag"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
-    <title>OpenHop</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <noscript>
+        <h1>OpenHop</h1>
+        <p>OpenHop turns YAML written by your coding agent into animated, step-through data-flow diagrams. This playground needs JavaScript enabled.</p>
+        <p><a href="https://github.com/naorsabag/openhop">View the project on GitHub</a></p>
+      </noscript>
+      <main hidden>
+        <h1>OpenHop — animated data-flow diagrams your AI agent can write</h1>
+        <p>
+          OpenHop is an open-source playground and CLI for animated, multi-level data-flow diagrams.
+          Your AI coding agent writes a small YAML file; OpenHop renders it as an animated diagram you can
+          play, pause, scrub, and drill into. Local-first, token-light, MIT-licensed.
+        </p>
+        <h2>Showcase flows</h2>
+        <ul>
+          <li><a href="#flow=openhop">OpenHop, visualized in OpenHop</a></li>
+          <li><a href="#flow=netflix">Netflix system design</a></li>
+          <li><a href="#flow=spotify">Spotify system design</a></li>
+          <li><a href="#flow=browser-use">browser-use agent</a></li>
+          <li><a href="#flow=langgraph">LangGraph internals</a></li>
+          <li><a href="#flow=openai-codex">OpenAI Codex CLI</a></li>
+        </ul>
+        <h2>Install</h2>
+        <p>
+          <code>npx openhop demo</code> spins up the local playground with every showcase flow seeded.
+          Full install and skill-integration docs live on <a href="https://github.com/naorsabag/openhop">the project page</a>.
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

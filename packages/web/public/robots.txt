@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://naorsabag.github.io/openhop/sitemap.xml
