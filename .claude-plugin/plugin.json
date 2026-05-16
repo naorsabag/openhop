@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "openhop",
+  "version": "0.1.0",
+  "description": "Animated data-flow diagrams your AI agent can write. Written by AI. Watched by humans.",
+  "author": {
+    "name": "Naor Sabag",
+    "url": "https://github.com/naorsabag"
+  },
+  "homepage": "https://github.com/naorsabag/openhop",
+  "repository": "https://github.com/naorsabag/openhop",
+  "license": "MIT",
+  "keywords": [
+    "visualization",
+    "data-flow",
+    "diagram",
+    "ai-agents",
+    "architecture",
+    "claude-code-skill"
+  ]
+}

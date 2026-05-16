@@ -116,7 +116,8 @@ npx openskills install naorsabag/openhop
 **Path C — plugin install**
 
 ```text
-/plugin install naorsabag/openhop
+/plugin marketplace add naorsabag/openhop
+/plugin install openhop@openhop
 ```
 
 …or from your agent GUI.

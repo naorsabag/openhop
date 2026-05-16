@@ -1,0 +1,23 @@
+{
+  "name": "openhop",
+  "description": "Single-plugin marketplace that ships the OpenHop skill and slash commands for animated data-flow diagrams inside Claude Code.",
+  "owner": {
+    "name": "Naor Sabag",
+    "url": "https://github.com/naorsabag"
+  },
+  "plugins": [
+    {
+      "name": "openhop",
+      "source": "./",
+      "description": "Animated data-flow diagrams your AI agent can write. Written by AI. Watched by humans.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Naor Sabag"
+      },
+      "homepage": "https://github.com/naorsabag/openhop",
+      "license": "MIT",
+      "category": "visualization",
+      "tags": ["visualization", "data-flow", "diagram", "ai-agents", "architecture"]
+    }
+  ]
+}
