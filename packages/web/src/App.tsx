@@ -8,6 +8,7 @@ const FlowEditorModal = lazy(() =>
   import('./components/FlowEditorModal').then((m) => ({ default: m.FlowEditorModal }))
 )
 import { buildStarterYaml } from './lib/starter-yaml'
+import { buildPagesShareUrl } from './lib/share-url'
 import { isMobileViewport } from './lib/mobile'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import { useFlowMutations } from './hooks/useFlowMutations'
@@ -18,6 +19,23 @@ interface FlowNavItem {
   parentNodeId?: string
   parentLabel?: string
   resumeFromStep?: number // step index to resume from when returning to this level
+}
+
+// Android-style share glyph: three nodes connected by two edges (one
+// anchor on the left, two on the right). Content runs edge-to-edge in
+// the viewBox so the flex gap matches "Share"'s left padding. `display:
+// block` overrides SVG's default baseline alignment, which otherwise
+// drops the icon below the pixel-font's optical midline.
+function ShareIcon() {
+  return (
+    <svg width={11} height={11} viewBox="0 0 16 16" aria-hidden="true" style={{ display: 'block' }}>
+      <line x1={3} y1={8} x2={13} y2={3} stroke="currentColor" strokeWidth={1.4} />
+      <line x1={3} y1={8} x2={13} y2={13} stroke="currentColor" strokeWidth={1.4} />
+      <circle cx={3} cy={8} r={2.4} fill="currentColor" />
+      <circle cx={13} cy={3} r={2.4} fill="currentColor" />
+      <circle cx={13} cy={13} r={2.4} fill="currentColor" />
+    </svg>
+  )
 }
 
 function App() {
@@ -171,6 +189,38 @@ function App() {
   const handleEditorCancel = useCallback(() => {
     setEditor({ mode: 'closed' })
   }, [])
+
+  // Toast for share-link feedback. Auto-clears via the timer ref so a
+  // rapid second click resets the countdown instead of stacking.
+  const [toast, setToast] = useState<string | null>(null)
+  const toastTimerRef = useRef<number | null>(null)
+  const showToast = useCallback((msg: string) => {
+    setToast(msg)
+    if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 2400)
+  }, [])
+
+  // Share URL points at the Pages playground (the only host that can
+  // decode it without a local server). Shares the top-level flow — sub-flow
+  // drilldown state is recipient-side navigation, not part of the data.
+  const apiFlowRef = useRef<Flow | null>(null)
+  useEffect(() => {
+    apiFlowRef.current = apiFlow
+  }, [apiFlow])
+  const handleShareFlow = useCallback(async () => {
+    const flow = apiFlowRef.current
+    if (!flow) return
+    const yamlText = YAML.stringify({ meta: flow.meta, flow: flow.flow })
+    const url = buildPagesShareUrl(yamlText)
+    try {
+      await navigator.clipboard.writeText(url)
+      showToast('Copied playground share URL to clipboard.')
+    } catch {
+      // Some browsers / iframe contexts block clipboard. Surface the URL
+      // via prompt so the user can copy it by hand.
+      window.prompt('Copy this share URL:', url)
+    }
+  }, [showToast])
 
   const [playing, setPlaying] = useState(false)
   const [flowStack, setFlowStack] = useState<FlowNavItem[]>([])
@@ -388,6 +438,21 @@ function App() {
             OpenHop
           </h1>
         </div>
+        <div className="flex items-center gap-2">
+          {apiFlow && (
+            <button
+              onClick={handleShareFlow}
+              data-testid="header-share"
+              aria-label="Share flow"
+              title="Copy a self-contained share URL for the Pages playground"
+              className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors inline-flex items-center gap-1.5"
+              style={{ fontSize: 10 }}
+            >
+              <ShareIcon />
+              Share
+            </button>
+          )}
+        </div>
         {/* Inspector toggle moved to a bookmark tab on the canvas's right edge. */}
       </header>
 
@@ -559,6 +624,23 @@ function App() {
             onCancel={handleEditorCancel}
           />
         </Suspense>
+      )}
+
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 font-terminal text-xs px-3 py-2"
+          style={{
+            background: '#1a1a2e',
+            border: '1px solid #7df9ff',
+            color: '#7df9ff',
+            borderRadius: 4,
+            zIndex: 200,
+          }}
+        >
+          {toast}
+        </div>
       )}
     </div>
   )

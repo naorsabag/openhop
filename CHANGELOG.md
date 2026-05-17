@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Local app (`packages/web/src/App.tsx`): "Share" button in the header that copies a self-contained share URL of the currently-loaded flow to the clipboard. The URL points at the public Pages playground (`https://naorsabag.github.io/openhop/#<encoded>`), reusing the same v1 fragment format the playground already decodes — so a link copied from `npm run dev` opens cleanly for anyone offsite without needing a local server. New `buildPagesShareUrl` helper in `lib/share-url.ts` centralizes the destination so future renames stay in one place.
+
 ## [0.3.2] - 2026-05-15
 
 ### Added
