@@ -42,7 +42,41 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: npm
 
+      # OIDC trusted publishing needs npm >= 11.5.1; Node 22 LTS bundles
+      # npm 10.x, so upgrade globally before `npm ci` so all later npm
+      # invocations (including publish) use the new version.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
+
       - run: npm ci
+
+      # Preflight for OIDC trusted publishing. There is no long-lived
+      # NPM_TOKEN anymore — each run mints a short-lived OIDC token from
+      # GitHub, which npm exchanges with the registry. The two things that
+      # can break:
+      #   1. The workflow lost `permissions: id-token: write` (no OIDC
+      #      endpoint exposed -> ACTIONS_ID_TOKEN_REQUEST_URL is unset).
+      #   2. npm CLI is too old to know how to do the exchange.
+      # Both surface here, instead of as an opaque registry rejection
+      # halfway through a publish.
+      #
+      # To (re)configure the npm side: npmjs.com -> each package
+      # (@openhop/server, @openhop/web, openhop) -> Settings -> Trusted
+      # Publisher -> GitHub Actions, with repo `naorsabag/openhop` and
+      # workflow `publish.yml`.
+      - name: Verify OIDC trusted publishing is wired up
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error::OIDC unavailable — workflow is missing 'permissions: id-token: write'."
+            exit 1
+          fi
+          npm_version=$(npm --version)
+          npm_major=${npm_version%%.*}
+          if [ "$npm_major" -lt 11 ]; then
+            echo "::error::npm $npm_version is too old for OIDC trusted publishing — need >=11.5.1."
+            exit 1
+          fi
+          echo "::notice::OIDC ready, npm $npm_version"
 
       - name: Resolve target versions
         id: versions
@@ -89,25 +123,25 @@ jobs:
         id: publish_server
         if: steps.server_status.outputs.publish == 'true'
         working-directory: packages/server
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # No env: OIDC handles auth via id-token. --provenance attaches
+        # a signed build attestation (recommended with trusted publishing).
+        run: npm publish --access public --provenance
 
       - name: Publish @openhop/web
         id: publish_web
         if: steps.web_status.outputs.publish == 'true'
         working-directory: packages/web
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # No env: OIDC handles auth via id-token. --provenance attaches
+        # a signed build attestation (recommended with trusted publishing).
+        run: npm publish --access public --provenance
 
       - name: Publish openhop CLI
         id: publish_cli
         if: steps.cli_status.outputs.publish == 'true'
         working-directory: packages/cli
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # No env: OIDC handles auth via id-token. --provenance attaches
+        # a signed build attestation (recommended with trusted publishing).
+        run: npm publish --access public --provenance
 
       # Tag + GitHub Release whenever ANY publish happened. Tag scheme
       # branches on what actually shipped so a one-package bump can't
