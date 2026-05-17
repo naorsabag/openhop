@@ -3,7 +3,14 @@ import LZString from 'lz-string'
 import YAML from 'yaml'
 import { deflateSync } from 'fflate'
 import { parseFlowYaml } from '@openhop/shared'
-import { buildShareUrl, decodeFragment, encodeFragment } from '../src/lib/share-url'
+import {
+  buildPagesShareUrl,
+  buildShareUrl,
+  decodeFragment,
+  encodeFragment,
+  PAGES_SHARE_BASE,
+  PAGES_SHARE_ORIGIN,
+} from '../src/lib/share-url'
 
 function toBase64Url(bytes: Uint8Array): string {
   let bin = ''
@@ -103,5 +110,13 @@ describe('share-url encode/decode', () => {
     const expectedHash = encodeFragment(SAMPLE_YAML)
     expect(dev.endsWith(`#${expectedHash}`)).toBe(true)
     expect(pages.endsWith(`#${expectedHash}`)).toBe(true)
+  })
+
+  it('buildPagesShareUrl always points at the Pages playground (used by the local app)', () => {
+    const url = buildPagesShareUrl(SAMPLE_YAML)
+    expect(url.startsWith(`${PAGES_SHARE_ORIGIN}${PAGES_SHARE_BASE}#`)).toBe(true)
+    // Decodes back to the same flow regardless of which host produced the link.
+    const hash = url.split('#')[1]
+    expect(YAML.parse(decodeFragment(hash) ?? '')).toEqual(YAML.parse(SAMPLE_YAML))
   })
 })

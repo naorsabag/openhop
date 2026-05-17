@@ -114,3 +114,13 @@ export function buildShareUrl(yamlText: string, origin: string, baseUrl: string)
   // baseUrl ends with '/' (Vite convention), so concat without normalization.
   return `${origin}${baseUrl}#${fragment}`
 }
+
+// Public GitHub Pages playground — the only host that can decode share
+// fragments without a local server. The local app uses this as the share
+// target so URLs copied from `npm run dev` still work for anyone offsite.
+export const PAGES_SHARE_ORIGIN = 'https://naorsabag.github.io'
+export const PAGES_SHARE_BASE = '/openhop/'
+
+export function buildPagesShareUrl(yamlText: string): string {
+  return buildShareUrl(yamlText, PAGES_SHARE_ORIGIN, PAGES_SHARE_BASE)
+}

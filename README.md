@@ -93,6 +93,8 @@ Flows are authored in **compact YAML**, not JSON, so the payload the agent emits
 
 OpenHop is local-first — no hosted backend, no flow storage. To share a flow, open the [playground](https://naorsabag.github.io/openhop/), paste your YAML and hit **Save**: the page compresses the flow into the URL hash and copies a self-contained link to your clipboard. Nothing is uploaded — URL fragments stay in the browser.
 
+Running the local app? The header's **Share** button does the same thing for the flow you have open — it builds a playground URL of the form `https://naorsabag.github.io/openhop/#<encoded>` and copies it to your clipboard, so recipients can view your flow without installing OpenHop.
+
 For flows too large to fit in a URL, share the YAML file directly.
 
 ## Install Options
