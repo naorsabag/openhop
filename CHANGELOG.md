@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-05-17
+
 ### Added
 
 - Local app (`packages/web/src/App.tsx`): "Share" button in the header that copies a self-contained share URL of the currently-loaded flow to the clipboard. The URL points at the public Pages playground (`https://naorsabag.github.io/openhop/#<encoded>`), reusing the same v1 fragment format the playground already decodes — so a link copied from `npm run dev` opens cleanly for anyone offsite without needing a local server. New `buildPagesShareUrl` helper in `lib/share-url.ts` centralizes the destination so future renames stay in one place.
+- Claude Code plugin bundle (`.claude-plugin/` + `commands/`): OpenHop now ships as a single-plugin marketplace from `naorsabag/openhop` directly. Install with `/plugin marketplace add naorsabag/openhop` then `/plugin install openhop@openhop`. Three slash commands ship inside: `/openhop:openhop-flow <prompt>`, `/openhop:openhop-list`, and `/openhop:openhop-preview <path> [--push]`. The skill itself stays at `skills/openhop/SKILL.md` and is auto-discovered — these files are repository-level only and are not bundled into the npm tarballs.
+- Pages playground SEO (`packages/web/`): crawler- and AI-search-friendly head/body for the GitHub Pages deploy. `index.html` now ships a descriptive `<title>`, meta description, Open Graph + Twitter Card tags, `<link rel="canonical">`, schema.org JSON-LD, and static landing content for the initial crawl pass. New `public/robots.txt` and `public/sitemap.xml`. `public/social-preview.png` is copied from `.github/` so Vite emits it under the Pages base path and the OG/Twitter cards resolve.
 
 ## [0.3.2] - 2026-05-15
 
