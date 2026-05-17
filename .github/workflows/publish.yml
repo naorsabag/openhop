@@ -42,23 +42,16 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: npm
 
-      # OIDC trusted publishing needs npm >= 11.5.1; Node 22 LTS bundles
-      # npm 10.x, so upgrade globally before `npm ci` so all later npm
-      # invocations (including publish) use the new version.
-      - name: Upgrade npm for OIDC trusted publishing
-        run: npm install -g npm@^11.5.1
-
       - run: npm ci
 
       # Preflight for OIDC trusted publishing. There is no long-lived
       # NPM_TOKEN anymore — each run mints a short-lived OIDC token from
-      # GitHub, which npm exchanges with the registry. The two things that
-      # can break:
-      #   1. The workflow lost `permissions: id-token: write` (no OIDC
-      #      endpoint exposed -> ACTIONS_ID_TOKEN_REQUEST_URL is unset).
-      #   2. npm CLI is too old to know how to do the exchange.
-      # Both surface here, instead of as an opaque registry rejection
-      # halfway through a publish.
+      # GitHub, which npm exchanges with the registry. The one thing that
+      # can break unannounced is the workflow losing `id-token: write`
+      # permission (ACTIONS_ID_TOKEN_REQUEST_URL becomes unset). The npm
+      # version requirement (>=11.5.1) is enforced at the publish step
+      # itself via the `npx -y npm@^11.5.1` specifier, so it does not
+      # need a separate preflight check here.
       #
       # To (re)configure the npm side: npmjs.com -> each package
       # (@openhop/server, @openhop/web, openhop) -> Settings -> Trusted
@@ -70,14 +63,7 @@ jobs:
             echo "::error::OIDC unavailable — workflow is missing 'permissions: id-token: write'."
             exit 1
           fi
-          npm_version=$(npm --version)
-          # `sort -V -C` returns success iff the input is already version-sorted,
-          # so feeding "11.5.1\n$npm_version" succeeds iff $npm_version >= 11.5.1.
-          if ! printf '%s\n' "11.5.1" "$npm_version" | sort -V -C; then
-            echo "::error::npm $npm_version is too old for OIDC trusted publishing — need >=11.5.1."
-            exit 1
-          fi
-          echo "::notice::OIDC ready, npm $npm_version"
+          echo "::notice::OIDC permission ready"
 
       - name: Resolve target versions
         id: versions
@@ -124,28 +110,37 @@ jobs:
         id: publish_server
         if: steps.server_status.outputs.publish == 'true'
         working-directory: packages/server
-        # No env: OIDC handles auth via id-token. npm >=11.5.1 also
-        # auto-attaches a signed provenance attestation on trusted-publishing
-        # runs — no --provenance flag needed.
-        run: npm publish --access public
+        # No env: OIDC handles auth via id-token. We invoke npm via
+        # `npx -y npm@^11.5.1` so we get an OIDC-capable npm without
+        # globally upgrading the system one (the in-place upgrade has a
+        # well-known MODULE_NOT_FOUND bug with arborist/promise-retry).
+        # `-y` accepts the install prompt; npx caches after the first
+        # call so the next two publish steps reuse it.
+        run: npx -y npm@^11.5.1 publish --access public
 
       - name: Publish @openhop/web
         id: publish_web
         if: steps.web_status.outputs.publish == 'true'
         working-directory: packages/web
-        # No env: OIDC handles auth via id-token. npm >=11.5.1 also
-        # auto-attaches a signed provenance attestation on trusted-publishing
-        # runs — no --provenance flag needed.
-        run: npm publish --access public
+        # No env: OIDC handles auth via id-token. We invoke npm via
+        # `npx -y npm@^11.5.1` so we get an OIDC-capable npm without
+        # globally upgrading the system one (the in-place upgrade has a
+        # well-known MODULE_NOT_FOUND bug with arborist/promise-retry).
+        # `-y` accepts the install prompt; npx caches after the first
+        # call so the next two publish steps reuse it.
+        run: npx -y npm@^11.5.1 publish --access public
 
       - name: Publish openhop CLI
         id: publish_cli
         if: steps.cli_status.outputs.publish == 'true'
         working-directory: packages/cli
-        # No env: OIDC handles auth via id-token. npm >=11.5.1 also
-        # auto-attaches a signed provenance attestation on trusted-publishing
-        # runs — no --provenance flag needed.
-        run: npm publish --access public
+        # No env: OIDC handles auth via id-token. We invoke npm via
+        # `npx -y npm@^11.5.1` so we get an OIDC-capable npm without
+        # globally upgrading the system one (the in-place upgrade has a
+        # well-known MODULE_NOT_FOUND bug with arborist/promise-retry).
+        # `-y` accepts the install prompt; npx caches after the first
+        # call so the next two publish steps reuse it.
+        run: npx -y npm@^11.5.1 publish --access public
 
       # Tag + GitHub Release whenever ANY publish happened. Tag scheme
       # branches on what actually shipped so a one-package bump can't
