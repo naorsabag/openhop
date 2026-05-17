@@ -28,13 +28,7 @@ interface FlowNavItem {
 // drops the icon below the pixel-font's optical midline.
 function ShareIcon() {
   return (
-    <svg
-      width={11}
-      height={11}
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-      style={{ display: 'block' }}
-    >
+    <svg width={11} height={11} viewBox="0 0 16 16" aria-hidden="true" style={{ display: 'block' }}>
       <line x1={3} y1={8} x2={13} y2={3} stroke="currentColor" strokeWidth={1.4} />
       <line x1={3} y1={8} x2={13} y2={13} stroke="currentColor" strokeWidth={1.4} />
       <circle cx={3} cy={8} r={2.4} fill="currentColor" />
@@ -43,7 +37,6 @@ function ShareIcon() {
     </svg>
   )
 }
-
 
 function App() {
   // Read flow ID from URL path: /flow/{id}
