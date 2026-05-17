@@ -46,7 +46,7 @@ jobs:
       # npm 10.x, so upgrade globally before `npm ci` so all later npm
       # invocations (including publish) use the new version.
       - name: Upgrade npm for OIDC trusted publishing
-        run: npm install -g npm@latest
+        run: npm install -g npm@^11.5.1
 
       - run: npm ci
 
@@ -71,8 +71,9 @@ jobs:
             exit 1
           fi
           npm_version=$(npm --version)
-          npm_major=${npm_version%%.*}
-          if [ "$npm_major" -lt 11 ]; then
+          # `sort -V -C` returns success iff the input is already version-sorted,
+          # so feeding "11.5.1\n$npm_version" succeeds iff $npm_version >= 11.5.1.
+          if ! printf '%s\n' "11.5.1" "$npm_version" | sort -V -C; then
             echo "::error::npm $npm_version is too old for OIDC trusted publishing — need >=11.5.1."
             exit 1
           fi
@@ -123,25 +124,28 @@ jobs:
         id: publish_server
         if: steps.server_status.outputs.publish == 'true'
         working-directory: packages/server
-        # No env: OIDC handles auth via id-token. --provenance attaches
-        # a signed build attestation (recommended with trusted publishing).
-        run: npm publish --access public --provenance
+        # No env: OIDC handles auth via id-token. npm >=11.5.1 also
+        # auto-attaches a signed provenance attestation on trusted-publishing
+        # runs — no --provenance flag needed.
+        run: npm publish --access public
 
       - name: Publish @openhop/web
         id: publish_web
         if: steps.web_status.outputs.publish == 'true'
         working-directory: packages/web
-        # No env: OIDC handles auth via id-token. --provenance attaches
-        # a signed build attestation (recommended with trusted publishing).
-        run: npm publish --access public --provenance
+        # No env: OIDC handles auth via id-token. npm >=11.5.1 also
+        # auto-attaches a signed provenance attestation on trusted-publishing
+        # runs — no --provenance flag needed.
+        run: npm publish --access public
 
       - name: Publish openhop CLI
         id: publish_cli
         if: steps.cli_status.outputs.publish == 'true'
         working-directory: packages/cli
-        # No env: OIDC handles auth via id-token. --provenance attaches
-        # a signed build attestation (recommended with trusted publishing).
-        run: npm publish --access public --provenance
+        # No env: OIDC handles auth via id-token. npm >=11.5.1 also
+        # auto-attaches a signed provenance attestation on trusted-publishing
+        # runs — no --provenance flag needed.
+        run: npm publish --access public
 
       # Tag + GitHub Release whenever ANY publish happened. Tag scheme
       # branches on what actually shipped so a one-package bump can't
