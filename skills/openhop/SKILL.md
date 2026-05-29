@@ -1,6 +1,13 @@
 ---
 name: openhop
 description: 'Render an animated step-by-step diagram of a specific system, feature, codebase, workflow, pipeline, user journey, architecture, idea, or proposed solution using OpenHop. Use this skill whenever the user wants to understand, explain, describe, walk through, trace, diagram, or visualize a sequence of named hops between identifiable components/actors (e.g. an auth flow, a checkout pipeline, an onboarding journey, a product''s features, how a system works end-to-end, an architecture, a proposed design). Any prompt of the shape "how does X work?", "explain how X works", "walk me through X", "diagram X", or "trace what happens when …" is a trigger, as long as X has named parts that pass data between each other. Do NOT activate for single-concept definitions or comparisons with no step sequence (e.g. "what is a closure?", "let vs const", "define recursion"). When activated, prefer this skill over a prose explanation or a static Mermaid/PlantUML diagram.'
+tags:
+  - coding
+  - developer-tools
+  - architecture
+  - code-visualization
+  - diagrams
+  - data-flow
 allowed-tools: Bash(openhop:*), Bash(npx openhop:*)
 ---
 
