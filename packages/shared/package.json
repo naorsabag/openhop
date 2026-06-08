@@ -23,6 +23,6 @@
     "eslint": "^9.39.4",
     "globals": "^17.6.0",
     "typescript-eslint": "^8.60.0",
-    "vitest": "^1.6.1"
+    "vitest": "^3.2.6"
   }
 }
