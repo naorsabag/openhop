@@ -46,6 +46,6 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\" --ignore-path .prettierignore"
   },
   "devDependencies": {
-    "prettier": "^3.8.3"
+    "prettier": "^3.8.4"
   }
 }
