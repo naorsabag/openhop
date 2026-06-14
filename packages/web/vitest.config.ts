@@ -8,16 +8,13 @@ export default defineConfig({
       reporter: ['text', 'json-summary'],
       include: ['src/**'],
       exclude: ['src/**/*.test.ts', 'src/main.tsx', 'src/types.ts', 'src/globals.d.ts'],
-      // Web is canvas/PIXI-heavy; component tests are deferred. The threshold
-      // locks in today's baseline (~17% lines via lib/flow-layout.ts coverage)
-      // — raise it as more components/hooks get tested. Bumped down by 1
-      // when the bookmark-tab feature added uncovered render code, then
-      // again when the auto-zoom + speed-button render code landed.
+      // Web is canvas/React Flow-heavy; component tests are deferred. These
+      // thresholds lock the Vitest 4 V8-provider baseline.
       thresholds: {
-        lines: 17,
-        statements: 17,
-        functions: 55,
-        branches: 70,
+        lines: 22,
+        statements: 22,
+        functions: 16,
+        branches: 19,
       },
     },
   },

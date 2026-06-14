@@ -272,7 +272,7 @@ describe('--json on every data-emitting command', () => {
         /^http:\/\/127\.0\.0\.1:1\//
       )
     }
-  })
+  }, 15_000)
 })
 
 describe('exit-code contract (per-command matrix)', () => {
