@@ -138,6 +138,8 @@ npx openhop demo
 
 **Contributors**
 
+Requires Node.js `^20.19.0 || >=22.12.0` for the Vite/Rolldown toolchain.
+
 ```bash
 git clone https://github.com/naorsabag/openhop.git
 cd openhop && npm install && npm run dev
