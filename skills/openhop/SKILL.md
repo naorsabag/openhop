@@ -154,19 +154,20 @@ First just add nodes and steps. No colors, icons, fields, or sub-flows.
 
 ### Phase 2: DETAIL
 
-Add node types, data fields for steps and icons. 
+Add node types, data fields for steps and icons.
 
 ### Phase 3: POLISH
 
 Add drill down sub flows were needed. go back to 1 and 2 for each subflow
 
-### Phase 4: Verify 
+### Phase 4: Verify
+
 1. The final yml represents correctly the actual flow you are trying to ilustrate.
 2. Used parrlel steps where relevant.
 3. Used icons and they are in bright colors.
 4. Steps have data fields and plain english descriptions.
 
-```
+````
 
 ## CLI Commands
 
@@ -182,7 +183,7 @@ openhop patch <flow-id> <patch.yaml>     # Apply patch operations
 openhop patch <flow-id> -                # Patch from stdin
 openhop remove <flow-id>                 # Delete a flow
 openhop help --json                      # Full machine-readable command tree
-```
+````
 
 Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network.
 
