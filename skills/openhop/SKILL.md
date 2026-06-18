@@ -152,9 +152,9 @@ The rule applies whether `data` is the string shorthand (`data: "..."`) or the o
 
 ## Before Creating Flows
 
-If `openhop --version` fails with `command not found`, OpenHop's CLI isn't installed yet. Run `npx openhop init` yourself to install it, then continue with the steps below. (`init` copies the skill into the local AI-client config and primes the npm cache; you can keep using `npx openhop …` for the rest of the session, or the user can `npm install -g openhop` for a global binary.)
-
 Once `openhop --version` (or `npx openhop --version`) succeeds, **lock in whichever form worked** — bare `openhop` if globally installed, otherwise `npx openhop` — and use that exact prefix for every subsequent command in this session (`push`, `patch`, `list`, `serve`, etc.). Don't mix forms; the bare command will fail if there's no global install.
+
+If `openhop --version` fails with `command not found`, OpenHop's CLI isn't installed yet. Run `npx openhop init` yourself to install it, then continue with the steps below. (`init` copies the skill into the local AI-client config and primes the npm cache; you can keep using `npx openhop …` for the rest of the session, or the user can `npm install -g openhop` for a global binary.)
 
 Then verify the OpenHop API server is running:
 
