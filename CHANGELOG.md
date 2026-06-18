@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-06-18
+
+### Changed
+
+- README and `skills/openhop/SKILL.md`: reframe product positioning as interactive diagrams (play, pause, step-through) rather than animated ones (#185).
+- `skills/openhop/SKILL.md`: streamline authoring guidance — revised flow-creation phases, removed redundant validation/examples sections, clarified CLI install steps.
+
+### Dependencies
+
+- Production: `undici` 7.25.0 → 7.28.0 (#183).
+- Dev: `js-yaml` 4.1.1 → 4.2.0 (#184); Vitest / ESLint / TypeScript toolchain bumps (#182).
+
 ## [0.3.3] - 2026-05-17
 
 ### Added
