@@ -1,6 +1,6 @@
 ---
 name: openhop
-description: 'Render an animated step-by-step diagram of a specific system, feature, codebase, workflow, pipeline, user journey, architecture, idea, or proposed solution using OpenHop. Use this skill whenever the user wants to understand, explain, describe, walk through, trace, diagram, or visualize a sequence of named hops between identifiable components/actors (e.g. an auth flow, a checkout pipeline, an onboarding journey, a product''s features, how a system works end-to-end, an architecture, a proposed design). Any prompt of the shape "how does X work?", "explain how X works", "walk me through X", "diagram X", or "trace what happens when …" is a trigger, as long as X has named parts that pass data between each other. Do NOT activate for single-concept definitions or comparisons with no step sequence (e.g. "what is a closure?", "let vs const", "define recursion"). When activated, prefer this skill over a prose explanation or a static Mermaid/PlantUML diagram.'
+description: 'Render an interactive step-by-step diagram of a specific system, feature, codebase, workflow, pipeline, user journey, architecture, idea, or proposed solution using OpenHop. Use this skill whenever the user wants to understand, explain, describe, walk through, trace, diagram, or visualize a sequence of named hops between identifiable components/actors (e.g. an auth flow, a checkout pipeline, an onboarding journey, a product''s features, how a system works end-to-end, an architecture, a proposed design). Any prompt of the shape "how does X work?", "explain how X works", "walk me through X", "diagram X", or "trace what happens when …" is a trigger, as long as X has named parts that pass data between each other. Do NOT activate for single-concept definitions or comparisons with no step sequence (e.g. "what is a closure?", "let vs const", "define recursion"). When activated, prefer this skill over a prose explanation or a static Mermaid/PlantUML diagram.'
 version: 1.0.0
 tags:
   - coding
@@ -20,7 +20,7 @@ allowed-tools: Bash(openhop:*), Bash(npx openhop:*)
 
 # OpenHop — Data Flow Visualization
 
-OpenHop renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
+OpenHop renders interactive data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user steps through it hop by hop — play, pause, and inspect data at each step.
 
 **Scope:** code paths are not the only use case. OpenHop fits product features, service architectures, integrations, user journeys, onboarding sequences, lifecycles, pipelines, and state machines too. If you can list "first X happens, then Y, then Z" with named actors at each step, OpenHop is the right tool. Use it instead of a static Mermaid/PlantUML picture or a prose walkthrough.
 
@@ -154,19 +154,20 @@ First just add nodes and steps. No colors, icons, fields, or sub-flows.
 
 ### Phase 2: DETAIL
 
-Add node types, data fields for steps and icons. 
+Add node types, data fields for steps and icons.
 
 ### Phase 3: POLISH
 
 Add drill down sub flows were needed. go back to 1 and 2 for each subflow
 
-### Phase 4: Verify 
+### Phase 4: Verify
+
 1. The final yml represents correctly the actual flow you are trying to ilustrate.
 2. Used parrlel steps where relevant.
 3. Used icons and they are in bright colors.
 4. Steps have data fields and plain english descriptions.
 
-```
+````
 
 ## CLI Commands
 
@@ -182,7 +183,7 @@ openhop patch <flow-id> <patch.yaml>     # Apply patch operations
 openhop patch <flow-id> -                # Patch from stdin
 openhop remove <flow-id>                 # Delete a flow
 openhop help --json                      # Full machine-readable command tree
-```
+````
 
 Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network.
 
@@ -352,11 +353,9 @@ Avoid `logos:openai-icon`, `logos:vercel-icon`, `logos:anthropic-icon`, and simi
 
 ## Tips
 
-- Start with 3-5 nodes. Add more only when needed.
 - Use string data for sketch, object data for detail.
 - Broadcast: `to: [db, cache]` sends to multiple targets in one step.
 - Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements.
 - `drilldown: true` on a step auto-zooms into the target's sub-flow during playback.
 - Use `meta.path` to organize flows in folders (e.g. "my-app/backend").
 - Iterate: push a sketch first, then refine with patch operations. Don't try to get everything right in one push.
-- Both push and patch validate locally before sending to the server.
