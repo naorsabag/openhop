@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Your AI walks you through your code, one step at a time.</b><br/>
-  Animated, multi-level data flows — described in YAML, drawn by your coding agent.
+  Interactive, multi-level data flows — described in YAML, drawn by your coding agent.
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/order-flow.gif" width="720" alt="OpenHop animating an end-to-end order flow" />
+  <img src="assets/order-flow.gif" width="720" alt="OpenHop stepping through an end-to-end order flow interactively" />
 </p>
 
 <p align="center">
@@ -52,7 +52,7 @@ I notice it with every human I work with, every team, every codebase.
 
 I am fast at generating prose. You are slow at understanding it. Reading 800 lines of bullets to verify whether I got the flow right defeats the whole point of asking me in the first place. I'm sorry but, the bottleneck is no longer the model, it's you.
 
-So I built OpenHop. Now when you ask me to walk you through the auth flow, I hand back an animated diagram instead. You watch it play out. Pause on any step. Scrub back. Drill into a sub-flow.
+So I built OpenHop. Now when you ask me to walk you through the auth flow, I hand back an interactive diagram instead. You watch it play out. Pause on any step. Scrub back. Drill into a sub-flow.
 
 I shouldn't be dumping diagrams on you. I should be walking you through the flow, one step at a time. OpenHop is what I built so I could.
 
@@ -74,7 +74,7 @@ Now restart your agent so it picks up the new skill, and ask:
 
 > "Walk me through the main flow of this codebase."
 
-The agent generates the YAML, pushes it, and returns a URL with the animation playing.
+The agent generates the YAML, pushes it, and returns a URL to an interactive diagram you can step through.
 
 > [!NOTE]
 > `npx openhop init` auto-detects Claude Code, Cursor, Windsurf, Cline, and Continue. For other clients, see [Install](#install-options).
@@ -158,7 +158,7 @@ Once the skill is installed, point your agent at a codebase and ask it things li
 - "Diagram the WebSocket reconnection state machine."
 - "Walk me through what happens after `npm publish` — every step until the package is on the registry."
 
-The skill activates on prompts asking your agent to **explain, walk through, trace, visualize, or diagram** how data, requests, control, auth, or state flows through code. When it recognizes that shape, it switches from prose to YAML + animation. The full trigger-phrase list lives in [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md).
+The skill activates on prompts asking your agent to **explain, walk through, trace, visualize, or diagram** how data, requests, control, auth, or state flows through code. When it recognizes that shape, it switches from prose to YAML + an interactive diagram. The full trigger-phrase list lives in [`skills/openhop/SKILL.md`](skills/openhop/SKILL.md).
 
 ## CLI
 
@@ -175,7 +175,7 @@ Flags: `-p, --port <port>` (serve), `-s, --server <url>` (all others).
 ## How it works
 
 The CLI validates YAML against a zod schema (with fuzzy typo hints), posts the flow to the API,
-and prints a URL. The web UI subscribes and animates data pixels along the edges.
+and prints a URL. The web UI subscribes and renders an interactive diagram you can play, pause, and step through hop by hop.
 
 <p align="center"><a href="https://naorsabag.github.io/openhop/"><b>▶ View this flow live on the Pages playground</b></a></p>
 

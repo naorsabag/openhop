@@ -1,6 +1,6 @@
 ---
 name: openhop
-description: 'Render an animated step-by-step diagram of a specific system, feature, codebase, workflow, pipeline, user journey, architecture, idea, or proposed solution using OpenHop. Use this skill whenever the user wants to understand, explain, describe, walk through, trace, diagram, or visualize a sequence of named hops between identifiable components/actors (e.g. an auth flow, a checkout pipeline, an onboarding journey, a product''s features, how a system works end-to-end, an architecture, a proposed design). Any prompt of the shape "how does X work?", "explain how X works", "walk me through X", "diagram X", or "trace what happens when …" is a trigger, as long as X has named parts that pass data between each other. Do NOT activate for single-concept definitions or comparisons with no step sequence (e.g. "what is a closure?", "let vs const", "define recursion"). When activated, prefer this skill over a prose explanation or a static Mermaid/PlantUML diagram.'
+description: 'Render an interactive step-by-step diagram of a specific system, feature, codebase, workflow, pipeline, user journey, architecture, idea, or proposed solution using OpenHop. Use this skill whenever the user wants to understand, explain, describe, walk through, trace, diagram, or visualize a sequence of named hops between identifiable components/actors (e.g. an auth flow, a checkout pipeline, an onboarding journey, a product''s features, how a system works end-to-end, an architecture, a proposed design). Any prompt of the shape "how does X work?", "explain how X works", "walk me through X", "diagram X", or "trace what happens when …" is a trigger, as long as X has named parts that pass data between each other. Do NOT activate for single-concept definitions or comparisons with no step sequence (e.g. "what is a closure?", "let vs const", "define recursion"). When activated, prefer this skill over a prose explanation or a static Mermaid/PlantUML diagram.'
 version: 1.0.0
 tags:
   - coding
@@ -20,7 +20,7 @@ allowed-tools: Bash(openhop:*), Bash(npx openhop:*)
 
 # OpenHop — Data Flow Visualization
 
-OpenHop renders animated data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user sees animated data pixels traveling between components.
+OpenHop renders interactive data flow diagrams. You describe the flow in YAML, push it with the CLI, and the user steps through it hop by hop — play, pause, and inspect data at each step.
 
 **Scope:** code paths are not the only use case. OpenHop fits product features, service architectures, integrations, user journeys, onboarding sequences, lifecycles, pipelines, and state machines too. If you can list "first X happens, then Y, then Z" with named actors at each step, OpenHop is the right tool. Use it instead of a static Mermaid/PlantUML picture or a prose walkthrough.
 
@@ -63,25 +63,6 @@ Activate this skill on prompts like:
 
 If you're unsure whether a request fits, ask yourself: **can the answer be expressed as a sequence of named hops between named components?** If yes, this skill applies — even if "code" was never mentioned.
 
-## Examples (prompt → YAML → URL)
-
-Each row reuses one of the bundled `examples/*.yaml` flows so the inputs match what the validator already accepts. The URL comes from the `url` field of `openhop push <file> --json`.
-
-| Prompt                                                       | YAML to push                                                                          | Returned `url`                    |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------- |
-| "walk me through the OAuth login flow"                       | `examples/auth-flow.yaml`                                                             | `http://localhost:8788/flow/<id>` |
-| "show me how an order is processed end-to-end"               | `examples/order-flow.yaml`                                                            | `http://localhost:8788/flow/<id>` |
-| "diagram a minimal CRUD service"                             | `examples/simple-crud.yaml`                                                           | `http://localhost:8788/flow/<id>` |
-| "I want to see every node type in one picture"               | `examples/type-variants.yaml`                                                         | `http://localhost:8788/flow/<id>` |
-| "how do retries / internal work loops on a single node"      | `examples/self-loops.yaml`                                                            | `http://localhost:8788/flow/<id>` |
-| "show me two things happening at the same time"              | `examples/parallel.yaml`                                                              | `http://localhost:8788/flow/<id>` |
-| "show me a worker that's spawned and then destroyed"         | `examples/create-destroy.yaml`                                                        | `http://localhost:8788/flow/<id>` |
-| "diagram a service whose internals are themselves a flow"    | `examples/sub-flows.yaml`                                                             | `http://localhost:8788/flow/<id>` |
-| "visualize a three-tier app (browser → API → DB)"            | the YAML in "Quickest valid flow" below                                               | `http://localhost:8788/flow/<id>` |
-| "diagram {Product X}'s features" / "how does {Product} work" | sketch a flow from the product's docs (user → entry point → core capability → result) | `http://localhost:8788/flow/<id>` |
-
-For brand-new flows, sketch your own YAML against the Schema Reference below and push the same way.
-
 ## Quickest valid flow (copy this, modify ids/labels)
 
 This is the **smallest known-valid flow**. Start from this and edit — do not invent the schema.
@@ -117,15 +98,6 @@ flow:
 
 Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin). Parse the JSON response and return the `url` field to the user.
 
-**Validation rules to lock in before you write your own:**
-
-- `type` must be one of the 12 enum values (see Schema Reference below). `transform`, `validation`, `redis`, `oauth`, etc. are **not** valid types.
-- `data` is a `string` or an object — never a list. `data: "request"` ✓, `data: { label: "request", fields: [...] }` ✓, `data: [{ name: "request" }]` ✗
-- `id` is alphanumeric + hyphens + underscores only.
-- **Node `label` must be ≤ 4 words.** Labels render under each node in a fixed-width box; longer labels truncate with "…" and read poorly. Pick the shortest noun phrase that identifies the component. ✓ `Order Service`, `Auth API`, `Stripe`. ✗ `Order Processing Service With Retries`, `User Authentication and Authorization API`.
-
-If the validator rejects your flow, **read the error path** — it tells you exactly which field is wrong.
-
 ## Voice — short on node names, verbose on step text
 
 The two text channels in a flow carry opposite weights and should be written in opposite voices.
@@ -152,9 +124,9 @@ The rule applies whether `data` is the string shorthand (`data: "..."`) or the o
 
 ## Before Creating Flows
 
-If `openhop --version` fails with `command not found`, OpenHop's CLI isn't installed yet. Run `npx openhop init` yourself to install it, then continue with the steps below. (`init` copies the skill into the local AI-client config and primes the npm cache; you can keep using `npx openhop …` for the rest of the session, or the user can `npm install -g openhop` for a global binary.)
-
 Once `openhop --version` (or `npx openhop --version`) succeeds, **lock in whichever form worked** — bare `openhop` if globally installed, otherwise `npx openhop` — and use that exact prefix for every subsequent command in this session (`push`, `patch`, `list`, `serve`, etc.). Don't mix forms; the bare command will fail if there's no global install.
+
+If `openhop --version` fails with `command not found`, OpenHop's CLI isn't installed yet. Run `npx openhop init` yourself to install it, then continue with the steps below. (`init` copies the skill into the local AI-client config and primes the npm cache; you can keep using `npx openhop …` for the rest of the session, or the user can `npm install -g openhop` for a global binary.)
 
 Then verify the OpenHop API server is running:
 
@@ -174,115 +146,28 @@ npx openhop serve   # long-lived: starts API + web UI, no starter flow, no brows
 
 Once the health check returns `{"status":"ok"}`, push a flow with `openhop push <file.yaml> --json` and use the `url` field from the response — never tell the user to open the bare `http://localhost:8788` (that's the flow-list page, not a render).
 
-## How to Work: Sketch → Detail → Polish
+## How to Work: Sketch → Detail → Sub-Flows → Verify
 
-### Phase 1: SKETCH (always start here)
+### Phase 1: SKETCH
 
-Write a YAML file with just nodes and steps. No colors, icons, fields, or sub-flows.
+First just add nodes and steps. No colors, icons, fields, or sub-flows.
 
-```yaml
-meta:
-  title: "Order Processing"
-  path: my-app/backend
+### Phase 2: DETAIL
 
-flow:
-  nodes:
-    - id: user
-      label: User
-    - id: api
-      label: POST /orders
-    - id: db
-      label: Database
-  steps:
-    - from: user
-      to: api
-      data: HTTP Request
-    - from: api
-      to: db
-      data: Save order
-    - from: db
-      to: api
-      data: Order ID
-    - from: api
-      to: user
-      data: Response
-```
+Add node types, data fields for steps and icons.
 
-Push it:
+### Phase 3: POLISH
 
-```bash
-openhop push flow.yaml --json
-```
+Add drill down sub flows were needed. go back to 1 and 2 for each subflow
 
-Output:
+### Phase 4: Verify
 
-```json
-{ "id": "abc123", "title": "Order Processing", "url": "http://localhost:8788/flow/abc123" }
-```
+1. The final yml represents correctly the actual flow you are trying to ilustrate.
+2. Used parrlel steps where relevant.
+3. Used icons and they are in bright colors.
+4. Steps have data fields and plain english descriptions.
 
-Parse the response and return the `url` field to the user.
-
-### Phase 2: DETAIL (iterate with PATCH)
-
-Write a patch YAML file to add detail:
-
-```yaml
-# patch.yaml
-operations:
-  - op: update-nodes
-    nodes:
-      - id: db
-        type: database
-        icon: "logos:postgresql"
-        color: "#336791"
-  - op: rename-nodes
-    nodes:
-      - id: api
-        label: Order Service
-```
-
-Apply it:
-
-```bash
-openhop patch abc123 patch.yaml
-```
-
-### Phase 3: POLISH (add data fields, sub-flows, diff highlighting)
-
-```yaml
-# polish-patch.yaml
-operations:
-  - op: update-step
-    index: 1
-    step:
-      from: api
-      to: db
-      data:
-        label: INSERT order
-        fields:
-          - name: items
-            type: "list[OrderItem]"
-          - name: total
-            type: float
-            added: true
-  - op: set-flows
-    nodes:
-      - id: api
-        flow:
-          nodes:
-            - id: validate
-              label: Validate
-            - id: save
-              label: Save to DB
-          steps:
-            - from: validate
-              to: save
-              data: validated order
-```
-
-```bash
-openhop patch abc123 polish-patch.yaml
-```
+````
 
 ## CLI Commands
 
@@ -298,9 +183,9 @@ openhop patch <flow-id> <patch.yaml>     # Apply patch operations
 openhop patch <flow-id> -                # Patch from stdin
 openhop remove <flow-id>                 # Delete a flow
 openhop help --json                      # Full machine-readable command tree
-```
+````
 
-Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network. **Always `validate` before `push`** when iterating — it skips the server round-trip.
+Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network.
 
 Stdin is useful when generating YAML programmatically:
 
@@ -468,11 +353,9 @@ Avoid `logos:openai-icon`, `logos:vercel-icon`, `logos:anthropic-icon`, and simi
 
 ## Tips
 
-- Start with 3-5 nodes. Add more only when needed.
 - Use string data for sketch, object data for detail.
 - Broadcast: `to: [db, cache]` sends to multiple targets in one step.
 - Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements.
 - `drilldown: true` on a step auto-zooms into the target's sub-flow during playback.
 - Use `meta.path` to organize flows in folders (e.g. "my-app/backend").
 - Iterate: push a sketch first, then refine with patch operations. Don't try to get everything right in one push.
-- Both push and patch validate locally before sending to the server.
