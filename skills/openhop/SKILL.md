@@ -352,11 +352,9 @@ Avoid `logos:openai-icon`, `logos:vercel-icon`, `logos:anthropic-icon`, and simi
 
 ## Tips
 
-- Start with 3-5 nodes. Add more only when needed.
 - Use string data for sketch, object data for detail.
 - Broadcast: `to: [db, cache]` sends to multiple targets in one step.
 - Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements.
 - `drilldown: true` on a step auto-zooms into the target's sub-flow during playback.
 - Use `meta.path` to organize flows in folders (e.g. "my-app/backend").
 - Iterate: push a sketch first, then refine with patch operations. Don't try to get everything right in one push.
-- Both push and patch validate locally before sending to the server.
