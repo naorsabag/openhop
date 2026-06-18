@@ -181,27 +181,7 @@ flow:
     - from: api
       to: db
       data: Save order
-    - from: db
-      to: api
-      data: Order ID
-    - from: api
-      to: user
-      data: Response
 ```
-
-Push it:
-
-```bash
-openhop push flow.yaml --json
-```
-
-Output:
-
-```json
-{ "id": "abc123", "title": "Order Processing", "url": "http://localhost:8788/flow/abc123" }
-```
-
-Parse the response and return the `url` field to the user.
 
 ### Phase 2: DETAIL (iterate with PATCH)
 
@@ -281,7 +261,7 @@ openhop remove <flow-id>                 # Delete a flow
 openhop help --json                      # Full machine-readable command tree
 ```
 
-Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network. **Always `validate` before `push`** when iterating — it skips the server round-trip.
+Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network.
 
 Stdin is useful when generating YAML programmatically:
 
