@@ -155,94 +155,26 @@ npx openhop serve   # long-lived: starts API + web UI, no starter flow, no brows
 
 Once the health check returns `{"status":"ok"}`, push a flow with `openhop push <file.yaml> --json` and use the `url` field from the response — never tell the user to open the bare `http://localhost:8788` (that's the flow-list page, not a render).
 
-## How to Work: Sketch → Detail → Polish
+## How to Work: Sketch → Detail → Sub-Flows → Verify
 
-### Phase 1: SKETCH (always start here)
+### Phase 1: SKETCH
 
-Write a YAML file with just nodes and steps. No colors, icons, fields, or sub-flows.
+First just add nodes and steps. No colors, icons, fields, or sub-flows.
 
-```yaml
-meta:
-  title: "Order Processing"
-  path: my-app/backend
+### Phase 2: DETAIL
 
-flow:
-  nodes:
-    - id: user
-      label: User
-    - id: api
-      label: POST /orders
-    - id: db
-      label: Database
-  steps:
-    - from: user
-      to: api
-      data: HTTP Request
-    - from: api
-      to: db
-      data: Save order
-```
+Add node types, data fields for steps and icons. 
 
-### Phase 2: DETAIL (iterate with PATCH)
+### Phase 3: POLISH
 
-Write a patch YAML file to add detail:
+Add drill down sub flows were needed. go back to 1 and 2 for each subflow
 
-```yaml
-# patch.yaml
-operations:
-  - op: update-nodes
-    nodes:
-      - id: db
-        type: database
-        icon: "logos:postgresql"
-        color: "#336791"
-  - op: rename-nodes
-    nodes:
-      - id: api
-        label: Order Service
-```
+### Phase 4: Verify 
+1. The final yml represents correctly the actual flow you are trying to ilustrate.
+2. Used parrlel steps where relevant.
+3. Used icons and they are in bright colors.
+4. Steps have data fields and plain english descriptions.
 
-Apply it:
-
-```bash
-openhop patch abc123 patch.yaml
-```
-
-### Phase 3: POLISH (add data fields, sub-flows, diff highlighting)
-
-```yaml
-# polish-patch.yaml
-operations:
-  - op: update-step
-    index: 1
-    step:
-      from: api
-      to: db
-      data:
-        label: INSERT order
-        fields:
-          - name: items
-            type: "list[OrderItem]"
-          - name: total
-            type: float
-            added: true
-  - op: set-flows
-    nodes:
-      - id: api
-        flow:
-          nodes:
-            - id: validate
-              label: Validate
-            - id: save
-              label: Save to DB
-          steps:
-            - from: validate
-              to: save
-              data: validated order
-```
-
-```bash
-openhop patch abc123 polish-patch.yaml
 ```
 
 ## CLI Commands
