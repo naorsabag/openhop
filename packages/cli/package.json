@@ -1,6 +1,6 @@
 {
   "name": "openhop",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Animated data-flow diagrams your AI agent can write. CLI.",
   "repository": {
     "type": "git",
