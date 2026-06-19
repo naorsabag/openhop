@@ -26,11 +26,31 @@ OpenHop renders interactive data flow diagrams. You describe the flow in YAML, p
 
 When the user asks for an explanation, walkthrough, or diagram of how something works — code or otherwise — **DO NOT write a prose explanation and DO NOT emit a static diagram. Instead:**
 
-1. **Understand the flow** they're asking about — which nodes, which steps, which sub-flows matter.
-2. **Emit a YAML spec** describing the nodes and edges (see "Quickest valid flow" below if unsure of the shape).
-3. **Run `openhop push <file.yaml> --json`** to create the flow.
-4. **Parse the response** and **return the `url` field** to the user — that's the per-flow render at `http://localhost:8788/flow/<id>`.
-5. **Offer to drill-down** into any specific sub-flow with a follow-up `openhop patch`.
+1. **Understand the flow** they're asking about — which nodes, which steps, which sub-flows matter, and which payloads cross each boundary.
+2. **Build the complete YAML locally** — run Phases 1→4 in one session (see below).
+3. **Run `openhop validate <file.yaml>`** — fix until it exits clean.
+4. **Run `openhop push <file.yaml> --json`** to create the flow.
+5. **Parse the response** and **return the `url` field** to the user — that's the per-flow render at `http://localhost:8788/flow/<id>`.
+6. **Optionally** offer *additional* drill-downs beyond what you already shipped (e.g. "want a third-level sub-flow on batch persistence?") via `openhop patch`.
+
+## Definition of Done — do NOT return the URL until ALL of these pass
+
+Before you give the user the flow URL, the diagram **must** satisfy Phase 4. Phases 1–3 are **internal build steps in one session**, not optional follow-ups.
+
+**Required before returning the URL:**
+
+- [ ] Every step uses object-form `data` with a verbose plain-English `label`
+- [ ] Every step that crosses a boundary has a `fields:` array (request payloads, DB rows, batch events, responses)
+- [ ] Branches, loops, or multi-stage internals use **sub-flows** on the owning node (not only top-level `parallel:`)
+- [ ] At least one `drilldown: true` step targets each sub-flow node
+- [ ] Every node has a **colorful** icon (see Icons section — not white, not black)
+- [ ] Ran `openhop validate` with no errors
+
+**Forbidden:**
+
+- Returning a Phase-1-only sketch and offering to "add detail later"
+- Steps with narration-only string `data:` in the pushed flow
+- Using `simple-icons:*` as the default icon set
 
 ## Trigger phrases
 
@@ -65,7 +85,7 @@ If you're unsure whether a request fits, ask yourself: **can the answer be expre
 
 ## Quickest valid flow (copy this, modify ids/labels)
 
-This is the **smallest known-valid flow**. Start from this and edit — do not invent the schema.
+This is the **smallest known-valid topology**. Use it for Phase-1 drafting only — **never push it as-is**. See "Minimum shippable flow" below for what you actually push.
 
 ```yaml
 meta:
@@ -96,7 +116,67 @@ flow:
       data: The API renders the page and sends the finished HTML back to the browser.
 ```
 
-Push it with `openhop push <file> --json` (or `openhop push - --json` for stdin). Parse the JSON response and return the `url` field to the user.
+### Minimum shippable flow
+
+This is what you push after Phases 2–4. Every step has narration **and** fields; every node has a colorful icon.
+
+```yaml
+meta:
+  title: Three-tier app
+flow:
+  nodes:
+    - id: browser
+      label: Browser
+      type: browser
+      icon: logos:chrome
+    - id: api
+      label: API
+      type: endpoint
+      icon: logos:nginx
+    - id: db
+      label: Postgres
+      type: database
+      icon: logos:postgresql
+  steps:
+    - from: browser
+      to: api
+      data:
+        label: The user opens the home page and the browser asks the API for the content to render.
+        fields:
+          - name: path
+            type: string
+          - name: session_cookie
+            type: string
+    - from: api
+      to: db
+      data:
+        label: The API asks the database for the rows it needs to render the page for this user.
+        fields:
+          - name: user_id
+            type: int
+          - name: table
+            type: string
+    - from: db
+      to: api
+      data:
+        label: The database returns the matching rows along with the row count.
+        fields:
+          - name: rows
+            type: "list[Row]"
+          - name: count
+            type: int
+    - from: api
+      to: browser
+      data:
+        label: The API renders the page and sends the finished HTML back to the browser.
+        fields:
+          - name: html
+            type: string
+          - name: status
+            type: int
+```
+
+Push with `openhop validate <file.yaml>` first, then `openhop push <file.yaml> --json`. Parse the JSON response and return the `url` field to the user.
 
 ## Voice — short on node names, verbose on step text
 
@@ -148,26 +228,33 @@ Once the health check returns `{"status":"ok"}`, push a flow with `openhop push 
 
 ## How to Work: Sketch → Detail → Sub-Flows → Verify
 
-### Phase 1: SKETCH
+Run all four phases **in the same session** before pushing. Phase 1 is a private drafting step — never the deliverable.
 
-First just add nodes and steps. No colors, icons, fields, or sub-flows.
+### Phase 1: SKETCH (local only — do not push)
 
-### Phase 2: DETAIL
+Add nodes and steps with string `data`. No icons, fields, or sub-flows yet. Use this to get the topology right, then immediately continue to Phase 2.
 
-Add node types, data fields for steps and icons.
+### Phase 2: DETAIL (required)
 
-### Phase 3: POLISH
+Replace every string `data` with object form: `{ label, fields }`. Add node `type`, `icon`, and `color`. **Fields are mandatory** on any step where structured data moves (API calls, DB reads/writes, queue messages, webhooks, file payloads). If nothing crosses the wire, use at least one context field (e.g. `{ name: reason, type: string }`).
 
-Add drill down sub flows were needed. go back to 1 and 2 for each subflow
+### Phase 3: SUB-FLOWS (required when applicable)
 
-### Phase 4: Verify
+Add nested `flow:` on nodes that own multi-step internals:
 
-1. The final yml represents correctly the actual flow you are trying to ilustrate.
-2. Used parrlel steps where relevant.
-3. Used icons and they are in bright colors.
-4. Steps have data fields and plain english descriptions.
+- auth / validation pipelines → sub-flow on the gatekeeper node
+- engine or strategy branches → sub-flow per branch (prefer over bare `parallel:`)
+- retry / persistence / notification fan-out → sub-flow on the coordinator node
 
-````
+Re-run Phases 2–3 inside each sub-flow. Set `drilldown: true` on entry steps.
+
+### Phase 4: VERIFY (gate — must pass before push)
+
+1. The final YAML represents correctly the actual flow you are trying to illustrate.
+2. `parallel:` only for truly concurrent transfers, not as a substitute for sub-flows.
+3. Icons are colorful (see Icons).
+4. Every step has `label` + `fields`.
+5. `openhop validate` exits 0.
 
 ## CLI Commands
 
@@ -183,7 +270,7 @@ openhop patch <flow-id> <patch.yaml>     # Apply patch operations
 openhop patch <flow-id> -                # Patch from stdin
 openhop remove <flow-id>                 # Delete a flow
 openhop help --json                      # Full machine-readable command tree
-````
+```
 
 Every command supports `--json` for machine-readable output. Use it whenever you'll parse the result. Exit codes are semantic: `0` success, `2` usage, `3` validation, `4` not-found, `5` conflict, `6` network.
 
@@ -286,19 +373,19 @@ Either a move step, parallel, create, or destroy:
 
 Either a string (sketch) or object (detailed):
 
-**String** — just a label:
+**String** — Phase-1 drafting only; never in the pushed flow:
 
 ```yaml
 data: "HTTP Request"
 ```
 
-**Object** — with optional fields:
+**Object** — required in the pushed flow:
 
 ```yaml
 data:
   label: "Order payload" # required
   color: "#4aff7a" # optional — override pixel color (hex)
-  fields: # optional — shown in tooltip on hover
+  fields: # required when data crosses a boundary
     - name: items # required
       type: "list[OrderItem]" # optional
     - name: total
@@ -342,20 +429,37 @@ All operations support multiple items. Apply with `openhop patch <id> <file.yaml
 
 ## Icons
 
-The canvas is dark — use light-theme icons.
+The canvas is dark. Icons must be **colorful and readable** — brand-accurate colors that pop against the background.
 
-Pick from either:
+### Default: colorful Iconify sets (USE THESE)
 
-- `simple-icons:<brand>` — covers ~3000 brand logos and auto-recolors to white.
-- `icon-sets.iconify.design/?palette=colorful` — sets with baked-in bright colors (e.g. `logos:google-icon`, `logos:postgresql`, `twemoji:*`).
+Prefer icons with baked-in bright colors:
 
-Avoid `logos:openai-icon`, `logos:vercel-icon`, `logos:anthropic-icon`, and similar bare-path "icon" variants — they render black. Use `simple-icons:openai`, `simple-icons:vercel`, `logos:claude-icon` instead.
+- `logos:<brand>` — e.g. `logos:mongodb-icon`, `logos:kubernetes`, `logos:react`, `logos:postgresql`
+- `twemoji:<emoji>` — e.g. `twemoji:bust-in-silhouette`, `twemoji:gear`
+- `simple-icons:<brand>` **only when no colorful variant exists**
+
+### Avoid
+
+| Don't use | Why | Use instead |
+| --------- | --- | ----------- |
+| `simple-icons:*` as default | Auto-recolors to **white** — looks flat | `logos:*` or `twemoji:*` |
+| `logos:*-icon` bare variants | Render **black** on dark canvas | See known exceptions below |
+| No icon | Generic gray sprite | Always set `icon` on every node |
+
+### Known exceptions (black-on-dark fixes)
+
+- OpenAI → `simple-icons:openai` (white) OR a colorful custom icon — not `logos:openai-icon`
+- Vercel → `simple-icons:vercel`
+- Anthropic → `logos:claude-icon` ✓
+
+**Rule of thumb:** if the icon looks white or black on the canvas, swap it before pushing.
 
 ## Tips
 
-- Use string data for sketch, object data for detail.
+- Use string `data` for Phase-1 drafting locally; object `data` with `fields` in the pushed flow.
 - Broadcast: `to: [db, cache]` sends to multiple targets in one step.
-- Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements.
+- Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements — not as a substitute for sub-flows on branches.
 - `drilldown: true` on a step auto-zooms into the target's sub-flow during playback.
 - Use `meta.path` to organize flows in folders (e.g. "my-app/backend").
-- Iterate: push a sketch first, then refine with patch operations. Don't try to get everything right in one push.
+- Draft Phase 1 locally if helpful, but push **once** when Phase 4 passes. Use `openhop patch` only for user-requested follow-ups or corrections — not to finish work you should have done before the first push.
