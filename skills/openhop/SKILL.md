@@ -28,10 +28,8 @@ When the user asks for an explanation, walkthrough, or diagram of how something 
 
 1. **Understand the flow** they're asking about — which nodes, which steps, which sub-flows matter, and which payloads cross each boundary.
 2. **Build the complete YAML locally** — run Phases 1→4 in one session (see below).
-3. **Run `openhop validate <file.yaml>`** — fix until it exits clean.
-4. **Run `openhop push <file.yaml> --json`** to create the flow.
-5. **Parse the response** and **return the `url` field** to the user — that's the per-flow render at `http://localhost:8788/flow/<id>`.
-6. **Optionally** offer *additional* drill-downs beyond what you already shipped (e.g. "want a third-level sub-flow on batch persistence?") via `openhop patch`.
+3. **Run `openhop push <file.yaml> --json`** to create the flow.
+4. **Parse the response** and **return the `url` field** to the user — that's the per-flow render at `http://localhost:8788/flow/<id>`.
 
 ## Definition of Done — do NOT return the URL until ALL of these pass
 
@@ -40,17 +38,19 @@ Before you give the user the flow URL, the diagram **must** satisfy Phase 4. Pha
 **Required before returning the URL:**
 
 - [ ] Every step uses object-form `data` with a verbose plain-English `label`
-- [ ] Every step that crosses a boundary has a `fields:` array (request payloads, DB rows, batch events, responses)
-- [ ] Branches, loops, or multi-stage internals use **sub-flows** on the owning node (not only top-level `parallel:`)
-- [ ] At least one `drilldown: true` step targets each sub-flow node
 - [ ] Every node has a **colorful** icon (see Icons section — not white, not black)
-- [ ] Ran `openhop validate` with no errors
+
+**Include in the first push when relevant:**
+
+- [ ] `fields:` on steps where a structured payload helps (requests, DB rows, batch events, responses)
+- [ ] **Sub-flows** on nodes that own multi-step internals, with `drilldown: true` on entry steps — not deferred to a follow-up patch
 
 **Forbidden:**
 
 - Returning a Phase-1-only sketch and offering to "add detail later"
 - Steps with narration-only string `data:` in the pushed flow
 - Using `simple-icons:*` as the default icon set
+- Shipping a flat top-level flow when a branch or internal pipeline clearly warrants a sub-flow
 
 ## Trigger phrases
 
@@ -118,7 +118,7 @@ flow:
 
 ### Minimum shippable flow
 
-This is what you push after Phases 2–4. Every step has narration **and** fields; every node has a colorful icon.
+This is what you push after Phases 2–4. Every step has a verbose `label`; add `fields` where a payload is worth inspecting; every node has a colorful icon.
 
 ```yaml
 meta:
@@ -176,7 +176,7 @@ flow:
             type: int
 ```
 
-Push with `openhop validate <file.yaml>` first, then `openhop push <file.yaml> --json`. Parse the JSON response and return the `url` field to the user.
+Push with `openhop push <file.yaml> --json`. Parse the JSON response and return the `url` field to the user.
 
 ## Voice — short on node names, verbose on step text
 
@@ -236,11 +236,11 @@ Add nodes and steps with string `data`. No icons, fields, or sub-flows yet. Use 
 
 ### Phase 2: DETAIL (required)
 
-Replace every string `data` with object form: `{ label, fields }`. Add node `type`, `icon`, and `color`. **Fields are mandatory** on any step where structured data moves (API calls, DB reads/writes, queue messages, webhooks, file payloads). If nothing crosses the wire, use at least one context field (e.g. `{ name: reason, type: string }`).
+Replace every string `data` with object form: at minimum `{ label }`. Add node `type`, `icon`, and `color`. Add `fields` when a structured payload is worth inspecting — API calls, DB reads/writes, queue messages, webhooks — but skip them on purely narrative hops.
 
-### Phase 3: SUB-FLOWS (required when applicable)
+### Phase 3: SUB-FLOWS (include in the first push when relevant)
 
-Add nested `flow:` on nodes that own multi-step internals:
+Add nested `flow:` on nodes that own multi-step internals — ship these in the initial push, not via a follow-up patch:
 
 - auth / validation pipelines → sub-flow on the gatekeeper node
 - engine or strategy branches → sub-flow per branch (prefer over bare `parallel:`)
@@ -253,8 +253,8 @@ Re-run Phases 2–3 inside each sub-flow. Set `drilldown: true` on entry steps.
 1. The final YAML represents correctly the actual flow you are trying to illustrate.
 2. `parallel:` only for truly concurrent transfers, not as a substitute for sub-flows.
 3. Icons are colorful (see Icons).
-4. Every step has `label` + `fields`.
-5. `openhop validate` exits 0.
+4. Every step has a verbose `label`; `fields` present where they add value.
+5. Sub-flows and `drilldown: true` entry steps are in place wherever the flow branches or goes deep.
 
 ## CLI Commands
 
@@ -379,13 +379,13 @@ Either a string (sketch) or object (detailed):
 data: "HTTP Request"
 ```
 
-**Object** — required in the pushed flow:
+**Object** — required in the pushed flow (`label` required; `fields` optional):
 
 ```yaml
 data:
   label: "Order payload" # required
   color: "#4aff7a" # optional — override pixel color (hex)
-  fields: # required when data crosses a boundary
+  fields: # optional — add when a structured payload is worth inspecting
     - name: items # required
       type: "list[OrderItem]" # optional
     - name: total
@@ -457,9 +457,9 @@ Prefer icons with baked-in bright colors:
 
 ## Tips
 
-- Use string `data` for Phase-1 drafting locally; object `data` with `fields` in the pushed flow.
+- Use string `data` for Phase-1 drafting locally; object `data` with at least a `label` in the pushed flow. Add `fields` where they help.
 - Broadcast: `to: [db, cache]` sends to multiple targets in one step.
 - Parallel: `parallel: [{from: a, to: b}, {from: c, to: d}]` for concurrent movements — not as a substitute for sub-flows on branches.
-- `drilldown: true` on a step auto-zooms into the target's sub-flow during playback.
+- `drilldown: true` on a step auto-zooms into the target's sub-flow during playback — include sub-flows in the first push when the flow warrants them.
 - Use `meta.path` to organize flows in folders (e.g. "my-app/backend").
-- Draft Phase 1 locally if helpful, but push **once** when Phase 4 passes. Use `openhop patch` only for user-requested follow-ups or corrections — not to finish work you should have done before the first push.
+- Draft Phase 1 locally if helpful, but push **once** when Phase 4 passes. Use `openhop patch` for user-requested additions or corrections — not to backfill sub-flows or detail you should have included upfront.
