@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-06-19
+
+### Changed
+
+- `skills/openhop/SKILL.md`: add Definition of Done so agents complete Phases 1–4 before returning a flow URL; prefer colorful `logos:` / `twemoji:` icons over white `simple-icons`; include sub-flows and `fields` in the first push when relevant (#187).
+
 ## [0.3.5] - 2026-06-18
 
 ### Changed
