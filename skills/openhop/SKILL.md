@@ -441,11 +441,11 @@ Prefer icons with baked-in bright colors:
 
 ### Avoid
 
-| Don't use | Why | Use instead |
-| --------- | --- | ----------- |
-| `simple-icons:*` as default | Auto-recolors to **white** — looks flat | `logos:*` or `twemoji:*` |
-| `logos:*-icon` bare variants | Render **black** on dark canvas | See known exceptions below |
-| No icon | Generic gray sprite | Always set `icon` on every node |
+| Don't use                    | Why                                     | Use instead                     |
+| ---------------------------- | --------------------------------------- | ------------------------------- |
+| `simple-icons:*` as default  | Auto-recolors to **white** — looks flat | `logos:*` or `twemoji:*`        |
+| `logos:*-icon` bare variants | Render **black** on dark canvas         | See known exceptions below      |
+| No icon                      | Generic gray sprite                     | Always set `icon` on every node |
 
 ### Known exceptions (black-on-dark fixes)
 
