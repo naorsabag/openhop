@@ -6,6 +6,27 @@ import { flowRoutes } from './routes.js'
 import { FlowStore } from './store.js'
 import { seedBundledExamples } from './seed-examples.js'
 
+/** Allow loopback browser origins (Swagger, local tooling). Block arbitrary web origins. */
+function isAllowedCorsOrigin(
+  origin: string | undefined,
+  cb: (err: Error | null, allow: boolean | string) => void
+): void {
+  if (!origin) {
+    cb(null, true)
+    return
+  }
+  try {
+    const { hostname } = new URL(origin)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      cb(null, origin)
+      return
+    }
+  } catch {
+    // reject below
+  }
+  cb(null, false)
+}
+
 export interface StartServerOptions {
   /** TCP port. Default: process.env.PORT ?? 8787 */
   port?: number
@@ -34,7 +55,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
     app.addSchema(schema)
   }
 
-  await app.register(cors, { origin: true })
+  await app.register(cors, { origin: isAllowedCorsOrigin })
 
   try {
     const swagger = await import('@fastify/swagger')

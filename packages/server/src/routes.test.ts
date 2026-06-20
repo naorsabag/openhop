@@ -249,6 +249,11 @@ flow:
       const res = await app.inject({ method: 'GET', url: '/api/flows/does-not-exist' })
       expect(res.statusCode).toBe(404)
     })
+
+    it('rejects path traversal in flow id with 400', async () => {
+      const res = await app.inject({ method: 'GET', url: '/api/flows/..%2Fvictim' })
+      expect(res.statusCode).toBe(400)
+    })
   })
 
   describe('PATCH /api/flows/:id', () => {
@@ -334,6 +339,11 @@ flow:
 
       const second = await app.inject({ method: 'DELETE', url: `/api/flows/${id}` })
       expect(second.statusCode).toBe(404)
+    })
+
+    it('rejects path traversal in flow id with 400', async () => {
+      const res = await app.inject({ method: 'DELETE', url: '/api/flows/..%2Fdelete-me' })
+      expect(res.statusCode).toBe(400)
     })
   })
 })
