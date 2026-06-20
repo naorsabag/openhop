@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-06-20
+
+### Security
+
+- `@openhop/server@0.3.6`: validate flow IDs before filesystem access and restrict CORS to loopback origins, fixing path traversal in `GET`/`DELETE /api/flows/:id` ([GHSA-g72f-jw3w-mgh7](https://github.com/naorsabag/openhop/security/advisories/GHSA-g72f-jw3w-mgh7)). `openhop@0.3.7` pins the patched server for `openhop serve`.
+
 ## [0.3.6] - 2026-06-19
 
 ### Changed
