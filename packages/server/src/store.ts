@@ -3,6 +3,7 @@ import { homedir } from 'node:os'
 import { mkdir, readFile, writeFile, readdir, unlink } from 'node:fs/promises'
 import YAML from 'yaml'
 import type { Root } from '@openhop/shared'
+import { assertValidFlowId, InvalidFlowIdError } from './flow-id.js'
 
 export interface StoredFlow {
   id: string
@@ -50,6 +51,7 @@ export class FlowStore {
   }
 
   private filePath(id: string): string {
+    assertValidFlowId(id)
     return join(this.dir, `${id}.yaml`)
   }
 
@@ -78,7 +80,8 @@ export class FlowStore {
       const content = await readFile(this.filePath(id), 'utf-8')
       const file = YAML.parse(content) as StoredFlowFile
       return this.toStoredFlow(file)
-    } catch {
+    } catch (err) {
+      if (err instanceof InvalidFlowIdError) throw err
       return null
     }
   }
@@ -104,7 +107,8 @@ export class FlowStore {
     try {
       await unlink(this.filePath(id))
       return true
-    } catch {
+    } catch (err) {
+      if (err instanceof InvalidFlowIdError) throw err
       return false
     }
   }

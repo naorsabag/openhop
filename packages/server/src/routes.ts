@@ -15,6 +15,7 @@ import {
   patchOperationsJsonSchema,
 } from '@openhop/shared'
 import { FlowStore } from './store.js'
+import { FLOW_ID_JSON_PATTERN } from './flow-id.js'
 
 /** Flow-ID generator. Uses an alphanumeric-only alphabet (no `-` / `_`)
  *  because the CLI passes IDs as positional arguments to commands like
@@ -40,6 +41,14 @@ const NOT_FOUND_EXAMPLE = {
   error: 'not_found',
   details: [{ path: '', message: 'Flow "xyz" not found' }],
 }
+
+const flowIdParamsSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', pattern: FLOW_ID_JSON_PATTERN, description: 'Flow ID' },
+  },
+  required: ['id'],
+} as const
 
 export async function flowRoutes(app: FastifyInstance): Promise<void> {
   // Register patch-operations schema so routes can $ref it by its generated id.
@@ -309,13 +318,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
         summary: 'Get a flow by ID',
         description: 'Returns the full flow definition including metadata, nodes, and steps.',
         tags: ['flows'],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'Flow ID' },
-          },
-          required: ['id'],
-        },
+        params: flowIdParamsSchema,
         response: {
           200: storedFlowJsonSchema,
           404: {
@@ -351,13 +354,7 @@ export async function flowRoutes(app: FastifyInstance): Promise<void> {
         summary: 'Get flow version',
         description: 'Returns only the version number. Used by the UI for polling.',
         tags: ['flows'],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'Flow ID' },
-          },
-          required: ['id'],
-        },
+        params: flowIdParamsSchema,
         response: {
           200: {
             type: 'object',
@@ -409,13 +406,7 @@ Supported operations:
 - **remove-step**: Remove a step by index
 - **replace-steps**: Replace the entire steps array`,
         tags: ['flows'],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'Flow ID' },
-          },
-          required: ['id'],
-        },
+        params: flowIdParamsSchema,
         body: { $ref: 'https://openhop.dev/schemas/patch-operations#' },
         response: {
           200: {
@@ -513,13 +504,7 @@ Supported operations:
         summary: 'Delete a flow',
         description: 'Permanently deletes a flow by ID.',
         tags: ['flows'],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'Flow ID' },
-          },
-          required: ['id'],
-        },
+        params: flowIdParamsSchema,
         response: {
           204: {
             type: 'null',
