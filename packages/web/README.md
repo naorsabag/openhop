@@ -11,6 +11,7 @@ The package contains a built Vite bundle (HTML + JS + sprites) that:
 - Animates data pixels traveling between nodes
 - Supports drill-down into sub-flows
 - Reads flows from URL fragments for the static GitHub Pages deploy
+- Optional GA4 on GitHub Pages only (`GA_MEASUREMENT_ID` repo secret → `pages.yml`); local dev and CLI deploys never load it
 
 ## Documentation
 
