@@ -3,9 +3,6 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import AppFragment from './AppFragment.tsx'
-import { initAnalytics } from './lib/analytics.ts'
-
-initAnalytics()
 
 // `VITE_FRAGMENT_MODE=1` switches the bundle into the GitHub Pages variant:
 // no API server, flows live in the URL fragment, "Save" copies a share URL.

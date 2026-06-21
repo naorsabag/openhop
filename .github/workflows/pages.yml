@@ -38,9 +38,6 @@ jobs:
           # https://naorsabag.github.io/openhop/ — is the asset base path.
           VITE_BASE: /openhop/
           VITE_FRAGMENT_MODE: "1"
-          # GA4 for the public Pages demo only. Add repo secret GA_MEASUREMENT_ID
-          # (Settings → Secrets → Actions) with your G-XXXXXXXXXX ID. Unset = no analytics.
-          VITE_GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
       - uses: actions/configure-pages@v6
         with:
           enablement: true
