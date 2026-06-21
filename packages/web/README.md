@@ -11,7 +11,7 @@ The package contains a built Vite bundle (HTML + JS + sprites) that:
 - Animates data pixels traveling between nodes
 - Supports drill-down into sub-flows
 - Reads flows from URL fragments for the static GitHub Pages deploy
-- Optional Umami analytics on GitHub Pages only (`VITE_UMAMI_WEBSITE_ID` in `pages.yml`); local dev and CLI deploys never load it
+- Optional Umami analytics on GitHub Pages only — `pages.yml` sets `VITE_UMAMI_WEBSITE_ID` and Vite injects the script into `<head>` at build time; local dev and CLI deploys never load it
 
 ## Documentation
 

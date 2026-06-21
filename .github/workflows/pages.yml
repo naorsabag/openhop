@@ -38,7 +38,7 @@ jobs:
           # https://naorsabag.github.io/openhop/ — is the asset base path.
           VITE_BASE: /openhop/
           VITE_FRAGMENT_MODE: "1"
-          # Umami for the public Pages demo only (cloud.umami.is). Unset = no analytics.
+          # Umami for the public Pages demo — injected into index.html <head> at build time.
           VITE_UMAMI_WEBSITE_ID: "139df029-9f0e-4323-a08e-46a6fe7674a6"
       - uses: actions/configure-pages@v6
         with:
