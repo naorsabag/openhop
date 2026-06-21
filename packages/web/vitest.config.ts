@@ -10,7 +10,7 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/main.tsx',
-        'src/lib/analytics.ts',
+        'src/lib/umami.ts',
         'src/types.ts',
         'src/globals.d.ts',
       ],

@@ -3,8 +3,9 @@
 interface ImportMetaEnv {
   readonly VITE_BASE: string
   readonly VITE_FRAGMENT_MODE?: string
-  /** GA4 measurement ID (G-…). Set in pages.yml only — not used locally. */
-  readonly VITE_GA_MEASUREMENT_ID?: string
+  /** Umami website ID. Set in pages.yml only — not used locally. */
+  readonly VITE_UMAMI_WEBSITE_ID?: string
+  readonly VITE_UMAMI_SCRIPT_URL?: string
 }
 
 interface ImportMeta {
