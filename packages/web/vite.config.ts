@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { umamiHeadTag } from './vite-plugin-umami.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [tailwindcss(), react()],
+  plugins: [tailwindcss(), react(), umamiHeadTag()],
   // VITE_BASE='/OpenHop/' for the GitHub Pages deploy; '/' for dev. Set in
   // .github/workflows/pages.yml so dev builds aren't affected.
   base: process.env.VITE_BASE ?? '/',

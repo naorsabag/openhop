@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import AppFragment from './AppFragment.tsx'
+import { initUmamiHashTracking } from './lib/umami.ts'
+
+initUmamiHashTracking()
 
 // `VITE_FRAGMENT_MODE=1` switches the bundle into the GitHub Pages variant:
 // no API server, flows live in the URL fragment, "Save" copies a share URL.
