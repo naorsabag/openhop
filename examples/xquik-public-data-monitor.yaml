@@ -1,0 +1,114 @@
+meta:
+  title: Xquik public data monitor
+  path: examples/xquik-public-data-monitor
+  description: A backend creates an opt-in Xquik monitor for public X data, then handles signed webhook events when new matches arrive.
+
+flow:
+  nodes:
+    - id: operator
+      label: Operator
+      type: actor
+    - id: app
+      label: App Backend
+      type: service
+    - id: api_key
+      label: API Key
+      type: auth
+    - id: xquik_api
+      label: Xquik API
+      type: endpoint
+      icon: "material-symbols:api"
+    - id: monitor
+      label: Monitor Job
+      type: scheduler
+    - id: public_data
+      label: X Public Data
+      type: external
+      icon: "simple-icons:x"
+    - id: events
+      label: Event Store
+      type: database
+    - id: webhook
+      label: Webhook Receiver
+      type: endpoint
+    - id: analyzer
+      label: Analyzer
+      type: service
+
+  steps:
+    - from: operator
+      to: app
+      data: The operator confirms the public keyword or account target, the webhook destination, and that the monitor should run continuously.
+    - from: app
+      to: api_key
+      data: The backend reads the Xquik API key from server-side configuration before calling the API.
+    - from: app
+      to: xquik_api
+      data:
+        label: The backend creates a monitor with the target expression, event types, and HTTPS webhook URL.
+        fields:
+          - name: target
+            type: string
+          - name: event_types
+            type: "list[string]"
+          - name: webhook_url
+            type: url
+    - from: xquik_api
+      to: monitor
+      data:
+        label: Xquik records the monitor and schedules ongoing checks for matching public X activity.
+        fields:
+          - name: monitor_id
+            type: string
+            added: true
+          - name: status
+            type: string
+    - from: monitor
+      to: public_data
+      data: The scheduled job checks public X data for new posts that match the approved target.
+    - from: public_data
+      to: monitor
+      data:
+        label: The public match returns post metadata and engagement fields that are safe to store for the workflow.
+        fields:
+          - name: post_id
+            type: string
+          - name: author_handle
+            type: string
+          - name: text
+            type: string
+          - name: created_at
+            type: datetime
+    - from: monitor
+      to: events
+      data:
+        label: Xquik stores the event with the monitor ID so later API reads and webhook retries reference the same record.
+        fields:
+          - name: event_id
+            type: string
+            added: true
+          - name: monitor_id
+            type: string
+          - name: delivered
+            type: bool
+    - parallel:
+        - from: events
+          to: xquik_api
+          data: The event becomes available through the paginated events API for dashboard or audit views.
+        - from: monitor
+          to: webhook
+          data:
+            label: Xquik sends the event to the HTTPS webhook with an HMAC signature header for verification.
+            fields:
+              - name: X-Xquik-Signature
+                type: string
+              - name: event_id
+                type: string
+              - name: payload
+                type: json
+    - from: webhook
+      to: analyzer
+      data: The receiver verifies the signature, stores its own copy, and passes the event into the downstream analysis job.
+    - from: analyzer
+      to: operator
+      data: The operator receives the derived alert or report without exposing API keys or signing material.
