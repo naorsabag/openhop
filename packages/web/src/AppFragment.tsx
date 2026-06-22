@@ -13,6 +13,7 @@ const FlowEditorModal = lazy(() =>
 import { Sidebar } from './components/Sidebar'
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildShareUrl, decodeFragment, encodeFragment } from './lib/share-url'
+import { setHashWithoutUmamiPageView, trackPageViewIfEnabled } from './lib/umami.ts'
 import { EXAMPLE_FLOWS } from './lib/example-flows'
 import { isMobileViewport } from './lib/mobile'
 import type { FlowListItem } from './hooks/useFlowPolling'
@@ -78,6 +79,7 @@ export default function AppFragment() {
     const { pathname, search } = window.location
     history.replaceState(null, '', `${pathname}${search}#${fragment}`)
     setHash(fragment)
+    trackPageViewIfEnabled()
   }, [])
 
   // Decode → parse. Both layers' failures collapse into `decodeError` for
@@ -155,7 +157,7 @@ export default function AppFragment() {
         }
         // Reflect the new flow in the URL hash so refresh / back / forward all work.
         const hashOnly = url.split('#')[1] ?? ''
-        window.location.hash = hashOnly
+        setHashWithoutUmamiPageView(hashOnly)
       } finally {
         setCopying(false)
         setEditor({ mode: 'closed' })

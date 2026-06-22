@@ -1,19 +1,53 @@
-declare global {
-  interface Window {
-    umami?: {
-      track: (
-        event?: string | ((props: Record<string, unknown>) => Record<string, unknown>)
-      ) => void
-    }
-  }
+import { isUmamiEnabled } from './umami-gating.ts'
+
+let skipNextHashChange = false
+
+/** Update the hash without counting a Umami page view (e.g. Save syncing the URL bar). */
+export function setHashWithoutUmamiPageView(hash: string): void {
+  skipNextHashChange = true
+  window.location.hash = hash
 }
 
-/** Hash-routed flow links on Pages — Umami script in <head> handles the first view. */
-export function initUmamiHashTracking(): void {
-  if (import.meta.env.VITE_FRAGMENT_MODE !== '1') return
-  if (!import.meta.env.VITE_UMAMI_WEBSITE_ID?.trim()) return
+/** Track the current URL when hash changed without firing hashchange (autoload). */
+export function trackPageViewIfEnabled(): void {
+  if (!isUmamiEnabled(import.meta.env)) return
+  whenUmamiReady(trackPageView)
+}
 
-  window.addEventListener('hashchange', trackPageView)
+export function initUmamiHashTracking(): void {
+  if (!isUmamiEnabled(import.meta.env)) return
+
+  window.addEventListener('hashchange', () => {
+    if (skipNextHashChange) {
+      skipNextHashChange = false
+      return
+    }
+    trackPageView()
+  })
+
+  whenUmamiReady(() => {
+    const hash = window.location.hash
+    if (!hash || hash === '#') return
+    trackPageView()
+  })
+}
+
+function whenUmamiReady(callback: () => void): void {
+  if (window.umami?.track) {
+    callback()
+    return
+  }
+
+  const started = Date.now()
+  const tick = (): void => {
+    if (window.umami?.track) {
+      callback()
+      return
+    }
+    if (Date.now() - started > 10_000) return
+    window.setTimeout(tick, 50)
+  }
+  window.setTimeout(tick, 0)
 }
 
 export function trackPageView(): void {
@@ -23,5 +57,3 @@ export function trackPageView(): void {
     url: `${window.location.pathname}${window.location.search}${window.location.hash}`,
   }))
 }
-
-export {}

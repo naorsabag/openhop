@@ -13,6 +13,12 @@ declare global {
     __flowSpeed?: number
     /** Test/debug hook: set the canvas's max zoom from the browser console. */
     __setMaxZoom?: (n: number) => void
+    /** Umami analytics — injected into <head> on GitHub Pages builds only. */
+    umami?: {
+      track: (
+        event?: string | ((props: Record<string, unknown>) => Record<string, unknown>)
+      ) => void
+    }
   }
 }
 

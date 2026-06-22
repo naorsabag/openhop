@@ -11,6 +11,7 @@ export default defineConfig({
         'src/**/*.test.ts',
         'src/main.tsx',
         'src/lib/umami.ts',
+        'src/lib/umami-gating.ts',
         'src/types.ts',
         'src/globals.d.ts',
       ],
