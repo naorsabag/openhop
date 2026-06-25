@@ -20,7 +20,26 @@ html {
 body {
   @apply bg-bg text-text font-terminal;
   margin: 0;
+  /* 100vh on mobile includes area behind the browser chrome; dvh tracks
+   * the actually-visible viewport. svh/vh are fallbacks for older engines. */
   min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+
+/* Full-viewport app shell — safe-area padding keeps bottom tabs and
+ * controls above the home indicator / browser toolbar on notched phones. */
+.openhop-app {
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
 }
 
 /* Drill-down: sub-flow appears from far away, zooms in */
