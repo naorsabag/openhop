@@ -412,10 +412,7 @@ function App() {
   }, [flowStack.length])
 
   return (
-    <div
-      className="flex flex-col h-screen w-screen overflow-hidden"
-      style={{ background: '#0a1f0e' }}
-    >
+    <div className="openhop-app flex flex-col" style={{ background: '#0a1f0e' }}>
       {/* Header */}
       <header
         className="flex items-center justify-between px-4 py-2 shrink-0"
