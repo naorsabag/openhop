@@ -59,9 +59,9 @@
     "@vitest/coverage-v8": "^4.1.9",
     "esbuild": "^0.28.1",
     "eslint": "^9.39.4",
-    "globals": "^17.6.0",
+    "globals": "^17.7.0",
     "tsx": "^4.22.4",
-    "typescript-eslint": "^8.61.1",
+    "typescript-eslint": "^8.62.0",
     "vitest": "^4.1.8"
   }
 }
