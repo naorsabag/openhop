@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Your AI walks you through your code, one step at a time.</b><br/>
-  Interactive, multi-level data flows — described in YAML, drawn by your coding agent.
+  Interactive, multi-level data flows. Local-first. Token-light. Your code never leaves your machine. No telemetry.
 </p>
 
 <p align="center">
@@ -36,10 +36,6 @@
   <a href="#how-it-works">How it works</a> ·
   <a href="#examples">Examples</a> ·
   <a href="docs/">Docs</a>
-</p>
-
-<p align="center">
-  <b>Local-first. Token-light. Your code never leaves your machine. No telemetry.</b>
 </p>
 
 ---
