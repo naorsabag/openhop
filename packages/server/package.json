@@ -47,10 +47,10 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
-    "@fastify/swagger": "^9.0.0",
+    "@fastify/swagger": "^9.8.1",
     "@fastify/swagger-ui": "^5.2.6",
-    "fastify": "^5.0.0",
-    "nanoid": "^5.1.15",
+    "fastify": "^5.10.0",
+    "nanoid": "^5.1.16",
     "yaml": "^2.9.0",
     "zod": "^4.4.3",
     "zod-to-json-schema": "^3.24.0"
