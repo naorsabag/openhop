@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useViewport } from '@xyflow/react'
 import type { FlowStep, FlowData } from '../types'
+import { useNodeTheme } from '../context/NodeThemeContext'
+import { PIXEL_THEME_PALETTE } from '../lib/node-themes'
 import { DataTooltip } from './DataTooltip'
 
 // Use Vite's BASE_URL so the sprite resolves under the project base on
 // the Pages deploy (`/openhop/sprites/...`) and at the root in dev (`/`).
 const CARROT_SPRITE = `${import.meta.env.BASE_URL}sprites/carrot_pixels.svg`
-const DEFAULT_PIXEL_COLOR = '#ff8a4a' // VARIANT_ACCENT[0] — sprite's original orange.
+const DEFAULT_PIXEL_COLOR = PIXEL_THEME_PALETTE.variantAccents[0]
 
 interface DataPixelProps {
   edgeId: string
@@ -58,6 +60,8 @@ export function DataPixel({
   dataOverride,
   paused = false,
 }: DataPixelProps) {
+  const { themeId } = useNodeTheme()
+  const isCorporate = themeId === 'corporate'
   const pixelRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
@@ -235,23 +239,36 @@ export function DataPixel({
         <div
           className="data-pixel-sprite"
           style={{
-            filter: `drop-shadow(0 0 6px ${color})`,
+            filter: isCorporate ? undefined : `drop-shadow(0 0 6px ${color})`,
+            width: '100%',
+            height: '100%',
           }}
         >
-          <img
-            src={CARROT_SPRITE}
-            alt=""
-            style={{
-              width: '100%',
-              height: '100%',
-              imageRendering: 'pixelated',
-              display: 'block',
-              // Hue-rotate is applied directly to the <img> so the carrot's
-              // own pixel colors shift (the wrapper's drop-shadow then reads
-              // from the rotated alpha, keeping the glow in sync).
-              filter: pixelFilter,
-            }}
-          />
+          {isCorporate ? (
+            <div
+              data-testid="corporate-pixel"
+              style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                background: color,
+                boxShadow: `0 0 8px ${color}aa`,
+                border: '2px solid #ffffff',
+              }}
+            />
+          ) : (
+            <img
+              src={CARROT_SPRITE}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                imageRendering: 'pixelated',
+                display: 'block',
+                filter: pixelFilter,
+              }}
+            />
+          )}
         </div>
       </div>
       {hovered && position && (

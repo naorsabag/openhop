@@ -2,8 +2,10 @@ import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
+import { useNodeTheme } from '../../context/NodeThemeContext'
 import { NODE_TYPE_SPRITE } from './node-sprites'
 import { SpriteBuilding } from './NodeBuilding'
+import { CorporateBuilding } from './CorporateBuilding'
 
 /** Node type color config */
 const NODE_STYLES: Record<string, { bg: string; border: string }> = {
@@ -63,6 +65,9 @@ function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
     variantFilter,
     variantColor,
   } = data
+
+  const { themeId } = useNodeTheme()
+  const isCorporate = themeId === 'corporate'
 
   // Use outgoing step count for progress bar (how many steps this node sends)
   const progressTotal = outgoingStepCount ?? totalSteps
@@ -193,13 +198,21 @@ function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
           transition: 'filter 0.2s ease',
         }}
       >
-        <SpriteBuilding
-          src={NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service}
-          color={borderColor}
-          active={isActive}
-          nodeType={nodeType}
-          variantFilter={variantFilter}
-        />
+        {isCorporate ? (
+          <CorporateBuilding
+            color={borderColor}
+            active={isActive}
+            nodeType={nodeType}
+          />
+        ) : (
+          <SpriteBuilding
+            src={NODE_TYPE_SPRITE[nodeType] ?? NODE_TYPE_SPRITE.service}
+            color={borderColor}
+            active={isActive}
+            nodeType={nodeType}
+            variantFilter={variantFilter}
+          />
+        )}
         {customIconOverlay}
         {hasSubFlow && (
           <button

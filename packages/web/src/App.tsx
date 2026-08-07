@@ -10,6 +10,7 @@ const FlowEditorModal = lazy(() =>
 import { buildStarterYaml } from './lib/starter-yaml'
 import { buildPagesShareUrl } from './lib/share-url'
 import { isMobileViewport } from './lib/mobile'
+import { ThemeToggle } from './components/ThemeToggle'
 import { useFlowList, useFlowData } from './hooks/useFlowPolling'
 import { useFlowMutations } from './hooks/useFlowMutations'
 import type { FlowNode, FlowStep, FlowData, Flow } from './types'
@@ -436,6 +437,7 @@ function App() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {apiFlow && (
             <button
               onClick={handleShareFlow}

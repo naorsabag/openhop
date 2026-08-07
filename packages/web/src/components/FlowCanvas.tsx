@@ -21,6 +21,8 @@ import { useFlowGraphLayout } from '../hooks/useFlowGraphLayout'
 import { DataPixel } from './DataPixel'
 import { buildFlowTopology } from '../lib/flow-layout'
 import { resolvePixelStyle, type ResolvedStepPixel } from '../lib/pixel-palette'
+import type { NodeThemeId } from '../lib/node-themes'
+import { useNodeTheme } from '../context/NodeThemeContext'
 import type { Flow, FlowStep, FlowData } from '../types'
 
 /** One carrot to render for a step. `dataObj` is set only for multi-data
@@ -35,7 +37,11 @@ interface StepPixelPlan extends ResolvedStepPixel {
   delayMs: number
 }
 
-function planStepPixels(edgeFlows: EdgeFlowRef[], fallbackStep?: FlowStep): StepPixelPlan[] {
+function planStepPixels(
+  edgeFlows: EdgeFlowRef[],
+  themeId: NodeThemeId,
+  fallbackStep?: FlowStep
+): StepPixelPlan[] {
   const totalPixels = edgeFlows.reduce((sum, ef) => {
     const data = (ef.step ?? fallbackStep)?.data
     return sum + (Array.isArray(data) ? data.length : 1)
@@ -53,7 +59,7 @@ function planStepPixels(edgeFlows: EdgeFlowRef[], fallbackStep?: FlowStep): Step
           dataObj,
           dataIndex,
           delayMs: dataIndex * 280,
-          ...resolvePixelStyle(cycle, pixelIdx++, dataObj.color),
+          ...resolvePixelStyle(cycle, pixelIdx++, dataObj.color, themeId),
         })
       })
     } else {
@@ -62,7 +68,7 @@ function planStepPixels(edgeFlows: EdgeFlowRef[], fallbackStep?: FlowStep): Step
         edgeFlow,
         edgeFlowIndex,
         delayMs: 0,
-        ...resolvePixelStyle(cycle, pixelIdx++, singleColor),
+        ...resolvePixelStyle(cycle, pixelIdx++, singleColor, themeId),
       })
     }
   })
@@ -118,6 +124,7 @@ function FlowCanvasInner({
   onInspectStep,
 }: FlowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { themeId } = useNodeTheme()
   const flowSteps = useMemo(() => flow.flow.steps ?? [], [flow.flow.steps])
 
   const { nodes: baseNodes, edges: baseEdges } = useFlowGraphLayout(flow)
@@ -310,7 +317,7 @@ function FlowCanvasInner({
   // (rather than just flow.flow.nodes) also covers dynamic nodes spawned
   // by `create:` steps so their pixels get a real variant color too.
   const nodeTypeMap = useMemo(() => {
-    const topology = buildFlowTopology(flow)
+    const topology = buildFlowTopology(flow, themeId)
     const explicitColors = new Map<string, string>()
     for (const n of flow.flow.nodes) {
       // A `custom`-typed node with an explicit hex color keeps that color
@@ -325,7 +332,7 @@ function FlowCanvasInner({
       })
     }
     return map
-  }, [flow])
+  }, [flow, themeId])
 
   const {
     fireManualPixel,
@@ -607,7 +614,7 @@ function FlowCanvasInner({
 
       // Click-to-fire uses the same plan as autoplay so manual pixels get
       // the same multi-data expansion + palette cycling.
-      for (const plan of planStepPixels(entry.edgeFlows, entry.step)) {
+      for (const plan of planStepPixels(entry.edgeFlows, themeId, entry.step)) {
         fireManualPixel({
           edgeId: plan.edgeFlow.edgeId,
           reverse: plan.edgeFlow.reverse,
@@ -870,7 +877,7 @@ function FlowCanvasInner({
           one is distinct; single-carrot steps keep the source node's
           variant color via DataPixel's sourceNodeColor fallback. */}
       {animState.activeStep &&
-        planStepPixels(activeEdgeFlows, animState.activeStep).map((plan) => {
+        planStepPixels(activeEdgeFlows, themeId, animState.activeStep).map((plan) => {
           const { edgeFlow, edgeFlowIndex, dataObj, dataIndex } = plan
           const sourceInfo = nodeTypeMap.get(edgeFlow.fromId) ?? { type: 'service' }
           const edgeStep = edgeFlow.step ?? animState.activeStep!

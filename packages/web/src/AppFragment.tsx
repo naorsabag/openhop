@@ -16,6 +16,7 @@ import { buildShareUrl, decodeFragment, encodeFragment } from './lib/share-url'
 import { setHashWithoutUmamiPageView, trackPageViewIfEnabled } from './lib/umami.ts'
 import { EXAMPLE_FLOWS } from './lib/example-flows'
 import { isMobileViewport } from './lib/mobile'
+import { ThemeToggle } from './components/ThemeToggle'
 import type { FlowListItem } from './hooks/useFlowPolling'
 import type { FlowNode, FlowStep, FlowData, Flow } from './types'
 
@@ -349,6 +350,7 @@ export default function AppFragment() {
           <span className="font-terminal text-text/40 text-xs">share via URL</span>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <button
             onClick={handleNewFlow}
             className="openhop-header-btn font-pixel text-xs px-3 py-1 border transition-colors"

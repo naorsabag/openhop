@@ -90,3 +90,19 @@ describe('resolvePixelStyle', () => {
     })
   })
 })
+
+describe('assignNodeVariants (corporate theme)', () => {
+  it('uses flat accent colors without hue-rotate filters', () => {
+    const variants = assignNodeVariants(
+      [
+        { id: 'a', type: 'service' },
+        { id: 'b', type: 'service' },
+      ],
+      'corporate'
+    )
+    expect(variants.get('a')?.filter).toBeUndefined()
+    expect(variants.get('b')?.filter).toBeUndefined()
+    expect(variants.get('a')?.color).toBe('#2563eb')
+    expect(variants.get('b')?.color).toBe('#475569')
+  })
+})

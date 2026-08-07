@@ -3,6 +3,7 @@ import type { Edge, Node } from '@xyflow/react'
 import type { Flow } from '../types'
 import type { FlowNodeData } from '../components/nodes/FlowNode'
 import { assignNodeVariants, type NodeVariant } from './pixel-palette'
+import type { NodeThemeId } from './node-themes'
 
 const elk = new ELK()
 
@@ -89,7 +90,7 @@ function pushOrdered(ordered: string[], seen: Set<string>, id?: string | null) {
   ordered.push(id)
 }
 
-export function buildFlowTopology(flow: Flow): FlowTopology {
+export function buildFlowTopology(flow: Flow, themeId: NodeThemeId = 'pixel'): FlowTopology {
   const flowNodes = flow.flow.nodes
   const steps = flow.flow.steps ?? []
   const ordered: string[] = []
@@ -251,7 +252,8 @@ export function buildFlowTopology(flow: Flow): FlowTopology {
   }
 
   const nodeVariants = assignNodeVariants(
-    ordered.map((id) => ({ id, type: nodeSnapshots.get(id)?.nodeType ?? 'service' }))
+    ordered.map((id) => ({ id, type: nodeSnapshots.get(id)?.nodeType ?? 'service' })),
+    themeId
   )
 
   return {
