@@ -51,7 +51,7 @@
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^6.1.1",
     "fastify": "^5.0.0",
-    "nanoid": "^5.1.15",
+    "nanoid": "^5.1.16",
     "yaml": "^2.9.0",
     "zod": "^4.4.3",
     "zod-to-json-schema": "^3.24.0"
