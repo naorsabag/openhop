@@ -3,6 +3,7 @@ set -uo pipefail
 
 max_attempts=3
 base_delay=${NPM_AUDIT_RETRY_DELAY_SECONDS:-10}
+attempt_timeout=${NPM_AUDIT_TIMEOUT_SECONDS:-120}
 attempt=1
 
 is_transient_failure() {
@@ -13,7 +14,7 @@ is_transient_failure() {
 }
 
 while ((attempt <= max_attempts)); do
-  output=$(npm audit "$@" 2>&1)
+  output=$(timeout --kill-after=5s "${attempt_timeout}s" npm audit "$@" 2>&1)
   status=$?
   printf '%s\n' "$output"
 
@@ -21,7 +22,7 @@ while ((attempt <= max_attempts)); do
     exit 0
   fi
 
-  if ! is_transient_failure "$output"; then
+  if ((status != 124)) && ! is_transient_failure "$output"; then
     exit "$status"
   fi
 

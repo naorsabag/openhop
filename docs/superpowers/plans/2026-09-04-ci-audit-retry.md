@@ -12,6 +12,7 @@
 
 - Retry only registry or transport failures, including HTTP 408, 429, and 5xx responses; DNS, connection, socket, and timeout errors; or npm's `audit endpoint returned an error`.
 - Attempt each audit at most three times.
+- Limit each audit attempt to two minutes.
 - Wait 10 seconds before attempt two and 20 seconds before attempt three.
 - Real vulnerability findings must fail immediately.
 - Production dependencies continue failing at moderate severity or above.
@@ -74,6 +75,10 @@ case "$NPM_FAKE_MODE" in
     echo "npm error code ETIMEDOUT" >&2
     exit 1
     ;;
+  always-hanging)
+    sleep 1
+    exit 1
+    ;;
   *)
     echo "unexpected fake mode: $NPM_FAKE_MODE" >&2
     exit 2
@@ -92,6 +97,7 @@ run_case() {
     NPM_FAKE_MODE="$mode" \
     NPM_FAKE_COUNT_FILE="$count_file" \
     NPM_AUDIT_RETRY_DELAY_SECONDS=0 \
+    NPM_AUDIT_TIMEOUT_SECONDS=0.05 \
     bash "$HELPER" --audit-level=high >"$output_file" 2>&1
   local status=$?
   set -e
@@ -114,6 +120,7 @@ run_case() {
 run_case transient-then-success 0 2
 run_case vulnerability 1 1
 run_case always-transient 1 3
+run_case always-hanging 124 3
 
 echo "npm audit retry tests passed"
 ```
@@ -138,6 +145,7 @@ set -uo pipefail
 
 max_attempts=3
 base_delay=${NPM_AUDIT_RETRY_DELAY_SECONDS:-10}
+attempt_timeout=${NPM_AUDIT_TIMEOUT_SECONDS:-120}
 attempt=1
 
 is_transient_failure() {
@@ -148,7 +156,7 @@ is_transient_failure() {
 }
 
 while ((attempt <= max_attempts)); do
-  output=$(npm audit "$@" 2>&1)
+  output=$(timeout --kill-after=5s "${attempt_timeout}s" npm audit "$@" 2>&1)
   status=$?
   printf '%s\n' "$output"
 
@@ -156,7 +164,7 @@ while ((attempt <= max_attempts)); do
     exit 0
   fi
 
-  if ! is_transient_failure "$output"; then
+  if ((status != 124)) && ! is_transient_failure "$output"; then
     exit "$status"
   fi
 

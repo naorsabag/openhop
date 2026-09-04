@@ -35,6 +35,10 @@ case "$NPM_FAKE_MODE" in
     echo "npm error code ETIMEDOUT" >&2
     exit 1
     ;;
+  always-hanging)
+    sleep 1
+    exit 1
+    ;;
   *)
     echo "unexpected fake mode: $NPM_FAKE_MODE" >&2
     exit 2
@@ -53,6 +57,7 @@ run_case() {
     NPM_FAKE_MODE="$mode" \
     NPM_FAKE_COUNT_FILE="$count_file" \
     NPM_AUDIT_RETRY_DELAY_SECONDS=0 \
+    NPM_AUDIT_TIMEOUT_SECONDS=0.05 \
     bash "$HELPER" --audit-level=high >"$output_file" 2>&1
   local status=$?
   set -e
@@ -75,5 +80,6 @@ run_case() {
 run_case transient-then-success 0 2
 run_case vulnerability 1 1
 run_case always-transient 1 3
+run_case always-hanging 124 3
 
 echo "npm audit retry tests passed"
