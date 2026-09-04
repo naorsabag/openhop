@@ -23,10 +23,12 @@
 ### Task 1: Add and test the audit retry helper
 
 **Files:**
+
 - Create: `.github/scripts/npm-audit-with-retry.sh`
 - Create: `.github/scripts/npm-audit-with-retry.test.sh`
 
 **Interfaces:**
+
 - Consumes: normal `npm audit` CLI arguments and optional `NPM_AUDIT_RETRY_DELAY_SECONDS`.
 - Produces: `bash .github/scripts/npm-audit-with-retry.sh [npm audit arguments]`, preserving npm output and exit semantics.
 
@@ -192,9 +194,11 @@ git commit -m "fix(ci): retry transient npm audit failures"
 ### Task 2: Integrate the helper into CI
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml:25,43,61-68`
 
 **Interfaces:**
+
 - Consumes: `.github/scripts/npm-audit-with-retry.sh` from Task 1.
 - Produces: build and coverage installs without implicit audit calls, plus explicit retry-aware production and full-tree audit gates.
 
@@ -215,16 +219,16 @@ to:
 Add the helper test and replace the audit commands:
 
 ```yaml
-      - run: npm ci --no-audit
-      - name: test audit retry helper
-        run: bash .github/scripts/npm-audit-with-retry.test.sh
-      # Production tree: stricter — anything moderate+ ships to end users.
-      - name: prod tree (moderate+)
-        run: bash .github/scripts/npm-audit-with-retry.sh --omit=dev --audit-level=moderate
-      # Full tree (incl. dev): looser — dev-only advisories don't reach
-      # users, so block only on high+critical to avoid noise.
-      - name: full tree (high+)
-        run: bash .github/scripts/npm-audit-with-retry.sh --audit-level=high
+- run: npm ci --no-audit
+- name: test audit retry helper
+  run: bash .github/scripts/npm-audit-with-retry.test.sh
+# Production tree: stricter — anything moderate+ ships to end users.
+- name: prod tree (moderate+)
+  run: bash .github/scripts/npm-audit-with-retry.sh --omit=dev --audit-level=moderate
+# Full tree (incl. dev): looser — dev-only advisories don't reach
+# users, so block only on high+critical to avoid noise.
+- name: full tree (high+)
+  run: bash .github/scripts/npm-audit-with-retry.sh --audit-level=high
 ```
 
 - [ ] **Step 2: Verify workflow formatting and helper behavior**
@@ -249,9 +253,11 @@ git commit -m "fix(ci): isolate and retry npm audits"
 ### Task 3: Publish and verify
 
 **Files:**
+
 - No additional source files.
 
 **Interfaces:**
+
 - Consumes: commits from Tasks 1 and 2.
 - Produces: a pull request whose GitHub Actions run demonstrates retry-aware audit behavior.
 

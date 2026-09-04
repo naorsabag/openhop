@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+      - run: npm ci --no-audit
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck --workspaces --if-present
@@ -40,7 +40,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --no-audit
       - run: npm run test:coverage --workspaces --if-present
       - name: Upload coverage artifacts
         if: always()
@@ -58,14 +58,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --no-audit
+      - name: test audit retry helper
+        run: bash .github/scripts/npm-audit-with-retry.test.sh
       # Production tree: stricter — anything moderate+ ships to end users.
       - name: prod tree (moderate+)
-        run: npm audit --omit=dev --audit-level=moderate
+        run: bash .github/scripts/npm-audit-with-retry.sh --omit=dev --audit-level=moderate
       # Full tree (incl. dev): looser — dev-only advisories don't reach
       # users, so block only on high+critical to avoid noise.
       - name: full tree (high+)
-        run: npm audit --audit-level=high
+        run: bash .github/scripts/npm-audit-with-retry.sh --audit-level=high
 
   gitleaks:
     name: gitleaks (secrets scan)
