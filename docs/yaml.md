@@ -111,18 +111,18 @@ data: "HTTP Request"
 
 # Object — adds inspectable detail in the right-hand panel.
 data:
-  label: Order payload      # required when using object form
-  color: "#4aff7a"          # optional pixel color override
-  fields:                   # optional — shown in tooltip + inspector
+  label: Order payload # required when using object form
+  color: "#4aff7a" # optional pixel color override
+  fields: # optional — shown in tooltip + inspector
     - name: items
       type: "list[OrderItem]"
     - name: total
       type: float
-      added: true           # green highlight (new field)
+      added: true # green highlight (new field)
     - name: old_field
-      removed: true         # red strikethrough
+      removed: true # red strikethrough
     - name: amount
-      changed: true         # yellow highlight (modified)
+      changed: true # yellow highlight (modified)
 
 # Array of objects — multiple data items sent on the same step.
 data:

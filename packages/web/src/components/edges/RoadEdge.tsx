@@ -42,8 +42,7 @@ function roundCorners(d: string, radius: number): string {
 export function RoadEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props
   const d = data as
-    | { active?: boolean; hiddenRoad?: boolean; visible?: boolean; elkPath?: string }
-    | undefined
+    { active?: boolean; hiddenRoad?: boolean; visible?: boolean; elkPath?: string } | undefined
   const active = !!d?.active
   const hiddenRoad = !!d?.hiddenRoad
   const visible = d?.visible ?? true
