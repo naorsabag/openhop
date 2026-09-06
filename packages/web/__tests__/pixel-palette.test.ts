@@ -6,6 +6,29 @@ import {
   stepPixelColor,
   stepPixelFilter,
 } from '../src/lib/pixel-palette'
+import { CORPORATE_THEME_PALETTE, PIXEL_THEME_PALETTE } from '../src/lib/node-themes'
+
+describe('theme palette shape', () => {
+  it.each([
+    { name: 'pixel', palette: PIXEL_THEME_PALETTE },
+    { name: 'corporate', palette: CORPORATE_THEME_PALETTE },
+  ])('$name has six aligned filter and accent slots', ({ palette }) => {
+    expect(palette.variantFilters).toHaveLength(6)
+    expect(palette.variantAccents).toHaveLength(6)
+  })
+
+  it('uses slot six before wrapping the seventh same-type node', () => {
+    const variants = assignNodeVariants(
+      Array.from({ length: 7 }, (_, index) => ({
+        id: `service-${index}`,
+        type: 'service',
+      }))
+    )
+
+    expect(variants.get('service-5')?.color).toBe(PIXEL_THEME_PALETTE.variantAccents[5])
+    expect(variants.get('service-6')?.color).toBe(PIXEL_THEME_PALETTE.variantAccents[0])
+  })
+})
 
 describe('assignNodeVariants', () => {
   it('gives the first node of each independent type the original (orange) accent', () => {
@@ -88,5 +111,21 @@ describe('resolvePixelStyle', () => {
       pixelColor: '#123456',
       pixelFilter: undefined,
     })
+  })
+})
+
+describe('assignNodeVariants (corporate theme)', () => {
+  it('uses flat accent colors without hue-rotate filters', () => {
+    const variants = assignNodeVariants(
+      [
+        { id: 'a', type: 'service' },
+        { id: 'b', type: 'service' },
+      ],
+      'corporate'
+    )
+    expect(variants.get('a')?.filter).toBeUndefined()
+    expect(variants.get('b')?.filter).toBeUndefined()
+    expect(variants.get('a')?.color).toBe('#2563eb')
+    expect(variants.get('b')?.color).toBe('#475569')
   })
 })

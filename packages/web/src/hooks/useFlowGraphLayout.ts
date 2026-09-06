@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Flow } from '../types'
+import { useNodeTheme } from '../context/node-theme-context'
 import {
   buildFlowTopology,
   buildReactFlowGraph,
@@ -8,7 +9,8 @@ import {
 } from '../lib/flow-layout'
 
 export function useFlowGraphLayout(flow: Flow) {
-  const topology = useMemo(() => buildFlowTopology(flow), [flow])
+  const { themeId } = useNodeTheme()
+  const topology = useMemo(() => buildFlowTopology(flow, themeId), [flow, themeId])
 
   const fallbackGraph = useMemo(() => {
     const fallbackPositions = computeFallbackPositions(topology)

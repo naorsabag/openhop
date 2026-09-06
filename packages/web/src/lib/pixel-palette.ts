@@ -6,21 +6,12 @@
  * agree.
  */
 
-export const VARIANT_FILTER: readonly string[] = [
-  '', // original (orange)
-  'hue-rotate(210deg)', // purple
-  'hue-rotate(90deg)', // green
-  'hue-rotate(140deg)', // blue
-  'hue-rotate(320deg)', // red
-]
+import { getNodeThemePalette, PIXEL_THEME_PALETTE, type NodeThemeId } from './node-themes'
 
-export const VARIANT_ACCENT: readonly string[] = [
-  '#ff8a4a', // orange
-  '#b47aff', // purple
-  '#4aff7a', // green
-  '#4a9eff', // blue
-  '#ff6b6b', // red
-]
+/** @deprecated import from node-themes — kept for tests referencing palette slots */
+export const VARIANT_FILTER = PIXEL_THEME_PALETTE.variantFilters
+/** @deprecated import from node-themes — kept for tests referencing palette slots */
+export const VARIANT_ACCENT = PIXEL_THEME_PALETTE.variantAccents
 
 const FALLBACK_SPRITE_KEY = 'service'
 const TYPES_SHARING_SERVICE_SPRITE = new Set(['service', 'custom'])
@@ -30,6 +21,10 @@ export interface NodeVariant {
   color: string
 }
 
+function paletteFor(themeId: NodeThemeId = 'pixel') {
+  return getNodeThemePalette(themeId)
+}
+
 /**
  * Compute per-node variant assignments. `nodes` MUST be passed in the same
  * canonical order across all callers (this is what `topology.orderedIds`
@@ -37,17 +32,20 @@ export interface NodeVariant {
  * land on the same palette index for the same node.
  */
 export function assignNodeVariants(
-  nodes: ReadonlyArray<{ id: string; type: string }>
+  nodes: ReadonlyArray<{ id: string; type: string }>,
+  themeId: NodeThemeId = 'pixel'
 ): Map<string, NodeVariant> {
+  const { variantFilters, variantAccents } = paletteFor(themeId)
   const counters = new Map<string, number>()
   const out = new Map<string, NodeVariant>()
   for (const node of nodes) {
     const counterKey = TYPES_SHARING_SERVICE_SPRITE.has(node.type) ? FALLBACK_SPRITE_KEY : node.type
     const n = counters.get(counterKey) ?? 0
     counters.set(counterKey, n + 1)
+    const idx = n % variantAccents.length
     out.set(node.id, {
-      filter: VARIANT_FILTER[n % VARIANT_FILTER.length] || undefined,
-      color: VARIANT_ACCENT[n % VARIANT_ACCENT.length],
+      filter: variantFilters[idx] || undefined,
+      color: variantAccents[idx],
     })
   }
   return out
@@ -58,8 +56,9 @@ export function assignNodeVariants(
  * (multi-data, broadcast, or parallel). Each pixel cycles through
  * VARIANT_ACCENT so they render with distinguishable shadows.
  */
-export function stepPixelColor(index: number): string {
-  return VARIANT_ACCENT[index % VARIANT_ACCENT.length]
+export function stepPixelColor(index: number, themeId: NodeThemeId = 'pixel'): string {
+  const { variantAccents } = paletteFor(themeId)
+  return variantAccents[index % variantAccents.length]
 }
 
 /**
@@ -68,8 +67,9 @@ export function stepPixelColor(index: number): string {
  * without it, all carrots stay orange (the sprite's original hue) and only
  * the surrounding glow cycles.
  */
-export function stepPixelFilter(index: number): string | undefined {
-  return VARIANT_FILTER[index % VARIANT_FILTER.length] || undefined
+export function stepPixelFilter(index: number, themeId: NodeThemeId = 'pixel'): string | undefined {
+  const { variantFilters } = paletteFor(themeId)
+  return variantFilters[index % variantFilters.length] || undefined
 }
 
 /**
@@ -87,21 +87,17 @@ export interface ResolvedStepPixel {
 /**
  * Resolve the carrot styling for one pixel given its global index in the
  * step and the data entry it represents (if any).
- *
- * - When `cycle` is true (the step emits 2+ carrots) and the data entry
- *   has no explicit color, both pixelColor and pixelFilter come from the
- *   variant palette so each carrot in the step looks distinct.
- * - An explicit `data.color` always wins; the sprite filter is dropped
- *   so we don't tint over the user-chosen color.
- * - When `cycle` is false (single-carrot step) we leave both undefined,
- *   so DataPixel falls back to the source node's variant color.
  */
 export function resolvePixelStyle(
   cycle: boolean,
   index: number,
-  dataColor?: string
+  dataColor?: string,
+  themeId: NodeThemeId = 'pixel'
 ): ResolvedStepPixel {
   if (dataColor) return { pixelColor: dataColor, pixelFilter: undefined }
   if (!cycle) return { pixelColor: undefined, pixelFilter: undefined }
-  return { pixelColor: stepPixelColor(index), pixelFilter: stepPixelFilter(index) }
+  return {
+    pixelColor: stepPixelColor(index, themeId),
+    pixelFilter: stepPixelFilter(index, themeId),
+  }
 }
