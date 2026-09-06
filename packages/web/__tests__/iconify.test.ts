@@ -5,6 +5,8 @@ describe('isIconifyId', () => {
   it('accepts one valid prefix/name separator only', () => {
     expect(isIconifyId('mdi:database')).toBe(true)
     expect(isIconifyId('logos:kubernetes')).toBe(true)
+    expect(isIconifyId('MDI:database')).toBe(false)
+    expect(isIconifyId('mdi:database_name')).toBe(false)
     expect(isIconifyId('mdi:database:extra')).toBe(false)
     expect(isIconifyId(':database')).toBe(false)
     expect(isIconifyId('mdi:')).toBe(false)

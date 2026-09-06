@@ -29,7 +29,7 @@ export const CORPORATE_TYPE_ICON = NODE_TYPE_ICON
 /** Iconify sets that ship with their own colors — skip ?color= recoloring. */
 const COLORFUL_ICON_PREFIXES = new Set(['logos', 'twemoji', 'emojione', 'noto', 'fluent-emoji'])
 
-const ICONIFY_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*:[a-z0-9]+(?:[-_][a-z0-9]+)*$/i
+const ICONIFY_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export function isIconifyId(icon: string | undefined): boolean {
   return !!icon && ICONIFY_ID_PATTERN.test(icon)
