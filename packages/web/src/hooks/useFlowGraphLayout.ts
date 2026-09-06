@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Flow } from '../types'
-import { useNodeTheme } from '../context/NodeThemeContext'
+import { useNodeTheme } from '../context/node-theme-context'
 import {
   buildFlowTopology,
   buildReactFlowGraph,

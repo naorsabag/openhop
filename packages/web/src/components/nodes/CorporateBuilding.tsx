@@ -1,13 +1,45 @@
-import { corporateTypeBadge } from '../../lib/node-themes'
+import { iconifySvgUrl, resolveNodeTypeIcon } from '../../lib/iconify'
 import { SPRITE_SIZE, type BuildingProps } from './node-sprites'
 
 const BOX_SIZE = 88
+const ICON_SIZE = 40
+
+const CORPORATE_TYPE_BADGE: Record<string, string> = {
+  actor: 'USR',
+  endpoint: 'API',
+  auth: 'AUTH',
+  database: 'DB',
+  external: 'EXT',
+  cache: 'CACHE',
+  queue: 'QUEUE',
+  service: 'SVC',
+  docker: 'DKR',
+  k8s: 'K8S',
+  scheduler: 'CRON',
+  ai_agent: 'AI',
+  browser: 'WEB',
+  transform: 'XFORM',
+  validation: 'VALID',
+  custom: 'NODE',
+}
+
+function corporateTypeBadge(nodeType: string): string {
+  const derived = nodeType
+    .slice(0, 3)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+  return CORPORATE_TYPE_BADGE[nodeType] ?? (derived || 'NODE')
+}
 
 export function CorporateBuilding({
   color,
   active,
   nodeType = 'service',
-}: BuildingProps & { nodeType?: string }) {
+  icon,
+  label,
+}: BuildingProps & { nodeType?: string; icon?: string; label?: string }) {
+  const resolvedIcon = resolveNodeTypeIcon(nodeType, icon)
+  const showEmoji = Boolean(icon && !icon.includes(':'))
   const badge = corporateTypeBadge(nodeType)
 
   return (
@@ -33,10 +65,8 @@ export function CorporateBuilding({
           border: `2px solid ${color}`,
           boxShadow: active ? `0 0 10px ${color}88, 0 2px 8px #00000044` : '0 2px 6px #00000033',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 4,
           transition: 'box-shadow 0.2s ease',
         }}
       >
@@ -51,18 +81,42 @@ export function CorporateBuilding({
             background: color,
           }}
         />
-        <span
-          style={{
-            fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: 0.6,
-            color,
-            lineHeight: 1,
-          }}
-        >
-          {badge}
-        </span>
+        {showEmoji ? (
+          <span style={{ fontSize: ICON_SIZE - 8, lineHeight: 1 }} aria-hidden="true">
+            {icon}
+          </span>
+        ) : (
+          <>
+            <span
+              aria-hidden="true"
+              style={{
+                fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 0.6,
+                color,
+                lineHeight: 1,
+              }}
+            >
+              {badge}
+            </span>
+            <img
+              src={iconifySvgUrl(resolvedIcon, color)}
+              alt={label ?? nodeType}
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              style={{
+                position: 'absolute',
+                display: 'block',
+                objectFit: 'contain',
+                background: '#f8fafc',
+              }}
+              onError={(event) => {
+                ;(event.currentTarget as HTMLElement).style.display = 'none'
+              }}
+            />
+          </>
+        )}
       </div>
     </div>
   )

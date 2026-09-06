@@ -6,11 +6,7 @@
  * agree.
  */
 
-import {
-  getNodeThemePalette,
-  PIXEL_THEME_PALETTE,
-  type NodeThemeId,
-} from './node-themes'
+import { getNodeThemePalette, PIXEL_THEME_PALETTE, type NodeThemeId } from './node-themes'
 
 /** @deprecated import from node-themes — kept for tests referencing palette slots */
 export const VARIANT_FILTER = PIXEL_THEME_PALETTE.variantFilters

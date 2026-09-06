@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useViewport } from '@xyflow/react'
 import type { FlowStep, FlowData } from '../types'
-import { useNodeTheme } from '../context/NodeThemeContext'
+import { useNodeTheme } from '../context/node-theme-context'
 import { PIXEL_THEME_PALETTE } from '../lib/node-themes'
 import { DataTooltip } from './DataTooltip'
 

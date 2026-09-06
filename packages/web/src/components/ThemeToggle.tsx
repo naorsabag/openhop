@@ -1,5 +1,5 @@
 import { NODE_THEME_IDS, NODE_THEME_LABELS } from '../lib/node-themes'
-import { useNodeTheme } from '../context/NodeThemeContext'
+import { useNodeTheme } from '../context/node-theme-context'
 
 export function ThemeToggle() {
   const { themeId, setThemeId } = useNodeTheme()

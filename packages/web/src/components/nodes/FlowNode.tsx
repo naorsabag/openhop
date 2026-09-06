@@ -2,7 +2,8 @@ import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FlowData } from '../../types'
-import { useNodeTheme } from '../../context/NodeThemeContext'
+import { useNodeTheme } from '../../context/node-theme-context'
+import { iconifySvgUrl, isIconifyId } from '../../lib/iconify'
 import { NODE_TYPE_SPRITE } from './node-sprites'
 import { SpriteBuilding } from './NodeBuilding'
 import { CorporateBuilding } from './CorporateBuilding'
@@ -84,11 +85,8 @@ function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
   // (e.g. type=database + icon=logos:postgresql renders the DB sprite plus the postgres logo).
   let customIconOverlay: React.ReactNode = null
   if (icon) {
-    if (icon.includes(':')) {
-      const [prefix, name] = icon.split(':')
-      // ?color=white recolors monotone icons (those that use fill/stroke="currentColor")
-      // for the dark canvas. It's a no-op on icons that have explicit fills baked in.
-      const url = `https://api.iconify.design/${prefix}/${name}.svg?color=white`
+    if (isIconifyId(icon)) {
+      const url = iconifySvgUrl(icon, 'white')
       customIconOverlay = (
         <img
           src={url}
@@ -101,12 +99,12 @@ function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
             left: 'calc(100% - 14px)',
             imageRendering: 'auto',
           }}
-          onError={(e) => {
-            ;(e.target as HTMLElement).style.display = 'none'
+          onError={(event) => {
+            ;(event.currentTarget as HTMLElement).style.display = 'none'
           }}
         />
       )
-    } else {
+    } else if (!icon.includes(':')) {
       customIconOverlay = (
         <span
           style={{
@@ -203,6 +201,8 @@ function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
             color={borderColor}
             active={isActive}
             nodeType={nodeType}
+            icon={icon}
+            label={label}
           />
         ) : (
           <SpriteBuilding
@@ -213,7 +213,7 @@ function FlowNodeComponentInner({ data, id }: NodeProps<FlowNodeType>) {
             variantFilter={variantFilter}
           />
         )}
-        {customIconOverlay}
+        {!isCorporate && customIconOverlay}
         {hasSubFlow && (
           <button
             aria-label="Drill down"

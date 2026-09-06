@@ -23,14 +23,15 @@ export const PIXEL_THEME_PALETTE: NodeThemePalette = {
     'hue-rotate(90deg)',
     'hue-rotate(140deg)',
     'hue-rotate(320deg)',
+    'hue-rotate(45deg)',
   ],
-  variantAccents: ['#ff8a4a', '#b47aff', '#4aff7a', '#4a9eff', '#ff6b6b'],
+  variantAccents: ['#ff8a4a', '#b47aff', '#4aff7a', '#4a9eff', '#ff6b6b', '#ffd84a'],
 }
 
 /** Muted corporate palette — flat accent colors, no sprite filters. */
 export const CORPORATE_THEME_PALETTE: NodeThemePalette = {
-  variantFilters: [undefined, undefined, undefined, undefined, undefined],
-  variantAccents: ['#2563eb', '#475569', '#0d9488', '#1d4ed8', '#64748b'],
+  variantFilters: [undefined, undefined, undefined, undefined, undefined, undefined],
+  variantAccents: ['#2563eb', '#475569', '#0d9488', '#1d4ed8', '#64748b', '#7c3aed'],
 }
 
 export const NODE_THEME_PALETTES: Record<NodeThemeId, NodeThemePalette> = {
@@ -65,29 +66,4 @@ export function storeNodeTheme(themeId: NodeThemeId): void {
   } catch {
     // ignore quota / private mode
   }
-}
-
-/** Short type badge for corporate node boxes. */
-export const CORPORATE_TYPE_BADGE: Record<string, string> = {
-  actor: 'USR',
-  endpoint: 'API',
-  auth: 'AUTH',
-  database: 'DB',
-  external: 'EXT',
-  cache: 'CACHE',
-  queue: 'QUEUE',
-  service: 'SVC',
-  docker: 'DKR',
-  k8s: 'K8S',
-  scheduler: 'CRON',
-  ai_agent: 'AI',
-  browser: 'WEB',
-  transform: 'XFORM',
-  validation: 'VALID',
-  custom: 'NODE',
-}
-
-export function corporateTypeBadge(nodeType: string): string {
-  const derived = nodeType.slice(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '')
-  return CORPORATE_TYPE_BADGE[nodeType] ?? (derived || 'NODE')
 }

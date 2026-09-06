@@ -22,7 +22,7 @@ import { DataPixel } from './DataPixel'
 import { buildFlowTopology } from '../lib/flow-layout'
 import { resolvePixelStyle, type ResolvedStepPixel } from '../lib/pixel-palette'
 import type { NodeThemeId } from '../lib/node-themes'
-import { useNodeTheme } from '../context/NodeThemeContext'
+import { useNodeTheme } from '../context/node-theme-context'
 import type { Flow, FlowStep, FlowData } from '../types'
 
 /** One carrot to render for a step. `dataObj` is set only for multi-data
