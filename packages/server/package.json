@@ -59,13 +59,13 @@
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@openhop/shared": "*",
-    "@types/node": "^24.13.3",
+    "@types/node": "^24.19.1",
     "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.4",
-    "globals": "^17.11.0",
-    "tsx": "^4.23.13",
-    "typescript-eslint": "^8.69.0",
+    "globals": "^17.13.0",
+    "tsx": "^4.23.15",
+    "typescript-eslint": "^8.71.1",
     "vitest": "^4.1.8"
   }
 }
